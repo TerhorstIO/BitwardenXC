@@ -24,12 +24,14 @@ public:
     enum class OpenStage
     {
         CheckingProfile = 1,
+        OpeningCache,
         Authenticating,
         Synchronizing,
         ReadingVault,
         PreparingView
     };
     using OpenProgress = std::function<void(OpenStage)>;
+    using VaultSnapshot = BitwardenCli::VaultSnapshot;
 
     struct Edit
     {
@@ -54,6 +56,9 @@ public:
                  const OpenProgress& progress = {});
     void unlock(QByteArray password, const OpenProgress& progress = {});
     void sync();
+    bool needsInitialSync() const;
+    VaultSnapshot fetchInitialSync(const std::function<bool()>& canceled = {});
+    QSharedPointer<Database> applyInitialSync(VaultSnapshot snapshot);
     void lock();
     SaveResult save(const QList<Edit>& edits);
 
@@ -67,7 +72,10 @@ public:
     QList<Edit> prepareSave(const Database& database) const;
 
 private:
+    bool openCachedVault(const QByteArray& password, const OpenProgress& progress);
     void loadVault(bool synchronize, bool force, const OpenProgress& progress);
+    void setVault(VaultSnapshot snapshot, bool needsInitialSync);
+    QSharedPointer<Database> makeDatabase(const VaultSnapshot& snapshot) const;
 
     BitwardenCli m_cli;
     QString m_name;
@@ -77,6 +85,7 @@ private:
     QSet<QUuid> m_uncertainCreates;
     bool m_fullEditing = false;
     bool m_connected = false;
+    bool m_needsInitialSync = false;
 };
 
 #endif

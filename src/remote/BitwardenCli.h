@@ -15,6 +15,8 @@
 #include <QString>
 #include <QStringList>
 #include <QUrl>
+#include <functional>
+#include <optional>
 #include <stdexcept>
 
 class BitwardenCliError : public std::runtime_error
@@ -40,11 +42,20 @@ private:
 class BitwardenCli
 {
 public:
+    struct VaultSnapshot
+    {
+        QJsonArray folders;
+        QJsonArray items;
+    };
+
     BitwardenCli(const QString& executable, const QUrl& server, const QString& email);
     ~BitwardenCli();
 
     QString version();
     bool supportsFullEditing();
+    // A missing result indicates an unsupported CLI or an unavailable local vault cache.
+    std::optional<VaultSnapshot> openCachedVault(const QByteArray& masterPassword);
+    VaultSnapshot readVault(bool synchronize, bool force = false, const std::function<bool()>& canceled = {});
     // True when a fresh login successfully refreshed the vault during this call.
     bool connect(const QByteArray& masterPassword,
                  const QString& totpCode,
@@ -65,8 +76,11 @@ private:
     QString cliVersion();
     QJsonObject writeItem(const QStringList& arguments, const QJsonObject& item) const;
     QJsonObject profileStatus() const;
+    void verifyProfile(const QString& server, const QString& email) const;
+    void syncVault(bool force) const;
     QJsonObject unlockProfile(const QProcessEnvironment& secrets);
     QJsonObject saveSessionKey(QByteArray key);
+    void adoptSessionKey(QByteArray key);
     void clearSessionKey();
     void ensureUnlocked() const;
     QJsonObject checkRevision(const QString& id, const QString& expectedRevision) const;

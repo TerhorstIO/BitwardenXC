@@ -171,6 +171,8 @@ jobs:
           $cliSource = Join-Path $env:RUNNER_TEMP 'bitwardenxc-cli-build/clients'
           git -C $cliSource add -u
           if ($LASTEXITCODE -ne 0) { throw 'Could not stage the patched CLI source.' }
+          git -C $cliSource add -A -- apps/cli/src
+          if ($LASTEXITCODE -ne 0) { throw 'Could not stage the new companion CLI files.' }
           $tree = git -C $cliSource write-tree
           if ($LASTEXITCODE -ne 0) { throw 'Could not write the patched CLI source tree.' }
           $cliSourceZip = Join-Path $PWD 'dist/BitwardenXC-CLI-Source.zip'
@@ -244,8 +246,13 @@ jobs:
           $env:BITWARDENCLI_APPDATA_DIR = Join-Path $env:RUNNER_TEMP 'bitwardenxc-packaged-cli-smoke'
           New-Item -ItemType Directory -Force -Path $env:BITWARDENCLI_APPDATA_DIR | Out-Null
           $cliVersion = & (Join-Path $startInfo.WorkingDirectory 'bw.exe') --version
-          if ($LASTEXITCODE -ne 0 -or $cliVersion -cne '2026.10.1-bitwardenxc.1') {
+          if ($LASTEXITCODE -ne 0 -or $cliVersion -cne '2026.10.1-bitwardenxc.2') {
             throw 'The packaged Bitwarden CLI could not be verified.'
+          }
+          $cacheProbe = '{"serverUrl":"https://example.invalid","email":"cache-smoke@example.invalid","password":"synthetic-only"}'
+          $cacheResult = $cacheProbe | & (Join-Path $startInfo.WorkingDirectory 'bw.exe') --nointeraction --raw bitwardenxc-open-cache
+          if ($LASTEXITCODE -ne 0 -or ($cacheResult | ConvertFrom-Json).kind -cne 'unavailable') {
+            throw 'The packaged Bitwarden CLI could not check an empty encrypted cache.'
           }
 
           Get-Item $zip.FullName, $cliSourceZip | ForEach-Object {

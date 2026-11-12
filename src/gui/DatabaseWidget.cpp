@@ -131,6 +131,15 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent, QSh
 
     auto mainLayout = new QVBoxLayout();
     mainLayout->addWidget(m_messageWidget);
+    if (isBitwarden()) {
+        m_bitwardenSyncStatus = new MessageWidget(this);
+        m_bitwardenSyncStatus->setObjectName(QStringLiteral("bitwardenSyncStatus"));
+        m_bitwardenSyncStatus->setCloseButtonVisible(false);
+        m_bitwardenSyncStatus->setWordWrap(true);
+        m_bitwardenSyncStatus->setAnimate(false);
+        m_bitwardenSyncStatus->hide();
+        mainLayout->addWidget(m_bitwardenSyncStatus);
+    }
     auto hbox = new QHBoxLayout();
     mainLayout->addLayout(hbox);
     hbox->addWidget(m_mainSplitter);
@@ -287,6 +296,7 @@ DatabaseWidget::DatabaseWidget(const QString& filePath, QWidget* parent)
 
 DatabaseWidget::~DatabaseWidget()
 {
+    cancelBitwardenInitialSync();
     resetBitwardenQuickUnlock();
     // Trigger any Database deletion related signals manually by
     // explicitly clearing the Database pointer, instead of leaving it to ~QSharedPointer.
@@ -554,6 +564,7 @@ void DatabaseWidget::unlockBitwarden(bool useHello)
                 m_bitwardenUnlockStatus->hide();
                 updateBitwardenUnlockWidget();
                 restore.dismiss();
+                startBitwardenInitialSync();
                 if (!useHello) {
                     offerBitwardenQuickUnlock(std::move(password));
                 }
@@ -2536,6 +2547,8 @@ bool DatabaseWidget::lock()
 
     auto newDb = QSharedPointer<Database>::create(m_db->filePath());
     if (isBitwarden()) {
+        cancelBitwardenInitialSync();
+        m_bitwardenSyncStatus->hideMessage();
         ++m_bitwardenQuickUnlockGeneration;
         newDb->metadata()->setName(m_db->metadata()->name());
         newDb->markAsClean();
@@ -2972,6 +2985,7 @@ bool DatabaseWidget::saveBitwarden()
     }
 
     if (!edits.isEmpty()) {
+        cancelBitwardenInitialSync();
         QScopedValueRollback<bool> busy(m_bitwardenBusy, true);
         const auto session = m_bitwarden;
         auto* window = getMainWindow();
@@ -3005,9 +3019,104 @@ bool DatabaseWidget::saveBitwarden()
     return true;
 }
 
+void DatabaseWidget::startBitwardenInitialSync()
+{
+    if (!isBitwarden() || isLocked() || m_bitwardenBusy || !m_bitwarden->needsInitialSync()) {
+        return;
+    }
+
+    m_bitwardenSyncStatus->showMessage(tr("Showing the cached vault while Bitwarden synchronizes."),
+                                      MessageWidget::Information,
+                                      MessageWidget::DisableAutoHide);
+    if (m_bitwardenInitialSync) {
+        // A previous connection may still be finishing after lock and unlock.
+        m_bitwardenRestartInitialSync = m_bitwardenInitialSync->load();
+        return;
+    }
+
+    struct Result
+    {
+        BitwardenSession::VaultSnapshot snapshot;
+        QString error;
+    };
+
+    const auto canceled = std::make_shared<std::atomic_bool>(false);
+    m_bitwardenInitialSync = canceled;
+    const auto session = m_bitwarden;
+    AsyncTask::runThenCallback(
+        [session, canceled]() -> Result {
+            try {
+                return {session->fetchInitialSync([canceled] { return canceled->load(); }), {}};
+            } catch (const BitwardenCliError& error) {
+                return {{}, error.message()};
+            } catch (...) {
+                return {{}, tr("Could not synchronize the Bitwarden vault.")};
+            }
+        },
+        this,
+        [this, session, canceled](Result result) {
+            m_bitwardenInitialSync.reset();
+            const auto restart = m_bitwardenRestartInitialSync;
+            m_bitwardenRestartInitialSync = false;
+            if (isLocked()) {
+                return;
+            }
+
+            const auto showStale = [this](const QString& error = {}) {
+                const auto message = error.isEmpty()
+                    ? tr("Showing the cached vault. Use Sync Bitwarden to refresh.")
+                    : tr("Synchronization failed. Showing the cached vault. Use Sync Bitwarden to try again.")
+                        + QStringLiteral("<br>") + error.toHtmlEscaped();
+                m_bitwardenSyncStatus->showMessage(message, MessageWidget::Warning, MessageWidget::DisableAutoHide);
+            };
+            if (canceled->load()) {
+                if (restart) {
+                    startBitwardenInitialSync();
+                } else {
+                    showStale();
+                }
+                return;
+            }
+            if (!result.error.isEmpty()) {
+                showStale(result.error);
+                return;
+            }
+            // Several entry operations, including the stock CLI editor and TOTP setup,
+            // use a modal dialog while the database view is still active.
+            if (m_bitwardenBusy || m_attemptingLock || m_db->isModified() || !isEntryViewActive()
+                || QApplication::activeModalWidget() || QApplication::activePopupWidget()) {
+                showStale();
+                return;
+            }
+
+            try {
+                if (auto database = session->applyInitialSync(std::move(result.snapshot))) {
+                    replaceBitwardenDatabase(std::move(database), true);
+                }
+                m_bitwardenSyncStatus->hideMessage();
+            } catch (const BitwardenCliError& error) {
+                showStale(error.message());
+            } catch (...) {
+                showStale(tr("Could not open the synchronized Bitwarden vault."));
+            }
+        });
+}
+
+void DatabaseWidget::cancelBitwardenInitialSync()
+{
+    if (m_bitwardenInitialSync) {
+        m_bitwardenInitialSync->store(true);
+    }
+    m_bitwardenRestartInitialSync = false;
+}
+
 void DatabaseWidget::syncBitwarden()
 {
     if (!isBitwarden() || isLocked() || m_bitwardenBusy) {
+        return;
+    }
+    if (m_bitwardenInitialSync) {
+        showMessage(tr("Bitwarden is already synchronizing."), MessageWidget::Information);
         return;
     }
     if (!isEntryViewActive()) {
@@ -3048,16 +3157,32 @@ void DatabaseWidget::syncBitwarden()
     }
 
     try {
-        auto database = session->makeDatabase();
-        const auto group = currentGroup() ? currentGroup()->uuid() : QUuid();
-        const auto entry = currentSelectedEntry() ? currentSelectedEntry()->uuid() : QUuid();
-        endSearch();
-        replaceDatabase(std::move(database));
-        switchToMainView();
-        restoreGroupEntryFocus(group, entry);
+        replaceBitwardenDatabase(session->makeDatabase());
+        m_bitwardenSyncStatus->hideMessage();
         showMessage(tr("Bitwarden synchronized."), MessageWidget::Positive);
     } catch (const BitwardenCliError& error) {
         showMessage(error.message(), MessageWidget::Error, true);
+    }
+}
+
+void DatabaseWidget::replaceBitwardenDatabase(QSharedPointer<Database> database, bool preserveSearch)
+{
+    const auto group = currentGroup() ? currentGroup()->uuid() : QUuid();
+    const auto entry = currentSelectedEntry() ? currentSelectedEntry()->uuid() : QUuid();
+    const auto searchText = preserveSearch ? m_lastSearchText : QString();
+    endSearch();
+    replaceDatabase(std::move(database));
+    switchToMainView();
+    restoreGroupEntryFocus(group, entry);
+    if (!searchText.isEmpty()) {
+        if (isVisible()) {
+            emit requestSearch(searchText);
+        } else {
+            search(searchText);
+        }
+        if (auto* selected = m_db->rootGroup()->findEntryByUuid(entry)) {
+            m_entryView->setCurrentEntry(selected);
+        }
     }
 }
 

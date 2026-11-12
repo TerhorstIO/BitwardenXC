@@ -525,6 +525,7 @@ void DatabaseTabWidget::openRecentBitwardenDatabase(const QUrl& initialServer, c
                         openDialog->accept();
                     }
                     if (openedTab && !m_bitwardenOpenCanceled) {
+                        openedTab->startBitwardenInitialSync();
                         openedTab->offerBitwardenQuickUnlock(std::move(*password));
                     }
                 });

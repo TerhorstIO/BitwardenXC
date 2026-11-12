@@ -311,6 +311,8 @@ QString BitwardenSession::stageText(OpenStage stage)
     switch (stage) {
     case OpenStage::CheckingProfile:
         return QCoreApplication::translate("BitwardenSession", "Preparing the Bitwarden CLI…");
+    case OpenStage::OpeningCache:
+        return QCoreApplication::translate("BitwardenSession", "Opening the encrypted local vault cache…");
     case OpenStage::Authenticating:
         return QCoreApplication::translate("BitwardenSession", "Signing in or unlocking the Bitwarden vault…");
     case OpenStage::Synchronizing:
@@ -339,11 +341,27 @@ void BitwardenSession::connect(QByteArray password,
         progress(OpenStage::CheckingProfile);
     }
     m_fullEditing = m_cli.supportsFullEditing();
+    if (code.isEmpty() && clientId.isEmpty() && openCachedVault(password, progress)) {
+        return;
+    }
     if (progress) {
         progress(OpenStage::Authenticating);
     }
     const auto alreadySynced = m_cli.connect(password, code, clientId, clientSecret);
     loadVault(!alreadySynced, false, progress);
+}
+
+bool BitwardenSession::openCachedVault(const QByteArray& password, const OpenProgress& progress)
+{
+    if (progress) {
+        progress(OpenStage::OpeningCache);
+    }
+    auto cached = m_cli.openCachedVault(password);
+    if (!cached) {
+        return false;
+    }
+    setVault(std::move(*cached), true);
+    return true;
 }
 
 void BitwardenSession::sync()
@@ -362,17 +380,48 @@ void BitwardenSession::loadVault(bool synchronize, bool force, const OpenProgres
     if (progress) {
         progress(OpenStage::ReadingVault);
     }
-    auto folders = m_cli.listFolders();
-    auto items = m_cli.listItems();
-    m_folders = std::move(folders);
-    m_items = std::move(items);
+    setVault({m_cli.listFolders(), m_cli.listItems()}, false);
+}
+
+void BitwardenSession::setVault(VaultSnapshot snapshot, bool needsInitialSync)
+{
+    m_folders = std::move(snapshot.folders);
+    m_items = std::move(snapshot.items);
     m_connected = true;
+    m_needsInitialSync = needsInitialSync;
+}
+
+bool BitwardenSession::needsInitialSync() const
+{
+    return m_needsInitialSync;
+}
+
+BitwardenSession::VaultSnapshot BitwardenSession::fetchInitialSync(const std::function<bool()>& canceled)
+{
+    return m_cli.readVault(true, false, canceled);
+}
+
+QSharedPointer<Database> BitwardenSession::applyInitialSync(VaultSnapshot snapshot)
+{
+    if (!m_connected || !m_needsInitialSync) {
+        return {};
+    }
+    if (snapshot.folders == m_folders && snapshot.items == m_items) {
+        m_needsInitialSync = false;
+        return {};
+    }
+    auto database = makeDatabase(snapshot);
+    setVault(std::move(snapshot), false);
+    return database;
 }
 
 void BitwardenSession::unlock(QByteArray password, const OpenProgress& progress)
 {
     const auto wipe = qScopeGuard([&password] { password.fill('\0'); });
     try {
+        if (openCachedVault(password, progress)) {
+            return;
+        }
         if (progress) {
             progress(OpenStage::Authenticating);
         }
@@ -393,6 +442,7 @@ void BitwardenSession::lock()
     m_items = {};
     m_folders = {};
     m_connected = false;
+    m_needsInitialSync = false;
     m_cli.lock();
 }
 
@@ -434,6 +484,11 @@ bool BitwardenSession::isDraft(const QUuid& id) const
 
 QSharedPointer<Database> BitwardenSession::makeDatabase() const
 {
+    return makeDatabase({m_folders, m_items});
+}
+
+QSharedPointer<Database> BitwardenSession::makeDatabase(const VaultSnapshot& snapshot) const
+{
     auto database = QSharedPointer<Database>::create();
     database->setLiteralEntryValues(true);
     database->setEmitModified(false);
@@ -444,7 +499,7 @@ QSharedPointer<Database> BitwardenSession::makeDatabase() const
     root->setName(QObject::tr("Vault"));
 
     QList<QJsonObject> folders;
-    for (const auto& value : m_folders) {
+    for (const auto& value : snapshot.folders) {
         folders.append(value.toObject());
     }
     std::stable_sort(folders.begin(), folders.end(), [](const QJsonObject& left, const QJsonObject& right) {
@@ -472,7 +527,7 @@ QSharedPointer<Database> BitwardenSession::makeDatabase() const
     }
 
     QSet<QUuid> ids;
-    for (const auto& value : m_items) {
+    for (const auto& value : snapshot.items) {
         const auto item = value.toObject();
         if (!visibleItem(item)) {
             continue;

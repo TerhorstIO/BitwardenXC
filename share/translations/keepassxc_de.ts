@@ -2768,6 +2768,26 @@ Das ist definitiv ein Programmfehler, bitte benachrichtigen Sie die Entwickler.<
 <context>
     <name>DatabaseWidget</name>
     <message>
+        <source>Showing the cached vault while Bitwarden synchronizes.</source>
+        <translation>Lokaler Tresor geöffnet. Bitwarden synchronisiert im Hintergrund.</translation>
+    </message>
+    <message>
+        <source>Showing the cached vault. Use Sync Bitwarden to refresh.</source>
+        <translation>Der lokale Tresor wird angezeigt. Verwende „Bitwarden synchronisieren“ zum Aktualisieren.</translation>
+    </message>
+    <message>
+        <source>Synchronization failed. Showing the cached vault. Use Sync Bitwarden to try again.</source>
+        <translation>Synchronisierung fehlgeschlagen. Der lokale Tresor wird angezeigt. Verwende „Bitwarden synchronisieren“ für einen neuen Versuch.</translation>
+    </message>
+    <message>
+        <source>Could not open the synchronized Bitwarden vault.</source>
+        <translation>Der synchronisierte Bitwarden-Tresor konnte nicht geöffnet werden.</translation>
+    </message>
+    <message>
+        <source>Bitwarden is already synchronizing.</source>
+        <translation>Bitwarden wird bereits synchronisiert.</translation>
+    </message>
+    <message>
         <source>Waiting for Windows Hello…</source>
         <translation>Warten auf Windows Hello …</translation>
     </message>
@@ -10843,6 +10863,10 @@ Example: JBSWY3DPEHPK3PXP</source>
 </context>
 <context>
     <name>BitwardenSession</name>
+    <message>
+        <source>Opening the encrypted local vault cache…</source>
+        <translation>Verschlüsselter lokaler Tresor wird geöffnet …</translation>
+    </message>
     <message>
         <source>Preparing the Bitwarden CLI…</source>
         <translation>Bitwarden-CLI wird vorbereitet …</translation>

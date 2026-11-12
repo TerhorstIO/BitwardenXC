@@ -1,14 +1,14 @@
 [CmdletBinding()]
 param(
     [string]$OutputDirectory = (Join-Path (Split-Path -Parent $PSScriptRoot) 'dist/bitwardenxc-cli'),
-    [string]$WorkDirectory = (Join-Path ([IO.Path]::GetTempPath()) 'bitwardenxc-cli-2026.10.1-build')
+    [string]$WorkDirectory = (Join-Path ([IO.Path]::GetTempPath()) 'bitwardenxc-cli-2026.10.1-bitwardenxc.2-build')
 )
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
 $revision = '91214c3b978edb5496a32a946451960fe7d44531' # Bitwarden clients cli-v2026.10.1
-$expectedVersion = '2026.10.1-bitwardenxc.1'
+$expectedVersion = '2026.10.1-bitwardenxc.2'
 $nodeVersion = '22.23.5'
 $npmVersion = '11.18.0'
 $pkgVersion = '3.5'

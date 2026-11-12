@@ -1,28 +1,501 @@
+diff --git a/apps/cli/src/bitwardenxc-open-cache.ts b/apps/cli/src/bitwardenxc-open-cache.ts
+new file mode 100644
+index 0000000..b8b4d7f
+--- /dev/null
++++ b/apps/cli/src/bitwardenxc-open-cache.ts
+@@ -0,0 +1,242 @@
++import { stat } from "node:fs/promises";
++import path from "node:path";
++
++import { firstValueFrom } from "rxjs";
++
++import { AuthenticationStatus } from "@bitwarden/common/auth/enums/authentication-status";
++import { ENCRYPTED_CIPHERS } from "@bitwarden/common/vault/services/key-state/ciphers.state";
++import { FOLDER_ENCRYPTED_FOLDERS } from "@bitwarden/common/vault/services/key-state/folder.state";
++// eslint-disable-next-line no-restricted-imports
++import { SymmetricCryptoKey } from "@bitwarden/legacy-crypto";
++import { PureCrypto } from "@bitwarden/sdk-internal";
++
++import { ListCommand } from "./commands/list.command";
++import { ListResponse } from "./models/response/list.response";
++import { ServiceContainer } from "./service-container/service-container";
++
++const command = "bitwardenxc-open-cache";
++const defaultServer = "https://bitwarden.com";
++const maxRequestBytes = 64 * 1024;
++const maxResponseBytes = 64 * 1024 * 1024;
++
++type Request = {
++  serverUrl: string;
++  email: string;
++  password: string;
++};
++
++export function isCacheOpenInvocation(args: string[]): boolean {
++  return (
++    (args.length === 1 && args[0] === command) ||
++    (args.length === 3 &&
++      args[0] === "--nointeraction" &&
++      args[1] === "--raw" &&
++      args[2] === command)
++  );
++}
++
++export function canonicalServer(input: string): string {
++  const url = new URL(input);
++  if (url.protocol !== "https:" || !url.hostname || input.includes("?") || input.includes("#")) {
++    throw new Error("Invalid cache server");
++  }
++  if (url.username || url.password || /^https:\/\/[^/]*@/i.test(input)) {
++    throw new Error("Invalid cache server");
++  }
++  const address = url.origin + url.pathname.replace(/\/+$/, "");
++  if (address === "https://vault.bitwarden.com") {
++    return defaultServer;
++  }
++  if (address === "https://bitwarden.eu") {
++    return "https://vault.bitwarden.eu";
++  }
++  return address;
++}
++
++export function parseRequest(json: string): Request {
++  const request = JSON.parse(json) as Partial<Request> | null;
++  if (
++    request == null ||
++    Object.keys(request).length !== 3 ||
++    typeof request.serverUrl !== "string" ||
++    typeof request.email !== "string" ||
++    !request.email.trim() ||
++    typeof request.password !== "string" ||
++    !request.password ||
++    request.password.includes("\0")
++  ) {
++    throw new Error("Invalid cache request");
++  }
++  return {
++    serverUrl: canonicalServer(request.serverUrl),
++    email: request.email.trim(),
++    password: request.password,
++  };
++}
++
++async function readRequest(): Promise<Request> {
++  const chunks: Buffer[] = [];
++  let bytes = 0;
++  try {
++    for await (const chunk of process.stdin as AsyncIterable<Buffer>) {
++      chunks.push(chunk);
++      bytes += chunk.byteLength;
++      if (bytes > maxRequestBytes) {
++        throw new Error("Cache request is too large");
++      }
++    }
++    const joined = Buffer.concat(chunks, bytes);
++    try {
++      return parseRequest(new TextDecoder("utf-8", { fatal: true }).decode(joined));
++    } finally {
++      joined.fill(0);
++    }
++  } finally {
++    for (const chunk of chunks) {
++      chunk.fill(0);
++    }
++  }
++}
++
++async function isFile(filename: string): Promise<boolean> {
++  try {
++    return (await stat(filename)).isFile();
++  } catch (error) {
++    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
++      return false;
++    }
++    throw error;
++  }
++}
++
++async function openCache(services: ServiceContainer, request: Request): Promise<string> {
++  const account = await firstValueFrom(services.accountService.activeAccount$);
++  if (!account || (await services.authService.getAuthStatus()) === AuthenticationStatus.LoggedOut) {
++    return JSON.stringify({ kind: "unavailable" });
++  }
++
++  const environment = await firstValueFrom(services.environmentService.getEnvironment$(account.id));
++  const serverUrl = canonicalServer(environment.getUrls().base ?? environment.getWebVaultUrl());
++  if (
++    serverUrl !== request.serverUrl ||
++    account.email.toLowerCase() !== request.email.toLowerCase()
++  ) {
++    throw new Error("Cache profile does not match");
++  }
++
++  const [lastSync, encryptedFolders, encryptedItems, unlockData] = await Promise.all([
++    services.syncService.getLastSync(),
++    firstValueFrom(services.stateProvider.getUser(account.id, FOLDER_ENCRYPTED_FOLDERS).state$),
++    firstValueFrom(services.stateProvider.getUser(account.id, ENCRYPTED_CIPHERS).state$),
++    firstValueFrom(services.masterPasswordService.masterPasswordUnlockData$(account.id)),
++  ]);
++  if (
++    !lastSync ||
++    !(lastSync.getTime() > 0) ||
++    encryptedFolders == null ||
++    encryptedItems == null ||
++    !unlockData
++  ) {
++    return JSON.stringify({ kind: "unavailable" });
++  }
++
++  try {
++    await services.unlockService.unlockWithMasterPassword(account.id, request.password);
++  } catch {
++    return JSON.stringify({ kind: "unlockFailed" });
++  } finally {
++    request.password = "";
++  }
++
++  const list = new ListCommand(
++    services.cipherService,
++    services.folderService,
++    services.collectionService,
++    services.organizationService,
++    services.searchService,
++    services.organizationUserApiService,
++    services.apiService,
++    services.eventCollectionService,
++    services.accountService,
++    services.keyService,
++    services.cliRestrictedItemTypesService,
++    services.cipherArchiveService,
++  );
++  const [folderResponse, itemResponse] = await Promise.all([
++    list.run("folders", {}, false),
++    list.run("items", {}, false),
++  ]);
++  if (
++    !folderResponse.success ||
++    !(folderResponse.data instanceof ListResponse) ||
++    !itemResponse.success ||
++    !(itemResponse.data instanceof ListResponse)
++  ) {
++    throw new Error("Cache list failed");
++  }
++
++  const sessionKey = SymmetricCryptoKey.fromSdk(PureCrypto.make_aes256_cbc_hmac_key()).toBase64();
++  const response = JSON.stringify({
++    kind: "opened",
++    serverUrl,
++    email: account.email,
++    sessionKey,
++    folders: folderResponse.data.data,
++    items: itemResponse.data.data,
++  });
++
++  if (Buffer.byteLength(response) >= maxResponseBytes) {
++    return JSON.stringify({ kind: "unavailable" });
++  }
++
++  // Persist only the official CLI's session-encrypted key, after producing the complete response.
++  process.env.BW_SESSION = sessionKey;
++  try {
++    await services.autoUnlockService.refreshAutoUnlockKey(account.id);
++  } catch (error) {
++    await services.stateService.setUserKeyAutoUnlock(null, { userId: account.id });
++    throw error;
++  } finally {
++    delete process.env.BW_SESSION;
++  }
++  return response;
++}
++
++export async function runCacheOpen(): Promise<void> {
++  // Upstream state observables can raise errors outside the command's awaited chain.
++  // Fail this private process without dumping untrusted profile data or stack traces.
++  const exitSilently = () => process.exit(1);
++  process.once("uncaughtException", exitSilently);
++  process.once("unhandledRejection", exitSilently);
++
++  let services: ServiceContainer | undefined;
++  let request: Request | undefined;
++  try {
++    request = await readRequest();
++    const directory = process.env.BITWARDENCLI_APPDATA_DIR;
++    if (!directory || !path.isAbsolute(directory)) {
++      throw new Error("Explicit cache profile required");
++    }
++    if (!(await isFile(path.join(directory, "data.json")))) {
++      process.stdout.write('{"kind":"unavailable"}\n');
++      return;
++    }
++
++    // This is a separate, short-lived invocation. Block any fetch, including accidental
++    // new network dependencies in upstream services, for its entire lifetime.
++    globalThis.fetch = () => Promise.reject(new Error("Network is disabled during cache open"));
++    delete process.env.BW_SESSION;
++    services = new ServiceContainer(true);
++    const initialized = await services.initCacheOpen();
++    const response = initialized ? await openCache(services, request) : '{"kind":"unavailable"}';
++    process.stdout.write(response + "\n");
++  } catch {
++    // Private protocol: never report upstream errors or request data to the console.
++    process.exitCode = 1;
++  } finally {
++    if (request) {
++      request.password = "";
++    }
++    services?.dispose();
++  }
++}
+diff --git a/apps/cli/src/bitwardenxc-version.ts b/apps/cli/src/bitwardenxc-version.ts
+new file mode 100644
+index 0000000..beb89c1
+--- /dev/null
++++ b/apps/cli/src/bitwardenxc-version.ts
+@@ -0,0 +1,3 @@
++import packageJson from "../package.json";
++
++export const companionVersion = packageJson.version + "-bitwardenxc.2";
+diff --git a/apps/cli/src/bw.ts b/apps/cli/src/bw.ts
+index b6a2c9b..f07fa4a 100644
+--- a/apps/cli/src/bw.ts
++++ b/apps/cli/src/bw.ts
+@@ -2,12 +2,30 @@ import "core-js/proposals/explicit-resource-management";
+
+ import { program } from "commander";
+
++import { isCacheOpenInvocation, runCacheOpen } from "./bitwardenxc-open-cache";
++import { companionVersion } from "./bitwardenxc-version";
+ import { OssServeConfigurator } from "./oss-serve-configurator";
+ import { registerOssPrograms } from "./register-oss-programs";
+ import { ServeProgram } from "./serve.program";
+ import { ServiceContainer } from "./service-container/service-container";
+
+ async function main() {
++  const args = process.argv.slice(2);
++  if (
++    (args.length === 1 && args[0] === "--version") ||
++    (args.length === 3 &&
++      args[0] === "--nointeraction" &&
++      args[1] === "--raw" &&
++      args[2] === "--version")
++  ) {
++    process.stdout.write(companionVersion + "\n");
++    return;
++  }
++  if (isCacheOpenInvocation(args)) {
++    await runCacheOpen();
++    return;
++  }
++
+   const serviceContainer = new ServiceContainer();
+   let disposed = false;
+   const dispose = () => {
+diff --git a/apps/cli/src/commands/list.command.ts b/apps/cli/src/commands/list.command.ts
+index 0a26669..d68c6d8 100644
+--- a/apps/cli/src/commands/list.command.ts
++++ b/apps/cli/src/commands/list.command.ts
+@@ -47,11 +47,15 @@ export class ListCommand {
+     private cipherArchiveService: CipherArchiveService,
+   ) {}
+
+-  async run(object: string, cmdOptions: Record<string, any>): Promise<Response> {
++  async run(
++    object: string,
++    cmdOptions: Record<string, any>,
++    uploadEvents = true,
++  ): Promise<Response> {
+     const normalizedOptions = new Options(cmdOptions);
+     switch (object.toLowerCase()) {
+       case "items":
+-        return await this.listCiphers(normalizedOptions);
++        return await this.listCiphers(normalizedOptions, uploadEvents);
+       case "folders":
+         return await this.listFolders(normalizedOptions);
+       case "collections":
+@@ -67,7 +71,7 @@ export class ListCommand {
+     }
+   }
+
+-  private async listCiphers(options: Options) {
++  private async listCiphers(options: Options, uploadEvents: boolean) {
+     let ciphers: CipherView[];
+
+     const activeUserId = await firstValueFrom(this.accountService.activeAccount$.pipe(getUserId));
+@@ -150,7 +154,11 @@ export class ListCommand {
+
+     ciphers = await this.cliRestrictedItemTypesService.filterRestrictedCiphers(ciphers);
+
+-    await this.eventCollectionService.collectMany(EventType.Cipher_ClientViewed, ciphers, true);
++    await this.eventCollectionService.collectMany(
++      EventType.Cipher_ClientViewed,
++      ciphers,
++      uploadEvents,
++    );
+
+     const res = new ListResponse(ciphers.map((o) => new CipherResponse(o)));
+     return Response.success(res);
+diff --git a/apps/cli/src/platform/services/lowdb-storage.service.ts b/apps/cli/src/platform/services/lowdb-storage.service.ts
+index 61d3920..5a443aa 100644
+--- a/apps/cli/src/platform/services/lowdb-storage.service.ts
++++ b/apps/cli/src/platform/services/lowdb-storage.service.ts
+@@ -38,6 +38,7 @@ export class LowdbStorageService implements AbstractStorageService {
+     private dir?: string,
+     private allowCache = false,
+     private requireLock = false,
++    private allowProfileRecovery = true,
+   ) {
+     this.defaults = defaults;
+     this.updates$ = this.updatesSubject.asObservable();
+@@ -52,12 +53,18 @@ export class LowdbStorageService implements AbstractStorageService {
+     let adapter: lowdb.AdapterSync<any>;
+     if (Utils.isNode && this.dir != null) {
+       if (!fs.existsSync(this.dir)) {
++        if (!this.allowProfileRecovery) {
++          throw new Error("Cache directory disappeared.");
++        }
+         this.logService.warning(`Could not find dir, "${this.dir}"; creating it instead.`);
+         NodeUtils.mkdirpSync(this.dir, "700");
+         this.logService.info(`Created dir "${this.dir}".`);
+       }
+       this.dataFilePath = path.join(this.dir, "data.json");
+       if (!fs.existsSync(this.dataFilePath)) {
++        if (!this.allowProfileRecovery) {
++          throw new Error("Cache file disappeared.");
++        }
+         this.logService.warning(
+           `Could not find data file, "${this.dataFilePath}"; creating it instead.`,
+         );
+@@ -76,7 +83,7 @@ export class LowdbStorageService implements AbstractStorageService {
+       this.db = lowdb(adapter);
+       this.logService.info("Successfully created lowdb storage adapter.");
+     } catch (e) {
+-      if (e instanceof SyntaxError) {
++      if (e instanceof SyntaxError && this.allowProfileRecovery) {
+         this.logService.warning(
+           `Error creating lowdb storage adapter, "${e.message}"; emptying data file.`,
+         );
 diff --git a/apps/cli/src/program.ts b/apps/cli/src/program.ts
+index 60c0701..120ab21 100644
 --- a/apps/cli/src/program.ts
 +++ b/apps/cli/src/program.ts
-@@ -35,7 +35,7 @@ export class Program extends BaseProgram {
+@@ -10,6 +10,7 @@ import { LockCommand } from "./auth/commands/lock.command";
+ import { LoginCommand } from "./auth/commands/login.command";
+ import { LogoutCommand } from "./auth/commands/logout.command";
+ import { BaseProgram } from "./base-program";
++import { companionVersion } from "./bitwardenxc-version";
+ import { CompletionCommand } from "./commands/completion.command";
+ import { EncodeCommand } from "./commands/encode.command";
+ import { StatusCommand } from "./commands/status.command";
+@@ -34,10 +35,7 @@ export class Program extends BaseProgram {
+       .option("--quiet", "Don't return anything to stdout.")
        .option("--nointeraction", "Do not prompt for interactive user input.")
        .option("--session <session>", "Pass session key instead of reading from env.")
-       .version(
+-      .version(
 -        await this.serviceContainer.platformUtilsService.getApplicationVersion(),
-+        (await this.serviceContainer.platformUtilsService.getApplicationVersion()) + "-bitwardenxc.1",
-         "-v, --version",
-       );
- 
-diff --git a/libs/common/src/models/export/cipher.export.ts b/libs/common/src/models/export/cipher.export.ts
---- a/libs/common/src/models/export/cipher.export.ts
-+++ b/libs/common/src/models/export/cipher.export.ts
-@@ -62,7 +62,7 @@ export class CipherExport {
-     switch (req.type) {
-       case CipherType.Login:
-         if (req.login != null) {
--          view.login = LoginExport.toView(req.login);
-+          view.login = LoginExport.toView(req.login, view.login ?? undefined);
-         }
-         break;
-       case CipherType.SecureNote:
+-        "-v, --version",
+-      );
++      .version(companionVersion, "-v, --version");
+
+     program.on("option:pretty", () => {
+       process.env.BW_PRETTY = "true";
+diff --git a/apps/cli/src/service-container/service-container.ts b/apps/cli/src/service-container/service-container.ts
+index 8b7797f..774956e 100644
+--- a/apps/cli/src/service-container/service-container.ts
++++ b/apps/cli/src/service-container/service-container.ts
+@@ -135,6 +135,7 @@ import { DefaultGovModeService } from "@bitwarden/common/platform/services/defau
+ import { FileUploadService } from "@bitwarden/common/platform/services/file-upload/file-upload.service";
+ import { MemoryStorageService } from "@bitwarden/common/platform/services/memory-storage.service";
+ import { MigrationBuilderService } from "@bitwarden/common/platform/services/migration-builder.service";
++import { CURRENT_VERSION, currentVersion } from "@bitwarden/state";
+ import { MigrationRunner } from "@bitwarden/common/platform/services/migration-runner";
+ import { DefaultSdkClientFactory } from "@bitwarden/common/platform/services/sdk/default-sdk-client-factory";
+ import { DefaultSdkService } from "@bitwarden/common/platform/services/sdk/default-sdk.service";
+@@ -395,10 +396,13 @@ export class ServiceContainer {
+   private accountCryptographicStateService: DefaultAccountCryptographicStateService;
+   private v2UpgradeTokenStateService: V2UpgradeTokenStateService;
+
+-  constructor() {
++  constructor(cacheOpen = false) {
+     let p = null;
+     const relativeDataDir = path.join(path.dirname(process.execPath), "bw-data");
+     if (fs.existsSync(relativeDataDir)) {
++      if (cacheOpen) {
++        throw new Error("Portable CLI data overrides the requested profile.");
++      }
+       p = relativeDataDir;
+     } else if (process.env.BITWARDENCLI_APPDATA_DIR) {
+       p = path.resolve(process.env.BITWARDENCLI_APPDATA_DIR);
+@@ -417,8 +421,13 @@ export class ServiceContainer {
+     this.platformUtilsService = new CliPlatformUtilsService(ClientType.Cli, packageJson);
+     this.logService = new ConsoleLogService(
+       this.platformUtilsService.isDev(),
+-      (level) => process.env.BITWARDENCLI_DEBUG !== "true" && level <= LogLevelType.Info,
+-      new FlightRecorderLogRecorder(SdkLoadService.Ready.then(() => new FlightRecorderClient())),
++      (level) =>
++        cacheOpen || (process.env.BITWARDENCLI_DEBUG !== "true" && level <= LogLevelType.Info),
++      cacheOpen
++        ? null
++        : new FlightRecorderLogRecorder(
++            SdkLoadService.Ready.then(() => new FlightRecorderClient()),
++          ),
+     );
+     this.cryptoFunctionService = new NodeCryptoFunctionService();
+     this.encryptService = new EncryptServiceImplementation(
+@@ -426,7 +435,14 @@ export class ServiceContainer {
+       this.logService,
+       true,
+     );
+-    this.storageService = new LowdbStorageService(this.logService, null, p, false, true);
++    this.storageService = new LowdbStorageService(
++      this.logService,
++      null,
++      p,
++      false,
++      true,
++      !cacheOpen,
++    );
+     this.secureStorageService = new NodeEnvSecureStorageService(
+       this.storageService,
+       this.logService,
+@@ -702,6 +718,7 @@ export class ServiceContainer {
+       this.stateProvider,
+       this.authService,
+       this.sdkService,
++      cacheOpen,
+     );
+
+     this.availableRegionsService = new DefaultAvailableRegionsService(
+@@ -817,6 +834,7 @@ export class ServiceContainer {
+       this.biometricStateService,
+       this.v2UpgradeTokenStateService,
+       this.autoUnlockService,
++      !cacheOpen,
+     );
+
+     this.sendTokenService = new DefaultSendTokenService(
+@@ -1243,6 +1261,20 @@ export class ServiceContainer {
+     process.env.BW_SESSION = undefined;
+   }
+
++  async initCacheOpen(): Promise<boolean> {
++    await this.storageService.init();
++    if ((await currentVersion(this.storageService, this.logService)) !== CURRENT_VERSION) {
++      // Let a regular CLI invocation handle old, new, or incomplete profiles.
++      return false;
++    }
++
++    await this.sdkLoadService.loadAndInit();
++    this.containerService.attachToGlobal(global);
++    await this.i18nService.init();
++    this.inited = true;
++    return true;
++  }
++
+   async init() {
+     if (this.inited) {
+       this.logService.warning("ServiceContainer.init called more than once");
 diff --git a/libs/common/src/models/export/cipher.export.spec.ts b/libs/common/src/models/export/cipher.export.spec.ts
+index 6bb3368..9ab6885 100644
 --- a/libs/common/src/models/export/cipher.export.spec.ts
 +++ b/libs/common/src/models/export/cipher.export.spec.ts
 @@ -2,6 +2,8 @@ import { CipherType } from "../../vault/enums";
@@ -32,10 +505,10 @@ diff --git a/libs/common/src/models/export/cipher.export.spec.ts b/libs/common/s
 +import { LoginUriView } from "../../vault/models/view/login-uri.view";
 +import { LoginView } from "../../vault/models/view/login.view";
  import { conditionalEncString } from "../../vault/utils/domain-utils";
- 
+
  import { CipherExport } from "./cipher.export";
 @@ -10,6 +12,41 @@ import { SshKeyExport } from "./ssh-key.export";
- 
+
  describe("Cipher Export", () => {
    describe("toView", () => {
 +    it.each([true, false])("retains login autofill and untouched collections (%s)", (autofill) => {
@@ -76,3 +549,116 @@ diff --git a/libs/common/src/models/export/cipher.export.spec.ts b/libs/common/s
      it("should preserve existing date values when request dates are undefined", () => {
        const existingView = new CipherView();
        existingView.creationDate = new Date("2023-01-01T00:00:00Z");
+diff --git a/libs/common/src/models/export/cipher.export.ts b/libs/common/src/models/export/cipher.export.ts
+index d075232..847eb14 100644
+--- a/libs/common/src/models/export/cipher.export.ts
++++ b/libs/common/src/models/export/cipher.export.ts
+@@ -62,7 +62,7 @@ export class CipherExport {
+     switch (req.type) {
+       case CipherType.Login:
+         if (req.login != null) {
+-          view.login = LoginExport.toView(req.login);
++          view.login = LoginExport.toView(req.login, view.login ?? undefined);
+         }
+         break;
+       case CipherType.SecureNote:
+diff --git a/libs/common/src/platform/services/config/default-config.service.ts b/libs/common/src/platform/services/config/default-config.service.ts
+index 805ea53..5475835 100644
+--- a/libs/common/src/platform/services/config/default-config.service.ts
++++ b/libs/common/src/platform/services/config/default-config.service.ts
+@@ -103,6 +103,7 @@ export class DefaultConfigService implements ConfigService {
+     private stateProvider: StateProvider,
+     private authService: AuthService,
+     private sdkService: SdkService,
++    cachedOnly = false,
+   ) {
+     const globalConfig$ = this.environmentService.globalEnvironment$.pipe(
+       distinctUntilChanged(environmentComparer),
+@@ -115,7 +116,7 @@ export class DefaultConfigService implements ConfigService {
+       ),
+     );
+
+-    this.serverConfig$ = this.stateProvider.activeUserId$.pipe(
++    const configSource$ = this.stateProvider.activeUserId$.pipe(
+       distinctUntilChanged(),
+       switchMap((userId) => {
+         if (userId == null) {
+@@ -154,28 +155,35 @@ export class DefaultConfigService implements ConfigService {
+           }),
+         );
+       }),
+-      tap(async (rec) => {
+-        const [existingConfig, userId, environment, fallbackConfig] = rec;
+-        // Grab new config if older retrieval interval
+-        if (!existingConfig || this.olderThanRetrievalInterval(existingConfig.utcDate)) {
+-          await this.renewConfig(existingConfig, userId, environment, fallbackConfig);
+-        }
+-      }),
+-      switchMap(([existingConfig]) => {
+-        // If we needed to fetch, stop this emit, we'll get a new one after update
+-        // This is split up with the above tap because we need to return an observable from a failed promise,
+-        // which isn't very doable since promises are converted to observables in switchMap
+-        if (!existingConfig || this.olderThanRetrievalInterval(existingConfig.utcDate)) {
+-          return NEVER;
+-        }
+-        return of(existingConfig);
+-      }),
+-      tap((config) => void this.gateLogRecorder(config)),
+-      // If fetch fails, we'll emit on this subject to fallback to the existing config
+-      mergeWith(this.failedFetchFallbackSubject),
+-      share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: () => timer(1000) }),
+     );
+
++    this.serverConfig$ = cachedOnly
++      ? configSource$.pipe(
++          map(([existingConfig, , , fallbackConfig]) => existingConfig ?? fallbackConfig),
++        )
++      : configSource$.pipe(
++          tap(async (rec) => {
++            const [existingConfig, userId, environment, fallbackConfig] = rec;
++            // Grab new config if older retrieval interval
++            if (!existingConfig || this.olderThanRetrievalInterval(existingConfig.utcDate)) {
++              await this.renewConfig(existingConfig, userId, environment, fallbackConfig);
++            }
++          }),
++          switchMap(([existingConfig]) => {
++            // If we needed to fetch, stop this emit, we'll get a new one after update
++            // This is split up with the above tap because we need to return an observable from a failed promise,
++            // which isn't very doable since promises are converted to observables in switchMap
++            if (!existingConfig || this.olderThanRetrievalInterval(existingConfig.utcDate)) {
++              return NEVER;
++            }
++            return of(existingConfig);
++          }),
++          tap((config) => void this.gateLogRecorder(config)),
++          // If fetch fails, we'll emit on this subject to fallback to the existing config
++          mergeWith(this.failedFetchFallbackSubject),
++          share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: () => timer(1000) }),
++        );
++
+     this.cloudRegion$ = this.serverConfig$.pipe(
+       map((config) => config?.environment?.cloudRegion ?? Region.US),
+     );
+diff --git a/libs/unlock/src/default-unlock.service.ts b/libs/unlock/src/default-unlock.service.ts
+index fc21b6e..351040d 100644
+--- a/libs/unlock/src/default-unlock.service.ts
++++ b/libs/unlock/src/default-unlock.service.ts
+@@ -66,6 +66,7 @@ export class DefaultUnlockService implements UnlockService {
+     private biometricStateService: BiometricStateService,
+     private v2UpgradeTokenStateService: V2UpgradeTokenStateService,
+     private autoUnlockService: AutoUnlockService,
++    private persistAutoUnlockKey = true,
+   ) {}
+
+   registerOnUnlockAction(
+@@ -290,7 +291,9 @@ export class DefaultUnlockService implements UnlockService {
+     if (await firstValueFrom(this.biometricStateService.biometricUnlockEnabled$(userId))) {
+       await this.biometricsService.setBiometricProtectedUnlockKeyForUser(userId, userKey);
+     }
+-    await this.autoUnlockService.setAutoUnlockKey(userId, userKey);
++    if (this.persistAutoUnlockKey) {
++      await this.autoUnlockService.setAutoUnlockKey(userId, userKey);
++    }
+     await this.stateProvider.setUserState(USER_EVER_HAD_USER_KEY, true, userId);
+
+     await this.runOnUnlockActions(userId, userKey, method);

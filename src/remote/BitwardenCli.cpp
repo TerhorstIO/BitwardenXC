@@ -28,6 +28,7 @@ namespace
     const auto sessionVariable = QStringLiteral("BW_SESSION");
     const auto upstreamVersion = QStringLiteral("2026.10.1");
     const auto fullEditingVersion = QStringLiteral("2026.10.1-bitwardenxc.1");
+    const auto cachedOpenVersion = QStringLiteral("2026.10.1-bitwardenxc.2");
     const auto nameKey = QStringLiteral("name");
     const auto notesKey = QStringLiteral("notes");
     const auto idKey = QStringLiteral("id");
@@ -45,6 +46,11 @@ namespace
     QDateTime lastSync(const QJsonObject& status)
     {
         return QDateTime::fromString(status.value(QStringLiteral("lastSync")).toString(), Qt::ISODateWithMs);
+    }
+
+    bool supportsFullEditingVersion(const QString& version)
+    {
+        return version == fullEditingVersion || version == cachedOpenVersion;
     }
 
     QString executablePath(const QString& path)
@@ -106,11 +112,16 @@ namespace
         return QDir(base).filePath(QStringLiteral("KeePassXC-Bitwarden/cli/") + hash);
     }
 
-    QProcessEnvironment passwordEnvironment(const QByteArray& password)
+    void validatePassword(const QByteArray& password)
     {
         if (password.isEmpty() || password.contains('\0')) {
             throw BitwardenCliError(QStringLiteral("Gib dein Master-Passwort ein."));
         }
+    }
+
+    QProcessEnvironment passwordEnvironment(const QByteArray& password)
+    {
+        validatePassword(password);
         QProcessEnvironment result;
         result.insert(passwordVariable, QString::fromUtf8(password));
         return result;
@@ -342,7 +353,56 @@ QString BitwardenCli::version()
 bool BitwardenCli::supportsFullEditing()
 {
     const QMutexLocker locker(&m_mutex);
-    return cliVersion() == fullEditingVersion;
+    return supportsFullEditingVersion(cliVersion());
+}
+
+std::optional<BitwardenCli::VaultSnapshot> BitwardenCli::openCachedVault(const QByteArray& masterPassword)
+{
+    const QMutexLocker locker(&m_mutex);
+    if (cliVersion() != cachedOpenVersion) {
+        return std::nullopt;
+    }
+    if (!m_sessionKey.isEmpty()) {
+        throw BitwardenCliError(QStringLiteral("Der Bitwarden-Tresor ist bereits entsperrt."));
+    }
+    validatePassword(masterPassword);
+
+    auto password = QString::fromUtf8(masterPassword);
+    const auto wipePassword = qScopeGuard([&password] { password.fill(QChar()); });
+    auto request = QJsonDocument(QJsonObject{{QStringLiteral("serverUrl"), m_server},
+                                            {QStringLiteral("email"), m_email},
+                                            {QStringLiteral("password"), password}})
+                       .toJson(QJsonDocument::Compact);
+    password.fill(QChar());
+    const auto wipeRequest = qScopeGuard([&request] { request.fill('\0'); });
+    const auto result = parseObject(run({QStringLiteral("bitwardenxc-open-cache")}, request));
+    const auto kind = result.value(QStringLiteral("kind")).toString();
+    if (kind == QStringLiteral("unavailable") && result.size() == 1) {
+        return std::nullopt;
+    }
+    if (kind == QStringLiteral("unlockFailed") && result.size() == 1) {
+        throw BitwardenCliError(QStringLiteral("Der Bitwarden-Tresor konnte nicht entsperrt werden. Prüfe dein Master-Passwort."),
+                               BitwardenCliError::Reason::AuthenticationRequired);
+    }
+
+    const auto server = result.value(QStringLiteral("serverUrl")).toString();
+    const auto email = result.value(QStringLiteral("email")).toString();
+    const auto key = result.value(QStringLiteral("sessionKey"));
+    const auto folders = result.value(QStringLiteral("folders"));
+    const auto items = result.value(QStringLiteral("items"));
+    if (kind != QStringLiteral("opened") || result.size() != 6 || server.isEmpty() || email.isEmpty()
+        || !key.isString() || !folders.isArray() || !items.isArray()) {
+        throw BitwardenCliError(QStringLiteral("Die BitwardenXC-CLI hat ungültige Tresordaten geliefert."));
+    }
+    verifyProfile(server, email);
+    VaultSnapshot snapshot{folders.toArray(), items.toArray()};
+    const auto isObject = [](const QJsonValue& value) { return value.isObject(); };
+    if (!std::all_of(snapshot.folders.constBegin(), snapshot.folders.constEnd(), isObject)
+        || !std::all_of(snapshot.items.constBegin(), snapshot.items.constEnd(), isObject)) {
+        throw BitwardenCliError(QStringLiteral("Die BitwardenXC-CLI hat ungültige Tresordaten geliefert."));
+    }
+    adoptSessionKey(key.toString().toLatin1());
+    return snapshot;
 }
 
 QString BitwardenCli::cliVersion()
@@ -369,13 +429,16 @@ QJsonObject BitwardenCli::profileStatus() const
     if (state != QStringLiteral("locked") && state != QStringLiteral("unlocked")) {
         throw BitwardenCliError(QStringLiteral("Die Bitwarden-CLI meldet einen unbekannten Tresorstatus."));
     }
-    const auto reportedServer = result.value(QStringLiteral("serverUrl")).toString();
-    const auto activeServer = reportedServer.isEmpty() ? defaultServer : serverAddress(QUrl(reportedServer));
-    const auto activeEmail = result.value(QStringLiteral("userEmail")).toString();
-    if (activeServer != m_server || activeEmail.compare(m_email, Qt::CaseInsensitive) != 0) {
+    verifyProfile(result.value(QStringLiteral("serverUrl")).toString(), result.value(QStringLiteral("userEmail")).toString());
+    return result;
+}
+
+void BitwardenCli::verifyProfile(const QString& server, const QString& email) const
+{
+    const auto activeServer = server.isEmpty() ? defaultServer : serverAddress(QUrl(server));
+    if (activeServer != m_server || email.compare(m_email, Qt::CaseInsensitive) != 0) {
         throw BitwardenCliError(QStringLiteral("Der angemeldete Bitwarden-Tresor passt nicht zum ausgewählten Profil."));
     }
-    return result;
 }
 
 bool BitwardenCli::connect(const QByteArray& masterPassword,
@@ -446,7 +509,7 @@ bool BitwardenCli::connect(const QByteArray& masterPassword,
     // These CLI versions force a full sync on login, but login can succeed even if that sync failed.
     const auto syncedAt = lastSync(unlockedStatus);
     const auto previousSync = lastSync(previousStatus);
-    return (m_cliVersion == upstreamVersion || m_cliVersion == fullEditingVersion) && syncedAt.isValid()
+    return (m_cliVersion == upstreamVersion || supportsFullEditingVersion(m_cliVersion)) && syncedAt.isValid()
            && syncedAt >= loginStarted && syncedAt <= QDateTime::currentDateTimeUtc()
            && (!previousSync.isValid() || syncedAt > previousSync);
 }
@@ -479,11 +542,38 @@ void BitwardenCli::lock()
 void BitwardenCli::sync(bool force)
 {
     const QMutexLocker locker(&m_mutex);
+    syncVault(force);
+}
+
+void BitwardenCli::syncVault(bool force) const
+{
     QStringList arguments{QStringLiteral("sync")};
     if (force) {
         arguments.append(QStringLiteral("--force"));
     }
     run(arguments);
+}
+
+BitwardenCli::VaultSnapshot
+BitwardenCli::readVault(bool synchronize, bool force, const std::function<bool()>& canceled)
+{
+    const QMutexLocker locker(&m_mutex);
+    const auto checkCanceled = [&canceled] {
+        if (canceled && canceled()) {
+            throw BitwardenCliError(QStringLiteral("Der Bitwarden-Vorgang wurde abgebrochen."));
+        }
+    };
+    checkCanceled();
+    ensureUnlocked();
+    if (synchronize) {
+        syncVault(force);
+        checkCanceled();
+    }
+    auto folders = parseArray(run({QStringLiteral("list"), QStringLiteral("folders")}));
+    checkCanceled();
+    auto items = parseArray(run({QStringLiteral("list"), QStringLiteral("items")}));
+    checkCanceled();
+    return {std::move(folders), std::move(items)};
 }
 
 QJsonArray BitwardenCli::listFolders()
@@ -506,7 +596,7 @@ QJsonObject BitwardenCli::editItem(const QString& id, const QJsonObject& item, c
     ensureUnlocked();
     const auto canonicalId = itemId(id);
     const bool fullEdit = item.contains(loginKey) || item.contains(fieldsKey) || item.contains(folderIdKey);
-    if (fullEdit && cliVersion() != fullEditingVersion) {
+    if (fullEdit && !supportsFullEditingVersion(cliVersion())) {
         throw BitwardenCliError(QStringLiteral("Für diese Änderungen ist die BitwardenXC-CLI erforderlich."));
     }
     for (auto field = item.constBegin(); field != item.constEnd(); ++field) {
@@ -610,7 +700,7 @@ QJsonObject BitwardenCli::checkRevision(const QString& id, const QString& expect
         throw BitwardenCliError(QStringLiteral("Für den Eintrag fehlt die zuletzt gelesene Version."),
                                BitwardenCliError::Reason::Conflict);
     }
-    run({QStringLiteral("sync"), QStringLiteral("--force")});
+    syncVault(true);
     const auto latest = parseObject(run({QStringLiteral("get"), QStringLiteral("item"), id}));
     if (latest.value(QStringLiteral("id")) != id || latest.value(QStringLiteral("revisionDate")) != expectedRevision) {
         throw BitwardenCliError(QStringLiteral("Der Eintrag wurde auf einem anderen Gerät geändert. Lade ihn erneut."),
@@ -619,9 +709,8 @@ QJsonObject BitwardenCli::checkRevision(const QString& id, const QString& expect
     return latest;
 }
 
-QJsonObject BitwardenCli::saveSessionKey(QByteArray key)
+void BitwardenCli::adoptSessionKey(QByteArray key)
 {
-    key = key.trimmed();
     auto decoded = QByteArray::fromBase64(key);
     const auto erase = qScopeGuard([&decoded] { decoded.fill('\0'); });
     if (decoded.size() != 64 || decoded.toBase64() != key) {
@@ -630,6 +719,12 @@ QJsonObject BitwardenCli::saveSessionKey(QByteArray key)
     }
     clearSessionKey();
     m_sessionKey = std::move(key);
+}
+
+QJsonObject BitwardenCli::saveSessionKey(QByteArray key)
+{
+    const auto wipeKey = qScopeGuard([&key] { key.fill('\0'); });
+    adoptSessionKey(key.trimmed());
     auto eraseOnFailure = qScopeGuard([this] { clearSessionKey(); });
     const auto status = profileStatus();
     if (status.value(QStringLiteral("status")) != QStringLiteral("unlocked")) {

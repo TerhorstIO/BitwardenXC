@@ -21,6 +21,9 @@
 
 #include <QStackedWidget>
 
+#include <atomic>
+#include <memory>
+
 #include "core/Database.h"
 #include "core/Group.h"
 #include "core/Metadata.h"
@@ -87,6 +90,7 @@ public:
     bool canCreateBitwardenEntry() const;
     bool canEditBitwardenEntry() const;
     bool canEditBitwardenLogin() const;
+    void startBitwardenInitialSync();
     void syncBitwarden();
     void rememberBitwardenPassword(const QByteArray& password);
     void offerBitwardenQuickUnlock(QByteArray password);
@@ -316,6 +320,8 @@ private:
     void performIconDownloads(const QList<Entry*>& entries, bool force = false, bool downloadInBackground = false);
     bool performSave(QString& errorMessage, const QString& fileName = {});
     bool saveBitwarden();
+    void cancelBitwardenInitialSync();
+    void replaceBitwardenDatabase(QSharedPointer<Database> database, bool preserveSearch = false);
     void initBitwardenUnlockWidget();
     void updateBitwardenUnlockWidget();
     void unlockBitwarden(bool useHello);
@@ -324,6 +330,8 @@ private:
 
     QSharedPointer<Database> m_db;
     QSharedPointer<BitwardenSession> m_bitwarden;
+    std::shared_ptr<std::atomic_bool> m_bitwardenInitialSync;
+    bool m_bitwardenRestartInitialSync = false;
     bool m_bitwardenBusy = false;
     bool m_bitwardenUnlocking = false;
     bool m_bitwardenUnlockCanceled = false;
@@ -335,6 +343,7 @@ private:
     QPointer<QPushButton> m_bitwardenHelloButton;
     QPointer<QLabel> m_bitwardenUnlockStatus;
     QPointer<QLabel> m_bitwardenUnlockError;
+    QPointer<MessageWidget> m_bitwardenSyncStatus;
 
     QPointer<QWidget> m_mainWidget;
     QPointer<QSplitter> m_mainSplitter;
