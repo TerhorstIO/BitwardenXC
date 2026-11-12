@@ -1,4 +1,17 @@
-# <img src="https://keepassxc.org/assets/img/keepassxc.svg" width="40" height="40"/> KeePassXC
+# BitwardenXC
+
+BitwardenXC is a Windows fork of KeePassXC 2.8.0. Bitwarden and Vaultwarden vaults open in the KeePassXC folder tree, entry table and detail view. The native clipboard shortcuts, including `Ctrl+B` for username and `Ctrl+C` for password, and the KeePassXC Auto-Type engine work on entries in the connected vault.
+
+1. Download the standalone Windows CLI from the [Bitwarden CLI releases](https://github.com/bitwarden/clients/releases?q=cli-v&expanded=true) and extract `bw.exe`.
+2. Start BitwardenXC and choose **Database → Open Bitwarden / Vaultwarden**. Select `bw.exe`, then enter your server's HTTPS address, email and master password. For Bitwarden Cloud use `https://vault.bitwarden.com` or `https://vault.bitwarden.eu`.
+3. For two-step login, enter an authenticator code if required. The personal API key option signs in via the [Bitwarden CLI API-key flow](https://bitwarden.com/help/personal-api-key/) and still needs your master password to unlock the vault.
+4. Edit the title or notes of an existing personal login and use `Ctrl+S` to write them to the server. Use **Database → Sync Bitwarden** to pull changes made on another device. Locking the connected vault closes its tab. Reopen it through the database menu.
+
+The connected vault supports reading logins and secure notes and saving the title and notes of existing personal logins. The CLI can reset a login's page-load autofill setting when it rewrites the login fields. BitwardenXC leaves those fields out of edit requests and checks the entry revision before saving. Entries requiring a master-password reprompt are unavailable in the connected view. The connected tab uses the CLI's local account profile and encrypted cache. The CLI can persist authentication tokens and the API client secret in that local profile. The application opens the vault in memory. The original KDBX format remains available for local KeePass databases.
+
+The Bitwarden connection uses the official CLI as a subprocess. See the [CLI documentation](https://bitwarden.com/help/cli/) for supported login methods and the [KeePassXC Windows build instructions](https://github.com/keepassxreboot/keepassxc/wiki/Set-up-Build-Environment-on-Windows) for the C++ and Qt dependencies. The source is distributed under the terms in [COPYING](COPYING).
+
+## KeePassXC upstream
 
 [![OpenSSF Best Practices](https://bestpractices.coreinfrastructure.org/projects/6326/badge)](https://bestpractices.coreinfrastructure.org/projects/6326)
 [![TeamCity Build Status](https://ci.keepassxc.org/app/rest/builds/buildType:\(project:KeepassXC\)/statusIcon)](https://ci.keepassxc.org/?guest=1)

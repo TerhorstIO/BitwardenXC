@@ -1,0 +1,203 @@
+name: BitwardenXC Windows x64
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bitwardenxc-windows-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    env:
+      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.ci-vcpkg-cache
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read vcpkg baseline
+        id: vcpkg
+        run: |
+          $baseline = (Get-Content vcpkg.json -Raw | ConvertFrom-Json).'builtin-baseline'
+          if ($baseline -cnotmatch '^[0-9a-f]{40}$') {
+            throw 'vcpkg.json must specify a full Git commit as its builtin baseline.'
+          }
+          "baseline=$baseline" >> $env:GITHUB_OUTPUT
+          New-Item -ItemType Directory -Force $env:VCPKG_DEFAULT_BINARY_CACHE | Out-Null
+
+      - name: Check out vcpkg
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: microsoft/vcpkg
+          ref: ${{ steps.vcpkg.outputs.baseline }}
+          path: .ci-vcpkg
+          persist-credentials: false
+
+      - name: Restore compiled vcpkg packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: vcpkg-windows-2025-x64-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+
+      - name: Set up Python for aqtinstall
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.12'
+
+      - name: Install Qt 6.11.2
+        uses: jurplel/install-qt-action/action@12aa0336e1e410b3c6dff5e0722547f7a37e8c60 # v4.2.1
+        with:
+          version: '6.11.2'
+          host: windows
+          target: desktop
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Set up Visual Studio 2022 x64
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        with:
+          arch: x64
+          vsversion: '2022'
+
+      - name: Bootstrap vcpkg
+        run: .\.ci-vcpkg\bootstrap-vcpkg.bat -disableMetrics
+
+      - name: Configure and build
+        run: |
+          $toolchain = Join-Path $PWD '.ci-vcpkg/scripts/buildsystems/vcpkg.cmake'
+          cmake -S . -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DKEEPASSXC_BUILD_TYPE=Release `
+            -DWITH_TESTS=OFF `
+            -DWITH_BUILD_QT=OFF `
+            -DKPXC_FEATURE_DOCS=OFF `
+            -DKPXC_FEATURE_UPDATES=OFF `
+            "-DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR" `
+            "-DCMAKE_TOOLCHAIN_FILE=$toolchain" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows `
+            -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
+          if ($LASTEXITCODE -ne 0) { throw 'CMake configure failed.' }
+          cmake --build build --parallel
+
+      - name: Package and verify portable ZIP
+        run: |
+          $packageName = 'BitwardenXC-Windows-x64'
+          cpack --config build/CPackConfig.cmake -G ZIP -B dist -D "CPACK_PACKAGE_FILE_NAME=$packageName"
+          if ($LASTEXITCODE -ne 0) { throw 'CPack failed.' }
+
+          $zip = Get-Item "dist/$packageName.zip"
+          $archive = [System.IO.Compression.ZipFile]::Open($zip.FullName, [System.IO.Compression.ZipArchiveMode]::Update)
+          try {
+            $executables = @($archive.Entries | Where-Object Name -CEQ 'BitwardenXC.exe')
+            if ($executables.Count -ne 1) { throw 'Expected exactly one BitwardenXC.exe in the ZIP.' }
+            $executablePath = $executables[0].FullName
+            $prefix = $executablePath.Substring(0, $executablePath.Length - $executables[0].Name.Length)
+            if (-not $archive.GetEntry("${prefix}.portable")) {
+              $null = $archive.CreateEntry("${prefix}.portable")
+            }
+            $required = @('keepassxc-cli.exe', 'Qt6Core.dll', 'Qt6Widgets.dll', 'botan-3.dll',
+                          'platforms/qwindows.dll', 'tls/qschannelbackend.dll')
+            foreach ($file in $required) {
+              if (-not $archive.GetEntry("$prefix$file")) { throw "Missing package file: $file" }
+            }
+            foreach ($notice in Get-ChildItem COPYING, LICENSE.*, README.md -File) {
+              $entry = "$prefix$($notice.Name)"
+              if (-not $archive.GetEntry($entry)) {
+                $null = [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $notice.FullName, $entry)
+              }
+            }
+          } finally {
+            $archive.Dispose()
+          }
+
+          $smokeDirectory = Join-Path $env:RUNNER_TEMP 'bitwardenxc-portable-smoke'
+          Expand-Archive -LiteralPath $zip.FullName -DestinationPath $smokeDirectory
+          $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+          $startInfo.FileName = Join-Path $smokeDirectory $executablePath
+          $startInfo.WorkingDirectory = Split-Path -Parent $startInfo.FileName
+          $startInfo.UseShellExecute = $false
+          $startInfo.CreateNoWindow = $true
+          $startInfo.RedirectStandardOutput = $true
+          $startInfo.RedirectStandardError = $true
+          $startInfo.ArgumentList.Add('--version')
+          $startInfo.Environment['PATH'] = "$env:SystemRoot\System32;$env:SystemRoot"
+          $startInfo.Environment['QT_COMMAND_LINE_PARSER_NO_GUI_MESSAGE_BOXES'] = '1'
+          foreach ($name in @('QT_PLUGIN_PATH', 'QT_QPA_PLATFORM_PLUGIN_PATH', 'QML_IMPORT_PATH', 'QML2_IMPORT_PATH')) {
+            $null = $startInfo.Environment.Remove($name)
+          }
+          $process = [System.Diagnostics.Process]::Start($startInfo)
+          try {
+            $stdout = $process.StandardOutput.ReadToEndAsync()
+            $stderr = $process.StandardError.ReadToEndAsync()
+            if (-not $process.WaitForExit(30000)) {
+              $process.Kill()
+              throw 'Packaged BitwardenXC did not exit after --version.'
+            }
+            if ($process.ExitCode -ne 0) {
+              throw "Packaged BitwardenXC failed to start: $($process.ExitCode) $($stderr.GetAwaiter().GetResult())"
+            }
+            $version = $stdout.GetAwaiter().GetResult().Trim()
+            if ($version -notmatch '^BitwardenXC \d+\.\d+\.\d+') {
+              throw "Unexpected packaged executable version: $version"
+            }
+            Write-Output $version
+          } finally {
+            $process.Dispose()
+          }
+
+          $hash = (Get-FileHash -LiteralPath $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $($zip.Name)" | Set-Content -Encoding ascii dist/SHA256SUMS
+
+      - name: Upload the build
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bitwardenxc-windows-x64
+          path: |
+            dist/BitwardenXC-Windows-x64.zip
+            dist/SHA256SUMS
+          if-no-files-found: error
+          compression-level: 0
+          overwrite: true
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Download the build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: bitwardenxc-windows-x64
+
+      - name: Publish commit release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: build-${{ github.sha }}
+        run: |
+          sha256sum --check SHA256SUMS
+          if tag_commit=$(gh api "repos/$GH_REPO/commits/$TAG" --jq .sha 2>/dev/null); then
+            if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+              echo "Release tag $TAG points to $tag_commit instead of $GITHUB_SHA." >&2
+              exit 1
+            fi
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" BitwardenXC-Windows-x64.zip SHA256SUMS --clobber
+          else
+            gh release create "$TAG" BitwardenXC-Windows-x64.zip SHA256SUMS \
+              --target "$GITHUB_SHA" --title "BitwardenXC Windows x64 (${GITHUB_SHA:0:7})" \
+              --notes "Portable Windows x64 build from commit $GITHUB_SHA. Extract the ZIP and run BitwardenXC.exe. The release source archives correspond to this commit." \
+              --prerelease --latest=false
+          fi

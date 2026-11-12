@@ -1130,6 +1130,10 @@ void Entry::updateModifiedSinceBegin()
 
 QString Entry::resolveMultiplePlaceholdersRecursive(const QString& str, int maxDepth) const
 {
+    const auto* db = database();
+    if (db && db->hasLiteralEntryValues()) {
+        return str;
+    }
     if (--maxDepth < 0) {
         qWarning("Maximum depth of replacement has been reached. Entry uuid: %s", uuid().toString().toLatin1().data());
         return str;

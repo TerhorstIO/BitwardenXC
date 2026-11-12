@@ -22,11 +22,15 @@
 #include <QBoxLayout>
 #include <QCheckBox>
 #include <QDesktopServices>
+#include <QDialogButtonBox>
+#include <QFormLayout>
 #include <QHostInfo>
 #include <QInputDialog>
 #include <QKeyEvent>
+#include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QProcess>
+#include <QScopedValueRollback>
 #include <QSplitter>
 #include <QTextDocumentFragment>
 #include <QTextEdit>
@@ -57,6 +61,7 @@
 #include "gui/tag/TagView.h"
 #include "gui/widgets/ElidedLabel.h"
 #include "keeshare/KeeShare.h"
+#include "remote/BitwardenSession.h"
 #include "remote/RemoteHandler.h"
 #include "remote/RemoteSettings.h"
 
@@ -72,9 +77,10 @@
 #include "gui/passkeys/PasskeyImporter.h"
 #endif
 
-DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent)
+DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent, QSharedPointer<BitwardenSession> bitwarden)
     : QStackedWidget(parent)
     , m_db(std::move(db))
+    , m_bitwarden(std::move(bitwarden))
     , m_mainWidget(new QWidget(this))
     , m_mainSplitter(new QSplitter(m_mainWidget))
     , m_groupSplitter(new QSplitter(this))
@@ -98,7 +104,7 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent)
     Q_ASSERT(m_db);
 
     // Read public headers if the database hasn't been opened yet
-    if (!m_db->isInitialized()) {
+    if (!isBitwarden() && !m_db->isInitialized()) {
         m_db->open(nullptr);
     }
 
@@ -145,6 +151,10 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent)
     rightHandSideVBox->addWidget(m_previewSplitter);
     rightHandSideWidget->setLayout(rightHandSideVBox);
     m_entryView = new EntryView(rightHandSideWidget);
+    if (isBitwarden()) {
+        m_entryView->setDragDropMode(QAbstractItemView::NoDragDrop);
+        m_groupView->setDragDropMode(QAbstractItemView::NoDragDrop);
+    }
 
     m_mainSplitter->setChildrenCollapsible(false);
     m_mainSplitter->addWidget(m_groupSplitter);
@@ -237,9 +247,11 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent)
 
     // We need to reregister the database to allow exports
     // from a newly created database
-    KeeShare::instance()->connectDatabase(m_db, {});
+    if (!isBitwarden()) {
+        KeeShare::instance()->connectDatabase(m_db, {});
+    }
 
-    if (m_db->isInitialized()) {
+    if (isBitwarden() || m_db->isInitialized()) {
         switchToMainView();
     } else {
         switchToOpenDatabase();
@@ -265,6 +277,11 @@ DatabaseWidget::~DatabaseWidget()
 QSharedPointer<Database> DatabaseWidget::database() const
 {
     return m_db;
+}
+
+bool DatabaseWidget::isBitwarden() const
+{
+    return !m_bitwarden.isNull();
 }
 
 DatabaseWidget::Mode DatabaseWidget::currentMode() const
@@ -338,6 +355,10 @@ bool DatabaseWidget::isEditWidgetModified() const
 
 QString DatabaseWidget::displayName() const
 {
+    if (isBitwarden()) {
+        const auto name = m_db->metadata()->name();
+        return name.isEmpty() ? tr("Bitwarden") : name;
+    }
     if (!m_db) {
         return {};
     }
@@ -502,7 +523,9 @@ void DatabaseWidget::replaceDatabase(QSharedPointer<Database> db)
 
     emit databaseReplaced(oldDb, m_db);
 
-    KeeShare::instance()->connectDatabase(m_db, oldDb);
+    if (!isBitwarden()) {
+        KeeShare::instance()->connectDatabase(m_db, oldDb);
+    }
 
     oldDb->releaseData();
 }
@@ -1002,6 +1025,16 @@ void DatabaseWidget::openUrlForEntry(Entry* entry)
     }
 
     QString cmdString = entry->resolveMultiplePlaceholders(entry->url());
+    if (isBitwarden()) {
+        const QUrl url(cmdString);
+        if (url.isValid() && !url.host().isEmpty() && (url.scheme() == "https" || url.scheme() == "http")) {
+            QDesktopServices::openUrl(url);
+            if (config()->get(Config::MinimizeOnOpenUrl).toBool()) {
+                getMainWindow()->minimizeOrHide();
+            }
+        }
+        return;
+    }
     if (cmdString.startsWith("cmd://")) {
         // check if decision to execute command was stored
         bool launch = (entry->attributes()->value(EntryAttributes::RememberCmdExecAttr) == "1");
@@ -1280,6 +1313,34 @@ void DatabaseWidget::switchToEntryEdit(Entry* entry)
 
 void DatabaseWidget::switchToEntryEdit(Entry* entry, bool create)
 {
+    if (isBitwarden()) {
+        if (create || !entry || m_bitwardenBusy || !m_bitwarden->canEdit(entry->uuid())) {
+            showMessage(tr("Only the title and notes of existing personal logins can be edited in BitwardenXC."),
+                        MessageWidget::Information);
+            return;
+        }
+        QDialog dialog(this);
+        dialog.setWindowTitle(tr("Edit Bitwarden entry"));
+        auto* layout = new QFormLayout(&dialog);
+        auto* title = new QLineEdit(entry->title(), &dialog);
+        auto* notes = new QPlainTextEdit(entry->notes(), &dialog);
+        layout->addRow(tr("Title"), title);
+        layout->addRow(tr("Notes"), notes);
+        auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+        layout->addRow(buttons);
+        connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+        connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+        connect(this, &DatabaseWidget::databaseLockRequested, &dialog, &QDialog::reject);
+        const QPointer<Entry> edited(entry);
+        if (dialog.exec() == QDialog::Accepted && edited && !isLocked()) {
+            edited->beginUpdate();
+            edited->setTitle(title->text());
+            edited->setNotes(notes->toPlainText());
+            edited->endUpdate();
+        }
+        return;
+    }
+
     // If creating an entry, it will be in `currentGroup()` so it's
     // okay to use but when editing, the entry may not be in
     // `currentGroup()` so we get the entry's group.
@@ -1973,7 +2034,7 @@ void DatabaseWidget::closeEvent(QCloseEvent* event)
 
 void DatabaseWidget::showEvent(QShowEvent* event)
 {
-    if (!m_db->isInitialized() || isLocked()) {
+    if (!isBitwarden() && (!m_db->isInitialized() || isLocked())) {
         switchToOpenDatabase();
     }
 
@@ -2029,7 +2090,7 @@ bool DatabaseWidget::lock()
     }
 
     // Don't try to lock the database while saving, this will cause a deadlock
-    if (m_db->isSaving()) {
+    if (m_db->isSaving() || m_bitwardenBusy) {
         QTimer::singleShot(200, this, SLOT(lock()));
         return false;
     }
@@ -2134,8 +2195,22 @@ bool DatabaseWidget::lock()
     switchToOpenDatabase(m_db->filePath());
 
     auto newDb = QSharedPointer<Database>::create(m_db->filePath());
-    newDb->open(nullptr);
+    if (!isBitwarden()) {
+        newDb->open(nullptr);
+    }
     replaceDatabase(newDb);
+
+    if (isBitwarden()) {
+        const auto session = m_bitwarden;
+        // Local data is cleared before the CLI lock runs.
+        (void) QtConcurrent::run([session] {
+            try {
+                session->lock();
+            } catch (const BitwardenCliError&) {
+                // The adapter clears its session key even when its lock command fails.
+            }
+        });
+    }
 
     m_attemptingLock = false;
     emit databaseLocked();
@@ -2498,6 +2573,10 @@ bool DatabaseWidget::save()
         return false;
     }
 
+    if (isBitwarden()) {
+        return saveBitwarden();
+    }
+
     // Read-only and new databases ask for filename
     if (m_db->filePath().isEmpty()) {
         return saveAs();
@@ -2539,6 +2618,99 @@ bool DatabaseWidget::save()
     return false;
 }
 
+bool DatabaseWidget::saveBitwarden()
+{
+    if (m_bitwardenBusy) {
+        return false;
+    }
+
+    QList<BitwardenSession::Edit> edits;
+    try {
+        edits = m_bitwarden->prepareSave(*m_db);
+    } catch (const BitwardenCliError& error) {
+        showMessage(error.message(), MessageWidget::Error, true);
+        return false;
+    }
+
+    if (!edits.isEmpty()) {
+        QScopedValueRollback<bool> busy(m_bitwardenBusy, true);
+        const auto session = m_bitwarden;
+        auto* window = getMainWindow();
+        const auto wasEnabled = window && window->isEnabled();
+        if (wasEnabled) {
+            window->setEnabled(false);
+        }
+        const auto error = AsyncTask::runAndWaitForFuture([session, edits] {
+            try {
+                session->save(edits);
+                return QString();
+            } catch (const BitwardenCliError& error) {
+                return error.message();
+            }
+        });
+        if (wasEnabled) {
+            window->setEnabled(true);
+        }
+        if (!error.isEmpty()) {
+            showMessage(error, MessageWidget::Error, true);
+            return false;
+        }
+    }
+
+    m_autosaveTimer->stop();
+    m_db->markAsClean();
+    emit databaseSaved();
+    hideMessage();
+    return true;
+}
+
+void DatabaseWidget::syncBitwarden()
+{
+    if (!isBitwarden() || isLocked() || m_bitwardenBusy) {
+        return;
+    }
+    if (!isEntryViewActive() || m_db->isModified()) {
+        showMessage(tr("Save or discard your changes before synchronizing Bitwarden."), MessageWidget::Warning, true);
+        return;
+    }
+
+    QScopedValueRollback<bool> busy(m_bitwardenBusy, true);
+    const auto session = m_bitwarden;
+    auto* window = getMainWindow();
+    const auto wasEnabled = window && window->isEnabled();
+    if (wasEnabled) {
+        window->setEnabled(false);
+    }
+    const auto error = AsyncTask::runAndWaitForFuture([session] {
+        try {
+            session->sync();
+            return QString();
+        } catch (const BitwardenCliError& error) {
+            return error.message();
+        }
+    });
+    if (wasEnabled) {
+        window->setEnabled(true);
+    }
+    if (!error.isEmpty()) {
+        showMessage(error, MessageWidget::Error, true);
+        return;
+    }
+
+    try {
+        auto database = session->makeDatabase();
+        const auto group = currentGroup() ? currentGroup()->uuid() : QUuid();
+        const auto entry = currentSelectedEntry() ? currentSelectedEntry()->uuid() : QUuid();
+        endSearch();
+        replaceDatabase(std::move(database));
+        switchToMainView();
+        restoreGroupEntryFocus(group, entry);
+        showMessage(tr("Bitwarden synchronized."), MessageWidget::Positive);
+    } catch (const BitwardenCliError& error) {
+        showMessage(error.message(), MessageWidget::Error, true);
+    }
+}
+
 /**
  * Save database under a new user-selected filename.
  *
@@ -2546,6 +2718,9 @@ bool DatabaseWidget::save()
  */
 bool DatabaseWidget::saveAs()
 {
+    if (isBitwarden()) {
+        return false;
+    }
     // Never allow saving a locked database; it causes corruption
     Q_ASSERT(!isLocked());
     // Release build interlock
@@ -2585,6 +2760,9 @@ bool DatabaseWidget::saveAs()
 
 bool DatabaseWidget::performSave(QString& errorMessage, const QString& fileName)
 {
+    if (isBitwarden()) {
+        return false;
+    }
     QPointer<QWidget> focusWidget(qApp->focusWidget());
 
     // Lock out interactions
@@ -2649,6 +2827,9 @@ bool DatabaseWidget::performSave(QString& errorMessage, const QString& fileName)
  */
 bool DatabaseWidget::saveBackup()
 {
+    if (isBitwarden()) {
+        return false;
+    }
     QString oldFilePath = m_db->filePath();
     if (!QFileInfo::exists(oldFilePath)) {
         QString defaultFileName = config()->get(Config::DefaultDatabaseFileName).toString();

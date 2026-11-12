@@ -226,6 +226,9 @@ bool GroupModel::dropMimeData(const QMimeData* data,
     QDataStream stream(&encoded, QIODevice::ReadOnly);
 
     Group* parentGroup = groupFromIndex(parent);
+    if (parentGroup->database()->hasLiteralEntryValues()) {
+        return false;
+    }
 
     if (isGroup) {
         QUuid dbUuid;
@@ -233,7 +236,7 @@ bool GroupModel::dropMimeData(const QMimeData* data,
         stream >> dbUuid >> groupUuid;
 
         Database* db = Database::databaseByUuid(dbUuid);
-        if (!db) {
+        if (!db || db->hasLiteralEntryValues()) {
             return false;
         }
 
@@ -281,7 +284,7 @@ bool GroupModel::dropMimeData(const QMimeData* data,
             stream >> dbUuid >> entryUuid;
 
             Database* db = Database::databaseByUuid(dbUuid);
-            if (!db) {
+            if (!db || db->hasLiteralEntryValues()) {
                 continue;
             }
 

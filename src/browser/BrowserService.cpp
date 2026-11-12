@@ -1737,7 +1737,7 @@ void BrowserService::databaseLocked(DatabaseWidget* dbWidget)
 
 void BrowserService::databaseUnlocked(DatabaseWidget* dbWidget)
 {
-    if (dbWidget) {
+    if (dbWidget && !dbWidget->isBitwarden()) {
         if (m_bringToFrontRequested) {
             m_bringToFrontRequested = false;
             hideWindow();
@@ -1751,6 +1751,10 @@ void BrowserService::databaseUnlocked(DatabaseWidget* dbWidget)
 
 void BrowserService::activeDatabaseChanged(DatabaseWidget* dbWidget)
 {
+    if (dbWidget && dbWidget->isBitwarden()) {
+        m_currentDatabaseWidget = nullptr;
+        return;
+    }
     if (dbWidget) {
         if (dbWidget->isLocked()) {
             databaseLocked(dbWidget);

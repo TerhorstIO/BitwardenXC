@@ -114,6 +114,8 @@ set(gui_SOURCES
         gui/DatabaseOpenWidget.cpp
         gui/DatabaseTabWidget.cpp
         gui/DatabaseWidget.cpp
+        remote/BitwardenCli.cpp
+        remote/BitwardenSession.cpp
         gui/DatabaseWidgetStateSync.cpp
         gui/EntryPreviewWidget.cpp
         gui/DialogyWidget.cpp
@@ -421,8 +423,8 @@ if(WIN32)
     include(GenerateProductVersion)
     generate_product_version(
             WIN32_ResourceFiles
-            NAME "KeePassXC"
-            COMPANY_NAME "KeePassXC Team"
+            NAME "BitwardenXC"
+            COMPANY_NAME "BitwardenXC contributors"
             VERSION_MAJOR ${KEEPASSXC_VERSION_MAJOR}
             VERSION_MINOR ${KEEPASSXC_VERSION_MINOR}
             VERSION_PATCH ${KEEPASSXC_VERSION_PATCH}
@@ -519,9 +521,9 @@ if(WIN32)
     set(CPACK_NSIS_MUI_UNWELCOMEFINISHPAGE_BITMAP "${CMAKE_SOURCE_DIR}/share/windows/installer-wizard.png")
     set(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${PROGNAME}.lnk' '$INSTDIR\\\\${PROGNAME}.exe'")
     set(CPACK_NSIS_DELETE_ICONS_EXTRA "Delete '$SMPROGRAMS\\\\$START_MENU\\\\${PROGNAME}.lnk'")
-    set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "ExecWait 'Taskkill /IM KeePassXC.exe'")
+    set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "ExecWait 'Taskkill /IM ${PROGNAME}.exe'")
     set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "${CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS}\nExecWait 'Taskkill /IM keepassxc-proxy.exe /F'")
-    set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "ExecWait 'Taskkill /IM KeePassXC.exe'")
+    set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "ExecWait 'Taskkill /IM ${PROGNAME}.exe'")
     set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "${CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS}\nExecWait 'Taskkill /IM keepassxc-proxy.exe /F'")
     set(CPACK_NSIS_URL_INFO_ABOUT "https://keepassxc.org")
     set(CPACK_NSIS_DISPLAY_NAME ${PROGNAME})

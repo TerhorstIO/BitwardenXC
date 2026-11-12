@@ -236,6 +236,12 @@ bool Database::isSaving()
  */
 bool Database::save(SaveAction action, const QString& backupFilePath, QString* error)
 {
+    if (hasLiteralEntryValues()) {
+        if (error) {
+            *error = tr("Use BitwardenXC to save changes to this vault.");
+        }
+        return false;
+    }
     Q_ASSERT(!m_data.filePath.isEmpty());
     if (m_data.filePath.isEmpty()) {
         if (error) {
@@ -1223,6 +1229,16 @@ void Database::setPublicIcon(int iconIndex)
         publicCustomData().insert("KPXC_PUBLIC_ICON", iconIndex);
     }
     markAsModified();
+}
+
+void Database::setLiteralEntryValues(bool literal)
+{
+    m_literalEntryValues = literal;
+}
+
+bool Database::hasLiteralEntryValues() const
+{
+    return m_literalEntryValues;
 }
 
 void Database::markAsTemporaryDatabase()

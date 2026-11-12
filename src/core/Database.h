@@ -167,6 +167,8 @@ public:
 
     void markAsTemporaryDatabase();
     bool isTemporaryDatabase();
+    void setLiteralEntryValues(bool literal);
+    bool hasLiteralEntryValues() const;
 
     static Database* databaseByUuid(const QUuid& uuid);
 
@@ -255,6 +257,7 @@ private:
     bool m_hasNonDataChange = false;
     QString m_keyError;
     bool m_isTemporaryDatabase = false;
+    bool m_literalEntryValues = false;
 
     QStringList m_commonUsernames;
     QStringList m_tagList;

@@ -63,7 +63,7 @@ endif()
 
 # Minor Feature Flags
 option(KPXC_FEATURE_NETWORK "Include code that reaches out to external networks (e.g. downloading icons)" ON)
-option(KPXC_FEATURE_UPDATES "Include automatic update checks; disable for managed distributions" ON)
+option(KPXC_FEATURE_UPDATES "Include automatic update checks; disable for managed distributions" OFF)
 option(KPXC_FEATURE_DOCS "Build offline documentation; requires asciidoctor tool" ON)
 
 # Reconcile update feature with overall network feature
@@ -387,7 +387,7 @@ if(WIN32)
 endif()
 
 if(WIN32)
-    set(PROGNAME KeePassXC)
+    set(PROGNAME BitwardenXC)
     set(CLI_INSTALL_DIR ".")
     set(PROXY_INSTALL_DIR ".")
     set(BIN_INSTALL_DIR ".")

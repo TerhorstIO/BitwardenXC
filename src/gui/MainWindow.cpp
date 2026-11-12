@@ -76,7 +76,7 @@
 #include "mainwindowadaptor.h"
 #endif
 
-const QString MainWindow::BaseWindowTitle = "KeePassXC";
+const QString MainWindow::BaseWindowTitle = "BitwardenXC";
 
 MainWindow* g_MainWindow = nullptr;
 MainWindow* getMainWindow()
@@ -447,6 +447,23 @@ MainWindow::MainWindow()
 
     connect(m_ui->actionDatabaseNew, SIGNAL(triggered()), m_ui->tabWidget, SLOT(newDatabase()));
     connect(m_ui->actionDatabaseOpen, SIGNAL(triggered()), m_ui->tabWidget, SLOT(openDatabase()));
+#ifdef Q_OS_WIN
+    auto* openBitwardenAction = new QAction(tr("Open &Bitwarden/Vaultwarden..."), this);
+    openBitwardenAction->setObjectName(QStringLiteral("actionOpenBitwarden"));
+    m_ui->menuFile->insertAction(m_ui->menuRecentDatabases->menuAction(), openBitwardenAction);
+    connect(openBitwardenAction, &QAction::triggered, m_ui->tabWidget, &DatabaseTabWidget::openBitwardenDatabase);
+
+    auto* syncBitwardenAction = new QAction(tr("Sync Bitwarden"), this);
+    syncBitwardenAction->setObjectName(QStringLiteral("actionSyncBitwarden"));
+    syncBitwardenAction->setEnabled(false);
+    m_ui->menuFile->insertAction(m_ui->menuRemoteSync->menuAction(), syncBitwardenAction);
+    connect(syncBitwardenAction, &QAction::triggered, m_ui->tabWidget, &DatabaseTabWidget::syncBitwardenDatabase);
+    connect(m_ui->menuFile, &QMenu::aboutToShow, this, [this, syncBitwardenAction] {
+        auto* dbWidget = m_ui->tabWidget->currentDatabaseWidget();
+        syncBitwardenAction->setEnabled(dbWidget && dbWidget->isBitwarden()
+                                        && dbWidget->currentMode() == DatabaseWidget::Mode::ViewMode);
+    });
+#endif
     connect(m_ui->actionDatabaseSave, SIGNAL(triggered()), m_ui->tabWidget, SLOT(saveDatabase()));
     connect(m_ui->actionDatabaseSaveAs, SIGNAL(triggered()), m_ui->tabWidget, SLOT(saveDatabaseAs()));
     connect(m_ui->actionDatabaseSaveBackup, SIGNAL(triggered()), m_ui->tabWidget, SLOT(saveDatabaseBackup()));
@@ -689,7 +706,10 @@ QList<DatabaseWidget*> MainWindow::getOpenDatabases()
 {
     QList<DatabaseWidget*> dbWidgets;
     for (int i = 0; i < m_ui->tabWidget->count(); ++i) {
-        dbWidgets << m_ui->tabWidget->databaseWidgetFromIndex(i);
+        auto* dbWidget = m_ui->tabWidget->databaseWidgetFromIndex(i);
+        if (!dbWidget->isBitwarden()) {
+            dbWidgets << dbWidget;
+        }
     }
     return dbWidgets;
 }
@@ -852,6 +872,7 @@ void MainWindow::updateMenuActionState()
 
     // Database State
     bool databaseUnlocked = (dbWidget && !dbWidget->isLocked());
+    bool bitwarden = dbWidget && dbWidget->isBitwarden();
     bool inDatabase = (dbMode == DatabaseWidget::Mode::ViewMode);
     bool inDatabaseSettings = (dbMode == DatabaseWidget::Mode::DatabaseSettingsMode);
     bool inReports = (dbMode == DatabaseWidget::Mode::ReportsMode);
@@ -879,7 +900,7 @@ void MainWindow::updateMenuActionState()
     bool multiEntrySelected = (inDatabase && dbWidget->numberOfSelectedEntries() > 0);
 
     // Group State
-    bool groupSelected = (inDatabase && dbWidget->isGroupSelected());
+    bool groupSelected = (inDatabase && !bitwarden && dbWidget->isGroupSelected());
     bool groupHasChildren = (groupSelected && dbWidget->currentGroup()->hasChildren());
     bool groupHasEntries = (groupSelected && !dbWidget->currentGroup()->entries().isEmpty());
     bool inRecycleBin = (inDatabase && dbWidget->isRecycleBinSelected());
@@ -889,11 +910,11 @@ void MainWindow::updateMenuActionState()
     bool entryViewAtBottom =
         (groupSelected && dbWidget->currentEntryIndex() == dbWidget->currentGroup()->entries().size() - 1);
 
-    m_ui->actionEntryNew->setEnabled(inDatabase && !inRecycleBin);
-    m_ui->actionEntryClone->setEnabled(singleEntrySelected && !inRecycleBin);
+    m_ui->actionEntryNew->setEnabled(inDatabase && !bitwarden && !inRecycleBin);
+    m_ui->actionEntryClone->setEnabled(singleEntrySelected && !bitwarden && !inRecycleBin);
     m_ui->actionEntryEdit->setEnabled(singleEntrySelected);
-    m_ui->actionEntryExpire->setEnabled(multiEntrySelected);
-    m_ui->actionEntryDelete->setEnabled(multiEntrySelected);
+    m_ui->actionEntryExpire->setEnabled(multiEntrySelected && !bitwarden);
+    m_ui->actionEntryDelete->setEnabled(multiEntrySelected && !bitwarden);
     if (dbWidget) {
         if (dbWidget->database()->metadata()->recycleBinEnabled() && !inRecycleBin) {
             m_ui->actionEntryDelete->setToolTip(
@@ -905,17 +926,17 @@ void MainWindow::updateMenuActionState()
     } else {
         m_ui->actionEntryDelete->setToolTip(tr("Delete Entry"));
     }
-    bool hasRecycledEntries = (inDatabase && dbWidget && dbWidget->hasRecycledSelectedEntries());
+    bool hasRecycledEntries = (inDatabase && !bitwarden && dbWidget && dbWidget->hasRecycledSelectedEntries());
     m_ui->actionEntryRestore->setVisible(multiEntrySelected && hasRecycledEntries);
     m_ui->actionEntryRestore->setEnabled(multiEntrySelected && hasRecycledEntries);
     if (dbWidget) {
         m_ui->actionEntryRestore->setText(tr("Restore Entry(s)", "", dbWidget->numberOfSelectedEntries()));
         m_ui->actionEntryRestore->setToolTip(tr("Restore Entry(s)", "", dbWidget->numberOfSelectedEntries()));
     }
-    m_ui->actionEntryMoveUp->setVisible(inDatabase && !entryViewSorted);
-    m_ui->actionEntryMoveDown->setVisible(inDatabase && !entryViewSorted);
-    m_ui->actionEntryMoveUp->setEnabled(singleEntrySelected && !entryViewSorted && !entryViewAtTop);
-    m_ui->actionEntryMoveDown->setEnabled(singleEntrySelected && !entryViewSorted && !entryViewAtBottom);
+    m_ui->actionEntryMoveUp->setVisible(inDatabase && !bitwarden && !entryViewSorted);
+    m_ui->actionEntryMoveDown->setVisible(inDatabase && !bitwarden && !entryViewSorted);
+    m_ui->actionEntryMoveUp->setEnabled(singleEntrySelected && !bitwarden && !entryViewSorted && !entryViewAtTop);
+    m_ui->actionEntryMoveDown->setEnabled(singleEntrySelected && !bitwarden && !entryViewSorted && !entryViewAtBottom);
     m_ui->actionEntryCopyTitle->setEnabled(singleEntryOrEditing && dbWidget->currentEntryHasTitle());
     m_ui->actionEntryCopyUsername->setEnabled(singleEntryOrEditing && dbWidget->currentEntryHasUsername());
     // NOTE: Copy password is enabled even if the selected entry's password is blank to prevent Ctrl+C
@@ -925,10 +946,10 @@ void MainWindow::updateMenuActionState()
     m_ui->actionEntryCopyNotes->setEnabled(singleEntryOrEditing && dbWidget->currentEntryHasNotes());
     m_ui->menuEntryCopyAttribute->setEnabled(singleEntryOrEditing);
     m_ui->menuEntryTotp->setEnabled(singleEntrySelected);
-    m_ui->menuTags->setEnabled(multiEntrySelected);
+    m_ui->menuTags->setEnabled(multiEntrySelected && !bitwarden);
     // Handle tear-off tags menu
     if (m_ui->menuTags->isTearOffMenuVisible()) {
-        if (!databaseUnlocked) {
+        if (!databaseUnlocked || bitwarden) {
             m_ui->menuTags->hideTearOffMenu();
         } else {
             updateSetTagsMenu();
@@ -950,17 +971,18 @@ void MainWindow::updateMenuActionState()
     m_ui->actionEntryAutoTypeTOTP->setVisible(singleEntrySelected && dbWidget->currentEntryHasTotp());
     m_ui->actionEntryOpenUrl->setEnabled(singleEntryOrEditing && dbWidget->currentEntryHasUrl());
     m_ui->actionEntryTotp->setEnabled(singleEntrySelected && dbWidget->currentEntryHasTotp());
-    m_ui->actionEntryCopyTotp->setEnabled(singleEntrySelected);
+    m_ui->actionEntryCopyTotp->setEnabled(singleEntrySelected && (!bitwarden || dbWidget->currentEntryHasTotp()));
     m_ui->actionEntryCopyPasswordTotp->setEnabled(singleEntrySelected && dbWidget->currentEntryHasTotp());
-    m_ui->actionEntrySetupTotp->setEnabled(singleEntrySelected);
+    m_ui->actionEntrySetupTotp->setEnabled(singleEntrySelected && !bitwarden);
     m_ui->actionEntryTotpQRCode->setEnabled(singleEntrySelected && dbWidget->currentEntryHasTotp());
-    m_ui->actionEntryDownloadIcon->setEnabled((multiEntrySelected && !singleEntrySelected)
-                                              || (singleEntrySelected && dbWidget->currentEntryHasUrl()));
+    m_ui->actionEntryDownloadIcon->setEnabled(
+        !bitwarden && ((multiEntrySelected && !singleEntrySelected)
+                       || (singleEntrySelected && dbWidget->currentEntryHasUrl())));
 #ifdef KPXC_FEATURE_BROWSER
-    m_ui->actionEntryImportPasskey->setVisible(singleEntrySelected);
-    m_ui->actionEntryImportPasskey->setEnabled(singleEntrySelected);
-    m_ui->actionEntryRemovePasskey->setVisible(singleEntrySelected && dbWidget->currentEntryHasPasskey());
-    m_ui->actionEntryRemovePasskey->setEnabled(singleEntrySelected && dbWidget->currentEntryHasPasskey());
+    m_ui->actionEntryImportPasskey->setVisible(singleEntrySelected && !bitwarden);
+    m_ui->actionEntryImportPasskey->setEnabled(singleEntrySelected && !bitwarden);
+    m_ui->actionEntryRemovePasskey->setVisible(singleEntrySelected && !bitwarden && dbWidget->currentEntryHasPasskey());
+    m_ui->actionEntryRemovePasskey->setEnabled(singleEntrySelected && !bitwarden && dbWidget->currentEntryHasPasskey());
 #endif
 #ifdef KPXC_FEATURE_SSHAGENT
     bool hasSSHKey = singleEntrySelected && sshAgent()->isEnabled() && dbWidget->currentEntryHasSshKey();
@@ -989,21 +1011,21 @@ void MainWindow::updateMenuActionState()
 
     // Database Menu
     m_ui->actionDatabaseSave->setEnabled(databaseUnlocked && m_ui->tabWidget->canSave());
-    m_ui->actionDatabaseSaveAs->setEnabled(databaseUnlocked);
-    m_ui->actionDatabaseSaveBackup->setEnabled(databaseUnlocked);
+    m_ui->actionDatabaseSaveAs->setEnabled(databaseUnlocked && !bitwarden);
+    m_ui->actionDatabaseSaveBackup->setEnabled(databaseUnlocked && !bitwarden);
     m_ui->actionDatabaseClose->setEnabled(dbWidget);
     m_ui->actionLockDatabase->setEnabled(databaseUnlocked);
     m_ui->actionLockAllDatabases->setEnabled(hasLockableDatabase);
     m_ui->actionLockDatabaseToolbar->setEnabled(hasLockableDatabase);
-    m_ui->actionDatabaseSettings->setEnabled(inDatabase || inDatabaseSettings);
-    m_ui->actionDatabaseSecurity->setEnabled(inDatabase || inDatabaseSettings);
+    m_ui->actionDatabaseSettings->setEnabled(!bitwarden && (inDatabase || inDatabaseSettings));
+    m_ui->actionDatabaseSecurity->setEnabled(!bitwarden && (inDatabase || inDatabaseSettings));
     m_ui->actionReports->setEnabled(inDatabase || inReports);
-    m_ui->menuRemoteSync->setEnabled(inDatabase || inDatabaseSettings);
-    m_ui->menuExport->setEnabled(inDatabase);
-    m_ui->actionDatabaseMerge->setEnabled(inDatabase);
+    m_ui->menuRemoteSync->setEnabled(!bitwarden && (inDatabase || inDatabaseSettings));
+    m_ui->menuExport->setEnabled(inDatabase && !bitwarden);
+    m_ui->actionDatabaseMerge->setEnabled(inDatabase && !bitwarden);
 #ifdef KPXC_FEATURE_BROWSER
-    m_ui->actionPasskeys->setEnabled(inDatabase || inReports);
-    m_ui->actionImportPasskey->setEnabled(inDatabase);
+    m_ui->actionPasskeys->setEnabled(!bitwarden && (inDatabase || inReports));
+    m_ui->actionImportPasskey->setEnabled(inDatabase && !bitwarden);
 #endif
 
     m_searchWidgetAction->setEnabled(inDatabase);
@@ -1537,7 +1559,7 @@ void MainWindow::updateTrayIcon()
             menu->addAction(m_ui->actionLockAllDatabases);
 
 #ifdef Q_OS_MACOS
-            auto actionQuit = new QAction(tr("Quit KeePassXC"), menu);
+            auto actionQuit = new QAction(tr("Quit BitwardenXC"), menu);
             connect(actionQuit, SIGNAL(triggered()), SLOT(appExit()));
             menu->addAction(actionQuit);
 #else

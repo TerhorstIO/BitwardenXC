@@ -29,6 +29,7 @@
 #include "remote/RemoteHandler.h"
 
 class DatabaseOpenDialog;
+class BitwardenSession;
 class DatabaseOpenWidget;
 class DatabaseSettingsDialog;
 class ReportsDialog;
@@ -71,13 +72,17 @@ public:
         DatabaseSettingsMode
     };
 
-    explicit DatabaseWidget(QSharedPointer<Database> db, QWidget* parent = nullptr);
+    explicit DatabaseWidget(QSharedPointer<Database> db,
+                            QWidget* parent = nullptr,
+                            QSharedPointer<BitwardenSession> bitwarden = {});
     explicit DatabaseWidget(const QString& filePath, QWidget* parent = nullptr);
     ~DatabaseWidget() override;
 
     void setFocus(Qt::FocusReason reason);
 
     QSharedPointer<Database> database() const;
+    bool isBitwarden() const;
+    void syncBitwarden();
 
     DatabaseWidget::Mode currentMode() const;
     bool isLocked() const;
@@ -302,8 +307,11 @@ private:
     void openDatabaseFromEntry(const Entry* entry, bool inBackground = true);
     void performIconDownloads(const QList<Entry*>& entries, bool force = false, bool downloadInBackground = false);
     bool performSave(QString& errorMessage, const QString& fileName = {});
+    bool saveBitwarden();
 
     QSharedPointer<Database> m_db;
+    QSharedPointer<BitwardenSession> m_bitwarden;
+    bool m_bitwardenBusy = false;
 
     QPointer<QWidget> m_mainWidget;
     QPointer<QSplitter> m_mainSplitter;

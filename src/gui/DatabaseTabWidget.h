@@ -65,6 +65,8 @@ public slots:
 
     DatabaseWidget* newDatabase();
     void openDatabase();
+    void openBitwardenDatabase();
+    void syncBitwardenDatabase();
     void mergeDatabase();
     void importFile();
     bool saveDatabase(int index = -1);
@@ -128,6 +130,8 @@ private:
     QPointer<ImportWizard> m_importWizard;
     QTimer m_lockDelayTimer;
     bool m_databaseOpenInProgress;
+    bool m_bitwardenOpenInProgress = false;
+    bool m_bitwardenOpenCanceled = false;
     QSet<DatabaseWidget*> m_widgetsPendingClose;
 };
 

@@ -70,7 +70,7 @@ int main(int argc, char** argv)
     Application app(argc, argv);
     // don't set organizationName as that changes the return value of
     // QStandardPaths::writableLocation(QDesktopServices::DataLocation)
-    Application::setApplicationName("KeePassXC");
+    Application::setApplicationName("BitwardenXC");
     Application::setApplicationVersion(KEEPASSXC_VERSION);
     app.setProperty("KPXC_QUALIFIED_APPNAME", "org.keepassxc.KeePassXC");
 
