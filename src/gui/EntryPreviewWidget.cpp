@@ -149,7 +149,7 @@ void EntryPreviewWidget::setEntry(Entry* selectedEntry)
     m_currentGroup = nullptr;
 
     if (!m_currentEntry) {
-        hide();
+        clear();
         return;
     }
 
@@ -176,6 +176,8 @@ void EntryPreviewWidget::setGroup(Group* selectedGroup)
 
     m_currentEntry = nullptr;
     m_currentGroup = selectedGroup;
+    m_ui->entryPasskeysText->clear();
+    m_ui->entryPasskeysBox->hide();
 
     if (!m_currentGroup) {
         hide();
