@@ -15,7 +15,7 @@ concurrency:
 jobs:
   build:
     runs-on: windows-2025
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       QT_ROOT_DIR: ${{ github.workspace }}/.ci-qt
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.ci-vcpkg-cache
@@ -44,10 +44,11 @@ jobs:
           persist-credentials: false
 
       - name: Restore compiled vcpkg packages
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: vcpkg-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          key: vcpkg-windows-2025-x64-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
+          key: vcpkg-windows-2025-x64-release-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json', '.github/vcpkg-triplets/*.cmake') }}
 
       - name: Restore Qt 6.11.2
         id: qt-cache
@@ -104,9 +105,10 @@ jobs:
       - name: Bootstrap vcpkg
         run: .\.ci-vcpkg\bootstrap-vcpkg.bat -disableMetrics
 
-      - name: Configure and build
+      - name: Configure and install Release dependencies
         run: |
           $toolchain = Join-Path $PWD '.ci-vcpkg/scripts/buildsystems/vcpkg.cmake'
+          $triplets = Join-Path $PWD '.github/vcpkg-triplets'
           cmake -S . -B build -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
             -DKEEPASSXC_BUILD_TYPE=Release `
@@ -116,10 +118,20 @@ jobs:
             -DKPXC_FEATURE_UPDATES=OFF `
             "-DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR" `
             "-DCMAKE_TOOLCHAIN_FILE=$toolchain" `
-            -DVCPKG_TARGET_TRIPLET=x64-windows `
+            "-DVCPKG_OVERLAY_TRIPLETS=$triplets" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows-release `
             -DX_VCPKG_APPLOCAL_DEPS_INSTALL=ON
           if ($LASTEXITCODE -ne 0) { throw 'CMake configure failed.' }
-          cmake --build build --parallel
+
+      - name: Save compiled vcpkg packages
+        if: steps.vcpkg-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+          key: ${{ steps.vcpkg-cache.outputs.cache-primary-key }}
+
+      - name: Build BitwardenXC
+        run: cmake --build build --parallel
 
       - name: Build Bitwarden CLI companion
         run: |
