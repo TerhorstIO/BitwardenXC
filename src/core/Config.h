@@ -20,6 +20,7 @@
 #define KEEPASSX_CONFIG_H
 
 #include <QPointer>
+#include <QUrl>
 #include <QVariant>
 #include <QVector>
 
@@ -78,6 +79,7 @@ public:
         DefaultDatabaseFileName,
 
         LastDatabases,
+        LastBitwardenDatabases,
         LastKeyFiles,
         LastChallengeResponse,
         LastActiveDatabase,
@@ -223,6 +225,12 @@ public:
         QString shortcut;
     };
 
+    struct RecentBitwardenDatabase
+    {
+        QUrl server;
+        QString email;
+    };
+
     ~Config() override;
     QVariant get(ConfigKey key);
     QVariant getDefault(ConfigKey key);
@@ -233,6 +241,10 @@ public:
     bool hasAccessError();
     void sync();
     void resetToDefaults();
+
+    QList<RecentBitwardenDatabase> recentBitwardenDatabases();
+    void rememberBitwardenDatabase(const QUrl& server, const QString& email);
+    void forgetBitwardenDatabase(const QUrl& server, const QString& email);
 
     bool importSettings(const QString& fileName);
     void exportSettings(const QString& fileName) const;
@@ -253,6 +265,7 @@ private:
     explicit Config(QObject* parent);
     void init(const QString& configFileName, const QString& localConfigFileName);
     void migrate();
+    void setRecentBitwardenDatabases(const QList<RecentBitwardenDatabase>& databases);
     static QPair<QString, QString> defaultConfigFiles();
 
     static QPointer<Config> m_instance;

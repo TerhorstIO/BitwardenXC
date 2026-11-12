@@ -557,6 +557,7 @@ void ApplicationSettingsWidget::saveSettings()
     if (!config()->get(Config::RememberLastDatabases).toBool()) {
         config()->remove(Config::LastDir);
         config()->remove(Config::LastDatabases);
+        config()->remove(Config::LastBitwardenDatabases);
         config()->remove(Config::LastActiveDatabase);
     }
 
@@ -596,6 +597,7 @@ void ApplicationSettingsWidget::resetSettings()
 
     // Clear recently used data
     config()->remove(Config::LastDatabases);
+    config()->remove(Config::LastBitwardenDatabases);
     config()->remove(Config::LastActiveDatabase);
     config()->remove(Config::LastKeyFiles);
     config()->remove(Config::LastDir);

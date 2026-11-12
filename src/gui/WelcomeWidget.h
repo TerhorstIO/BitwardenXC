@@ -20,6 +20,7 @@
 #define KEEPASSX_WELCOMEWIDGET_H
 
 #include <QListWidgetItem>
+#include <QUrl>
 
 namespace Ui
 {
@@ -39,6 +40,7 @@ signals:
     void newDatabase();
     void openDatabase();
     void openDatabaseFile(QString);
+    void openRecentBitwardenDatabase(const QUrl& server, const QString& email);
     void importFile();
 
 protected:
@@ -46,7 +48,7 @@ protected:
     void showEvent(QShowEvent* event) override;
 
 private slots:
-    void openDatabaseFromFile(QListWidgetItem* item);
+    void openRecentDatabase(QListWidgetItem* item);
 
 private:
     const QScopedPointer<Ui::WelcomeWidget> m_ui;

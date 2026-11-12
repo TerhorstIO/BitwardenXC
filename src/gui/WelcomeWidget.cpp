@@ -52,17 +52,22 @@ WelcomeWidget::WelcomeWidget(QWidget* parent)
     connect(m_ui->recentListWidget,
             SIGNAL(itemActivated(QListWidgetItem*)),
             this,
-            SLOT(openDatabaseFromFile(QListWidgetItem*)));
+            SLOT(openRecentDatabase(QListWidgetItem*)));
 }
 
 WelcomeWidget::~WelcomeWidget() = default;
 
-void WelcomeWidget::openDatabaseFromFile(QListWidgetItem* item)
+void WelcomeWidget::openRecentDatabase(QListWidgetItem* item)
 {
     if (!item || item->text().isEmpty()) {
         return;
     }
-    emit openDatabaseFile(item->text());
+    const auto server = item->data(Qt::UserRole).toUrl();
+    if (!server.isEmpty()) {
+        emit openRecentBitwardenDatabase(server, item->data(Qt::UserRole + 1).toString());
+    } else {
+        emit openDatabaseFile(item->text());
+    }
 }
 
 void WelcomeWidget::removeFromLastDatabases(QListWidgetItem* item)
@@ -71,7 +76,10 @@ void WelcomeWidget::removeFromLastDatabases(QListWidgetItem* item)
         return;
     }
 
-    if (config()->get(Config::RememberLastDatabases).toBool()) {
+    const auto server = item->data(Qt::UserRole).toUrl();
+    if (!server.isEmpty()) {
+        config()->forgetBitwardenDatabase(server, item->data(Qt::UserRole + 1).toString());
+    } else if (config()->get(Config::RememberLastDatabases).toBool()) {
         QStringList lastDatabases = config()->get(Config::LastDatabases).toStringList();
         lastDatabases.removeOne(item->text());
         config()->set(Config::LastDatabases, lastDatabases);
@@ -88,6 +96,16 @@ void WelcomeWidget::refreshLastDatabases()
         itm->setText(database);
         m_ui->recentListWidget->addItem(itm);
     }
+#ifdef Q_OS_WIN
+    const auto recentBitwarden = config()->recentBitwardenDatabases();
+    const auto icon = icons()->icon("document-open");
+    for (const auto& database : recentBitwarden) {
+        const auto label = tr("%1 (%2)").arg(database.email, database.server.toDisplayString());
+        auto* item = new QListWidgetItem(icon, label, m_ui->recentListWidget);
+        item->setData(Qt::UserRole, database.server);
+        item->setData(Qt::UserRole + 1, database.email);
+    }
+#endif
 
     bool recent_visibility = (m_ui->recentListWidget->count() > 0);
     m_ui->startLabel->setVisible(!recent_visibility);
@@ -99,7 +117,7 @@ void WelcomeWidget::keyPressEvent(QKeyEvent* event)
 {
     if (m_ui->recentListWidget->hasFocus()) {
         if (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) {
-            openDatabaseFromFile(m_ui->recentListWidget->currentItem());
+            openRecentDatabase(m_ui->recentListWidget->currentItem());
         } else if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
             removeFromLastDatabases(m_ui->recentListWidget->currentItem());
         }

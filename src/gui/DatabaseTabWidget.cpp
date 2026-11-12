@@ -29,9 +29,11 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QScopeGuard>
 #include <QTabBar>
 #include <QUrl>
 
+#include <memory>
 #include <utility>
 
 #include "autotype/AutoType.h"
@@ -168,8 +170,32 @@ void DatabaseTabWidget::openDatabase()
 
 void DatabaseTabWidget::openBitwardenDatabase()
 {
+    openRecentBitwardenDatabase({}, {});
+}
+
+void DatabaseTabWidget::openRecentBitwardenDatabase(const QUrl& initialServer, const QString& initialEmail)
+{
     if (m_bitwardenOpenInProgress) {
         return;
+    }
+
+    const auto findExistingTab = [this](const QUrl& server, const QString& email) {
+        for (int index = 0; index < count(); ++index) {
+            auto* tab = databaseWidgetFromIndex(index);
+            if (tab && tab->isBitwarden() && tab->property(BitwardenServerProperty).toUrl() == server
+                && tab->property(BitwardenEmailProperty).toString().compare(email, Qt::CaseInsensitive) == 0) {
+                return index;
+            }
+        }
+        return -1;
+    };
+    if (!initialServer.isEmpty() && !initialEmail.isEmpty()) {
+        const auto index = findExistingTab(initialServer, initialEmail);
+        if (index != -1) {
+            setCurrentIndex(index);
+            databaseWidgetFromIndex(index)->focusBitwardenUnlock();
+            return;
+        }
     }
 
     m_bitwardenOpenInProgress = true;
@@ -198,7 +224,9 @@ void DatabaseTabWidget::openBitwardenDatabase()
 
     auto* serverField = new QLineEdit(&dialog);
     serverField->setPlaceholderText(QStringLiteral("https://vault.example.org"));
+    serverField->setText(initialServer.toString(QUrl::FullyEncoded));
     auto* emailField = new QLineEdit(&dialog);
+    emailField->setText(initialEmail);
     auto* passwordField = new QLineEdit(&dialog);
     passwordField->setEchoMode(QLineEdit::Password);
     auto* codeField = new QLineEdit(&dialog);
@@ -260,14 +288,10 @@ void DatabaseTabWidget::openBitwardenDatabase()
             return;
         }
 
-        for (int index = 0; index < count(); ++index) {
-            auto* tab = databaseWidgetFromIndex(index);
-            if (tab->isBitwarden() && tab->property(BitwardenServerProperty).toUrl() == server
-                && tab->property(BitwardenEmailProperty).toString().compare(email, Qt::CaseInsensitive) == 0) {
-                existingTab = index;
-                dialog.accept();
-                return;
-            }
+        existingTab = findExistingTab(server, email);
+        if (existingTab != -1) {
+            dialog.accept();
+            return;
         }
 
         const QFileInfo cli(cliPath->text());
@@ -299,6 +323,9 @@ void DatabaseTabWidget::openBitwardenDatabase()
         dialog.accept();
     });
 
+    if (!initialServer.isEmpty() && !initialEmail.isEmpty()) {
+        passwordField->setFocus();
+    }
     if (dialog.exec() != QDialog::Accepted || m_bitwardenOpenCanceled) {
         m_bitwardenOpenInProgress = false;
         return;
@@ -306,10 +333,14 @@ void DatabaseTabWidget::openBitwardenDatabase()
     if (existingTab != -1) {
         m_bitwardenOpenInProgress = false;
         setCurrentIndex(existingTab);
+        databaseWidgetFromIndex(existingTab)->focusBitwardenUnlock();
         return;
     }
 
-    auto password = passwordField->text().toUtf8();
+    const QSharedPointer<QByteArray> password(new QByteArray(passwordField->text().toUtf8()), [](QByteArray* value) {
+        value->fill('\0');
+        delete value;
+    });
     auto code = codeField->text();
     auto clientId = apiKeyGroup->isChecked() ? clientIdField->text().trimmed() : QString{};
     auto clientSecret = apiKeyGroup->isChecked() ? clientSecretField->text().toUtf8() : QByteArray{};
@@ -328,13 +359,12 @@ void DatabaseTabWidget::openBitwardenDatabase()
     emit messageGlobal(tr("Connecting to Bitwarden..."), MessageWidget::Information);
     AsyncTask::runThenCallback(
         [session,
-         password = std::move(password),
+         password,
          code = std::move(code),
          clientId = std::move(clientId),
          clientSecret = std::move(clientSecret)]() mutable -> QString {
             try {
-                session->connect(
-                    std::move(password), std::move(code), std::move(clientId), std::move(clientSecret));
+                session->connect(*password, std::move(code), std::move(clientId), std::move(clientSecret));
                 return {};
             } catch (const BitwardenCliError& error) {
                 return error.message();
@@ -343,10 +373,26 @@ void DatabaseTabWidget::openBitwardenDatabase()
             }
         },
         this,
-        [this, session, server, email](const QString& connectionError) {
-            m_bitwardenOpenInProgress = false;
+        [this, session, server, email, password](const QString& connectionError) {
+            const QPointer<DatabaseTabWidget> self(this);
+            bool connected = false;
+            const auto cleanup = qScopeGuard([self, session, password, &connected] {
+                password->fill('\0');
+                if (self) {
+                    self->m_bitwardenOpenInProgress = false;
+                }
+                if (!connected) {
+                    (void) QtConcurrent::run([session] {
+                        try {
+                            session->lock();
+                        } catch (...) {
+                            // Discarding the adapter also clears its session key.
+                        }
+                    });
+                }
+            });
             emit messageDismissGlobal();
-            if (m_bitwardenOpenCanceled) {
+            if (!self || m_bitwardenOpenCanceled) {
                 return;
             }
             if (!connectionError.isEmpty()) {
@@ -357,10 +403,17 @@ void DatabaseTabWidget::openBitwardenDatabase()
             try {
                 auto db = session->makeDatabase();
                 if (db) {
-                    auto* tab = new DatabaseWidget(db, this, session);
+                    auto tab = std::make_unique<DatabaseWidget>(db, nullptr, session);
+                    tab->rememberBitwardenPassword(*password);
+                    password->fill('\0');
+                    if (!self || m_bitwardenOpenCanceled) {
+                        return;
+                    }
                     tab->setProperty(BitwardenServerProperty, server);
                     tab->setProperty(BitwardenEmailProperty, email);
-                    addDatabaseTab(tab);
+                    connected = true;
+                    addDatabaseTab(tab.release());
+                    config()->rememberBitwardenDatabase(server, email);
                     return;
                 }
             } catch (const BitwardenCliError& error) {
@@ -438,11 +491,6 @@ void DatabaseTabWidget::lockAndSwitchToFirstUnlockedDatabase(int index)
         return;
     }
 
-    if (dbWidget->isBitwarden()) {
-        closeDatabaseTab(dbWidget);
-        return;
-    }
-
     if (dbWidget->isLocked()) {
         // Database is already locked, act like lock all databases instead
         lockDatabases();
@@ -491,19 +539,6 @@ void DatabaseTabWidget::addDatabaseTab(DatabaseWidget* dbWidget, bool inBackgrou
     connect(dbWidget, SIGNAL(databaseUnlocked()), SLOT(emitDatabaseLockChanged()));
     connect(dbWidget, SIGNAL(databaseLocked()), SLOT(updateTabName()));
     connect(dbWidget, SIGNAL(databaseLocked()), SLOT(emitDatabaseLockChanged()));
-    if (dbWidget->isBitwarden()) {
-        const QPointer<DatabaseWidget> bitwardenTab(dbWidget);
-        connect(
-            dbWidget,
-            &DatabaseWidget::databaseLocked,
-            this,
-            [this, bitwardenTab] {
-                if (bitwardenTab) {
-                    closeDatabaseTab(bitwardenTab.data());
-                }
-            },
-            Qt::QueuedConnection);
-    }
     connect(dbWidget,
             &DatabaseWidget::unlockDatabaseInDialogForSync,
             this,
@@ -1005,7 +1040,7 @@ bool DatabaseTabWidget::lockDatabases()
         auto dbWidget = databaseWidgetFromIndex(i);
         if (dbWidget && dbWidget->lock()) {
             ++numLocked;
-            if (dbWidget->database()->filePath().isEmpty()) {
+            if (!dbWidget->isBitwarden() && dbWidget->database()->filePath().isEmpty()) {
                 // If we locked a database without a file close the tab
                 closeDatabaseTab(dbWidget);
             }

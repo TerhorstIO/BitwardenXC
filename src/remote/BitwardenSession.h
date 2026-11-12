@@ -36,6 +36,7 @@ public:
     BitwardenSession(QString executable, QUrl server, QString email);
 
     void connect(QByteArray password, QString code = {}, QString clientId = {}, QByteArray clientSecret = {});
+    void unlock(QByteArray password);
     void sync();
     void lock();
     SaveResult save(const QList<Edit>& edits);

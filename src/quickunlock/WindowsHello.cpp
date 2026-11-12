@@ -29,6 +29,8 @@
 #include "crypto/Random.h"
 #include "crypto/SymmetricCipher.h"
 
+#include <QScopeGuard>
+#include <QScopedValueRollback>
 #include <QTimer>
 #include <QWindow>
 
@@ -107,11 +109,15 @@ bool WindowsHello::isAvailable() const
 
 QString WindowsHello::errorString() const
 {
-    return m_error;
+    return m_busy ? QString() : m_error;
 }
 
 bool WindowsHello::setKey(const QUuid& dbUuid, const QByteArray& data)
 {
+    if (m_busy) {
+        return false;
+    }
+    const QScopedValueRollback<bool> prompt(m_busy, true);
     queueSecurityPromptFocus();
 
     // Generate a random challenge that will be signed by Windows Hello
@@ -119,11 +125,12 @@ bool WindowsHello::setKey(const QUuid& dbUuid, const QByteArray& data)
     auto ivSize = SymmetricCipher::defaultIvSize(SymmetricCipher::Aes256_GCM);
     auto challenge = Random::instance()->randomArray(ivSize);
     QByteArray key;
+    const auto wipeKey = qScopeGuard([&key] { key.fill('\0'); });
     if (!deriveEncryptionKey(challenge, key, m_error)) {
         return false;
     }
 
-    // Encrypt the data using AES-256-CBC
+    // Encrypt the data using AES-256-GCM.
     SymmetricCipher cipher;
     if (!cipher.init(SymmetricCipher::Aes256_GCM, SymmetricCipher::Encrypt, key, challenge)) {
         m_error = QObject::tr("Failed to init KeePassXC crypto.");
@@ -144,6 +151,10 @@ bool WindowsHello::setKey(const QUuid& dbUuid, const QByteArray& data)
 bool WindowsHello::getKey(const QUuid& dbUuid, QByteArray& data)
 {
     data.clear();
+    if (m_busy) {
+        return false;
+    }
+    const QScopedValueRollback<bool> prompt(m_busy, true);
     if (!hasKey(dbUuid)) {
         m_error = QObject::tr("Failed to get Windows Hello credential.");
         return false;
@@ -157,6 +168,7 @@ bool WindowsHello::getKey(const QUuid& dbUuid, QByteArray& data)
     auto challenge = keydata.left(ivSize);
     auto encrypted = keydata.mid(ivSize);
     QByteArray key;
+    const auto wipeKey = qScopeGuard([&key] { key.fill('\0'); });
 
     if (!deriveEncryptionKey(challenge, key, m_error)) {
         return false;

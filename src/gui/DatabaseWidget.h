@@ -41,6 +41,8 @@ class EntrySearcher;
 class GroupView;
 class QFile;
 class QMenu;
+class QLineEdit;
+class QPushButton;
 class QSplitter;
 class QLabel;
 class EntryPreviewWidget;
@@ -86,6 +88,8 @@ public:
     bool canEditBitwardenEntry() const;
     bool canEditBitwardenLogin() const;
     void syncBitwarden();
+    void rememberBitwardenPassword(const QByteArray& password);
+    void focusBitwardenUnlock();
 
     DatabaseWidget::Mode currentMode() const;
     bool isLocked() const;
@@ -311,10 +315,23 @@ private:
     void performIconDownloads(const QList<Entry*>& entries, bool force = false, bool downloadInBackground = false);
     bool performSave(QString& errorMessage, const QString& fileName = {});
     bool saveBitwarden();
+    void initBitwardenUnlockWidget();
+    void updateBitwardenUnlockWidget();
+    void unlockBitwarden(bool useHello);
+    void lockBitwardenSession();
+    void resetBitwardenQuickUnlock();
 
     QSharedPointer<Database> m_db;
     QSharedPointer<BitwardenSession> m_bitwarden;
     bool m_bitwardenBusy = false;
+    bool m_bitwardenUnlocking = false;
+    bool m_bitwardenUnlockCanceled = false;
+    QUuid m_bitwardenQuickUnlockId;
+    QPointer<QWidget> m_bitwardenUnlockWidget;
+    QPointer<QLineEdit> m_bitwardenPassword;
+    QPointer<QPushButton> m_bitwardenPasswordButton;
+    QPointer<QPushButton> m_bitwardenHelloButton;
+    QPointer<QLabel> m_bitwardenUnlockError;
 
     QPointer<QWidget> m_mainWidget;
     QPointer<QSplitter> m_mainSplitter;

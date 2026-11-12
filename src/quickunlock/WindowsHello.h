@@ -37,6 +37,7 @@ public:
     void reset(const QUuid& dbUuid) override;
 
 private:
+    bool m_busy = false;
     QString m_error;
     QHash<QUuid, QByteArray> m_encryptedKeys;
     Q_DISABLE_COPY(WindowsHello);

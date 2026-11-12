@@ -448,12 +448,13 @@ MainWindow::MainWindow()
     connect(m_ui->actionDatabaseNew, SIGNAL(triggered()), m_ui->tabWidget, SLOT(newDatabase()));
     connect(m_ui->actionDatabaseOpen, SIGNAL(triggered()), m_ui->tabWidget, SLOT(openDatabase()));
 #ifdef Q_OS_WIN
-    auto* openBitwardenAction = new QAction(tr("Open &Bitwarden/Vaultwarden..."), this);
+    auto* openBitwardenAction =
+        new QAction(icons()->icon("document-open"), tr("Open &Bitwarden/Vaultwarden..."), this);
     openBitwardenAction->setObjectName(QStringLiteral("actionOpenBitwarden"));
     m_ui->menuFile->insertAction(m_ui->menuRecentDatabases->menuAction(), openBitwardenAction);
     connect(openBitwardenAction, &QAction::triggered, m_ui->tabWidget, &DatabaseTabWidget::openBitwardenDatabase);
 
-    auto* syncBitwardenAction = new QAction(tr("Sync Bitwarden"), this);
+    auto* syncBitwardenAction = new QAction(icons()->icon("remote-sync"), tr("Sync Bitwarden"), this);
     syncBitwardenAction->setObjectName(QStringLiteral("actionSyncBitwarden"));
     syncBitwardenAction->setEnabled(false);
     m_ui->menuFile->insertAction(m_ui->menuRemoteSync->menuAction(), syncBitwardenAction);
@@ -548,6 +549,12 @@ MainWindow::MainWindow()
     connect(m_ui->welcomeWidget, SIGNAL(newDatabase()), SLOT(switchToNewDatabase()));
     connect(m_ui->welcomeWidget, SIGNAL(openDatabase()), SLOT(switchToOpenDatabase()));
     connect(m_ui->welcomeWidget, SIGNAL(openDatabaseFile(QString)), SLOT(switchToDatabaseFile(QString)));
+#ifdef Q_OS_WIN
+    connect(m_ui->welcomeWidget,
+            &WelcomeWidget::openRecentBitwardenDatabase,
+            m_ui->tabWidget,
+            &DatabaseTabWidget::openRecentBitwardenDatabase);
+#endif
     connect(m_ui->welcomeWidget, SIGNAL(importFile()), m_ui->tabWidget, SLOT(importFile()));
 
     connect(m_ui->actionAbout, SIGNAL(triggered()), SLOT(showAboutDialog()));
@@ -764,6 +771,19 @@ void MainWindow::updateLastDatabasesMenu()
         action->setData(database);
         m_lastDatabasesActions->addAction(action);
     }
+#ifdef Q_OS_WIN
+    const auto recentBitwarden = config()->recentBitwardenDatabases();
+    if (!recentBitwarden.isEmpty()) {
+        m_ui->menuRecentDatabases->addSection(tr("Bitwarden/Vaultwarden"));
+        const auto icon = icons()->icon("document-open");
+        for (const auto& database : recentBitwarden) {
+            const auto label = tr("%1 (%2)").arg(database.email, database.server.toDisplayString());
+            m_ui->menuRecentDatabases->addAction(icon, Tools::escapeAccelerators(label), this, [this, database] {
+                m_ui->tabWidget->openRecentBitwardenDatabase(database.server, database.email);
+            });
+        }
+    }
+#endif
     m_ui->menuRecentDatabases->addSeparator();
     m_ui->menuRecentDatabases->addAction(m_clearHistoryAction);
 }
@@ -847,6 +867,7 @@ void MainWindow::openRecentDatabase(QAction* action)
 void MainWindow::clearLastDatabases()
 {
     config()->remove(Config::LastDatabases);
+    config()->remove(Config::LastBitwardenDatabases);
     bool inWelcomeWidget = (m_ui->stackedWidget->currentIndex() == 2);
 
     if (inWelcomeWidget) {

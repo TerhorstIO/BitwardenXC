@@ -324,6 +324,22 @@ void BitwardenSession::sync()
     m_connected = true;
 }
 
+void BitwardenSession::unlock(QByteArray password)
+{
+    const auto wipe = qScopeGuard([&password] { password.fill('\0'); });
+    try {
+        m_cli.unlock(password);
+        sync();
+    } catch (...) {
+        try {
+            lock();
+        } catch (...) {
+            // The adapter clears its session key even if the CLI lock fails.
+        }
+        throw;
+    }
+}
+
 void BitwardenSession::lock()
 {
     m_items = {};

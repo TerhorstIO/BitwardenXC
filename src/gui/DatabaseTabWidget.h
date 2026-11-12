@@ -26,6 +26,7 @@
 #include <QSet>
 #include <QTabWidget>
 #include <QTimer>
+#include <QUrl>
 
 class Database;
 class DatabaseWidget;
@@ -66,6 +67,7 @@ public slots:
     DatabaseWidget* newDatabase();
     void openDatabase();
     void openBitwardenDatabase();
+    void openRecentBitwardenDatabase(const QUrl& initialServer, const QString& initialEmail);
     void syncBitwardenDatabase();
     void mergeDatabase();
     void importFile();

@@ -30,6 +30,8 @@
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QProcess>
+#include <QPushButton>
+#include <QScopeGuard>
 #include <QScopedValueRollback>
 #include <QSplitter>
 #include <QTextDocumentFragment>
@@ -47,6 +49,7 @@
 #include "gui/EntryPreviewWidget.h"
 #include "gui/FileDialog.h"
 #include "gui/GuiTools.h"
+#include "gui/Icons.h"
 #include "gui/MainWindow.h"
 #include "gui/MergeDialog.h"
 #include "gui/MessageBox.h"
@@ -61,6 +64,7 @@
 #include "gui/tag/TagView.h"
 #include "gui/widgets/ElidedLabel.h"
 #include "keeshare/KeeShare.h"
+#include "quickunlock/QuickUnlockInterface.h"
 #include "remote/BitwardenSession.h"
 #include "remote/RemoteHandler.h"
 #include "remote/RemoteSettings.h"
@@ -76,6 +80,20 @@
 #ifdef KPXC_FEATURE_BROWSER
 #include "gui/passkeys/PasskeyImporter.h"
 #endif
+
+namespace
+{
+    bool lockBitwarden(const QSharedPointer<BitwardenSession>& session)
+    {
+        try {
+            session->lock();
+            return true;
+        } catch (...) {
+            // The adapter clears its session key even when its lock command fails.
+            return false;
+        }
+    }
+}
 
 DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent, QSharedPointer<BitwardenSession> bitwarden)
     : QStackedWidget(parent)
@@ -208,6 +226,9 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent, QSh
     addChildWidget(m_databaseSettingDialog);
     addChildWidget(m_historyEditEntryWidget);
     addChildWidget(m_databaseOpenWidget);
+    if (isBitwarden()) {
+        initBitwardenUnlockWidget();
+    }
 
     // clang-format off
     connect(m_mainSplitter, SIGNAL(splitterMoved(int,int)), SIGNAL(splitterSizesChanged()));
@@ -265,6 +286,7 @@ DatabaseWidget::DatabaseWidget(const QString& filePath, QWidget* parent)
 
 DatabaseWidget::~DatabaseWidget()
 {
+    resetBitwardenQuickUnlock();
     // Trigger any Database deletion related signals manually by
     // explicitly clearing the Database pointer, instead of leaving it to ~QSharedPointer.
     // QSharedPointer may behave differently depending on whether it is cleared by the `clear` method
@@ -301,13 +323,231 @@ bool DatabaseWidget::canEditBitwardenLogin() const
         && (m_bitwarden->supportsFullEditing() || m_bitwarden->isDraft(currentSelectedEntry()->uuid()));
 }
 
+void DatabaseWidget::initBitwardenUnlockWidget()
+{
+    m_bitwardenUnlockWidget = new QWidget(this);
+    auto* layout = new QVBoxLayout(m_bitwardenUnlockWidget);
+    layout->addStretch();
+    auto* form = new QFormLayout();
+    form->setFormAlignment(Qt::AlignHCenter);
+    layout->addLayout(form);
+    form->addRow(new QLabel(tr("The Bitwarden vault is locked."), m_bitwardenUnlockWidget));
+
+    m_bitwardenHelloButton = new QPushButton(tr("Unlock with Windows Hello"), m_bitwardenUnlockWidget);
+    m_bitwardenHelloButton->setObjectName(QStringLiteral("bitwardenHelloButton"));
+    m_bitwardenHelloButton->setIcon(icons()->icon("fingerprint"));
+    form->addRow(m_bitwardenHelloButton);
+    m_bitwardenPassword = new QLineEdit(m_bitwardenUnlockWidget);
+    m_bitwardenPassword->setObjectName(QStringLiteral("bitwardenUnlockPassword"));
+    m_bitwardenPassword->setEchoMode(QLineEdit::Password);
+    form->addRow(tr("Master password"), m_bitwardenPassword);
+    m_bitwardenPasswordButton = new QPushButton(tr("Unlock"), m_bitwardenUnlockWidget);
+    m_bitwardenPasswordButton->setObjectName(QStringLiteral("bitwardenUnlockButton"));
+    form->addRow(m_bitwardenPasswordButton);
+    m_bitwardenUnlockError = new QLabel(m_bitwardenUnlockWidget);
+    m_bitwardenUnlockError->setTextFormat(Qt::PlainText);
+    m_bitwardenUnlockError->setWordWrap(true);
+    form->addRow(m_bitwardenUnlockError);
+    layout->addStretch();
+
+    connect(m_bitwardenHelloButton, &QPushButton::clicked, this, [this] { unlockBitwarden(true); });
+    connect(m_bitwardenPasswordButton, &QPushButton::clicked, this, [this] { unlockBitwarden(false); });
+    connect(m_bitwardenPassword, &QLineEdit::returnPressed, this, [this] { unlockBitwarden(false); });
+    connect(m_bitwardenPassword, &QLineEdit::textChanged, this, &DatabaseWidget::updateBitwardenUnlockWidget);
+    addChildWidget(m_bitwardenUnlockWidget);
+    updateBitwardenUnlockWidget();
+}
+
+void DatabaseWidget::updateBitwardenUnlockWidget()
+{
+    m_bitwardenUnlockWidget->setEnabled(!m_bitwardenBusy);
+    m_bitwardenPasswordButton->setEnabled(!m_bitwardenPassword->text().isEmpty());
+    m_bitwardenHelloButton->setVisible(!m_bitwardenQuickUnlockId.isNull()
+                                       && config()->get(Config::Security_QuickUnlock).toBool()
+                                       && getQuickUnlock()->hasKey(m_bitwardenQuickUnlockId));
+}
+
+void DatabaseWidget::focusBitwardenUnlock()
+{
+    if (isBitwarden() && isLocked() && !m_bitwardenBusy) {
+        if (m_bitwardenHelloButton->isHidden()) {
+            m_bitwardenPassword->setFocus();
+        } else {
+            m_bitwardenHelloButton->setFocus();
+        }
+    }
+}
+
+void DatabaseWidget::rememberBitwardenPassword(const QByteArray& password)
+{
+#ifdef Q_OS_WIN
+    if (!isBitwarden() || password.isEmpty() || !config()->get(Config::Security_QuickUnlock).toBool()
+        || !m_bitwardenQuickUnlockId.isNull()) {
+        return;
+    }
+    const QPointer<DatabaseWidget> self(this);
+    const auto canStore = [self] {
+        return self && !self->m_bitwardenUnlockCanceled && config()->get(Config::Security_QuickUnlock).toBool();
+    };
+    try {
+        auto* provider = getQuickUnlock();
+        const auto id = QUuid::createUuid();
+        if (provider->isAvailable() && canStore() && provider->setKey(id, password)) {
+            if (canStore()) {
+                self->m_bitwardenQuickUnlockId = id;
+            } else {
+                provider->reset(id);
+            }
+        }
+    } catch (...) {
+        // An unavailable or canceled Windows Hello setup leaves password unlock available.
+    }
+    if (self) {
+        self->updateBitwardenUnlockWidget();
+    }
+#else
+    Q_UNUSED(password);
+#endif
+}
+
+void DatabaseWidget::resetBitwardenQuickUnlock()
+{
+    if (!m_bitwardenQuickUnlockId.isNull()) {
+        getQuickUnlock()->reset(m_bitwardenQuickUnlockId);
+        m_bitwardenQuickUnlockId = QUuid();
+    }
+}
+
+void DatabaseWidget::unlockBitwarden(bool useHello)
+{
+    if (!isLocked() || m_bitwardenBusy || (useHello && m_bitwardenHelloButton->isHidden())
+        || (!useHello && m_bitwardenPassword->text().isEmpty())) {
+        return;
+    }
+
+    m_bitwardenUnlockError->clear();
+    m_bitwardenBusy = true;
+    m_bitwardenUnlocking = true;
+    m_bitwardenUnlockCanceled = false;
+    const QPointer<DatabaseWidget> self(this);
+    const auto helloId = m_bitwardenQuickUnlockId;
+    const auto canUnlock = [self, useHello, helloId] {
+        return self && !self->m_bitwardenUnlockCanceled
+               && (!useHello || (self->m_bitwardenQuickUnlockId == helloId
+                                 && config()->get(Config::Security_QuickUnlock).toBool()));
+    };
+    auto restore = qScopeGuard([self] {
+        if (self) {
+            self->m_bitwardenBusy = false;
+            self->m_bitwardenUnlocking = false;
+            self->updateBitwardenUnlockWidget();
+            if (self->isLocked()) {
+                self->m_bitwardenPassword->setFocus();
+            }
+        }
+    });
+    QByteArray password;
+    const auto wipe = qScopeGuard([&password] { password.fill('\0'); });
+    updateBitwardenUnlockWidget();
+    if (useHello) {
+        bool authenticated = false;
+        bool helloFailed = false;
+        try {
+            auto* provider = getQuickUnlock();
+            authenticated = provider->getKey(helloId, password);
+            helloFailed = !authenticated && !provider->errorString().isEmpty();
+        } catch (...) {
+            helloFailed = true;
+        }
+        if (!canUnlock()) {
+            return;
+        }
+        if (!authenticated) {
+            if (helloFailed) {
+                resetBitwardenQuickUnlock();
+            }
+            m_bitwardenUnlockError->setText(tr("Windows Hello did not unlock the vault. Try your master password."));
+            return;
+        }
+    } else {
+        password = m_bitwardenPassword->text().toUtf8();
+    }
+    m_bitwardenPassword->clear();
+
+    const auto session = m_bitwarden;
+    auto error = AsyncTask::runAndWaitForFuture([session, &password]() -> QString {
+        try {
+            session->unlock(password);
+            return {};
+        } catch (const BitwardenCliError& error) {
+            if (error.reason() == BitwardenCliError::Reason::AuthenticationRequired) {
+                return error.message() + QLatin1Char('\n')
+                    + tr("If Bitwarden requires sign-in again, close this tab and reopen the connection from Recent.");
+            }
+            return error.message();
+        } catch (...) {
+            return tr("Could not unlock the Bitwarden vault.");
+        }
+    });
+    const auto sessionUnlocked = error.isEmpty();
+    if (sessionUnlocked && canUnlock()) {
+        try {
+            if (!useHello) {
+                rememberBitwardenPassword(password);
+            }
+            if (canUnlock()) {
+                auto database = session->makeDatabase();
+                emit databaseAboutToUnlock();
+                replaceDatabase(database);
+                switchToMainView();
+                restoreGroupEntryFocus(m_groupBeforeLock, m_entryBeforeLock);
+                m_groupBeforeLock = QUuid();
+                m_entryBeforeLock = QUuid();
+                m_bitwardenBusy = false;
+                m_bitwardenUnlocking = false;
+                updateBitwardenUnlockWidget();
+                restore.dismiss();
+                emit databaseUnlocked();
+                return;
+            }
+        } catch (const BitwardenCliError& openError) {
+            error = openError.message();
+        } catch (...) {
+            error = tr("Could not open the Bitwarden vault.");
+        }
+    }
+    if (sessionUnlocked) {
+        AsyncTask::runAndWaitForFuture([session] { return lockBitwarden(session); });
+    }
+    if (self && !m_bitwardenUnlockCanceled && !error.isEmpty()) {
+        if (useHello) {
+            resetBitwardenQuickUnlock();
+        }
+        m_bitwardenUnlockError->setText(error);
+    }
+}
+
+void DatabaseWidget::lockBitwardenSession()
+{
+    m_bitwardenBusy = true;
+    updateBitwardenUnlockWidget();
+    AsyncTask::runThenCallback(
+        [session = m_bitwarden] { return lockBitwarden(session); }, this, [this](bool) {
+            m_bitwardenBusy = false;
+            updateBitwardenUnlockWidget();
+            if (isVisible()) {
+                focusBitwardenUnlock();
+            }
+        });
+}
+
 DatabaseWidget::Mode DatabaseWidget::currentMode() const
 {
     auto mode = Mode::None;
     auto widget = currentWidget();
     if (widget == m_mainWidget) {
         mode = Mode::ViewMode;
-    } else if (widget == m_databaseOpenWidget) {
+    } else if (widget == m_databaseOpenWidget || (m_bitwardenUnlockWidget && widget == m_bitwardenUnlockWidget)) {
         mode = Mode::LockedMode;
     } else if (widget == m_reportsDialog) {
         mode = Mode::ReportsMode;
@@ -456,6 +696,12 @@ void DatabaseWidget::onConfigChanged(Config::ConfigKey key)
         // Toggle the group splitter visibility and reset the size
         m_groupSplitter->setVisible(!config()->get(Config::GUI_HideGroupPanel).toBool());
         setSplitterSizes({{Config::GUI_SplitterState, QList<int>({})}});
+    }
+    if (isBitwarden() && key == Config::Security_QuickUnlock) {
+        if (!config()->get(Config::Security_QuickUnlock).toBool()) {
+            resetBitwardenQuickUnlock();
+        }
+        updateBitwardenUnlockWidget();
     }
 }
 
@@ -701,6 +947,10 @@ void DatabaseWidget::deleteEntries(QList<Entry*> selectedEntries, bool confirm)
 
 void DatabaseWidget::setFocus(Qt::FocusReason reason)
 {
+    if (isBitwarden() && isLocked()) {
+        focusBitwardenUnlock();
+        return;
+    }
     focusNextPrevChild(reason == Qt::TabFocusReason);
 }
 
@@ -2051,12 +2301,16 @@ Group* DatabaseWidget::currentGroup() const
 
 void DatabaseWidget::closeEvent(QCloseEvent* event)
 {
-    if (!lock() || m_databaseOpenWidget->unlockingDatabase()) {
+    if (!lock() || m_databaseOpenWidget->unlockingDatabase() || m_bitwardenUnlocking) {
         event->ignore();
         return;
     }
 
-    m_databaseOpenWidget->resetQuickUnlock();
+    if (isBitwarden()) {
+        resetBitwardenQuickUnlock();
+    } else {
+        m_databaseOpenWidget->resetQuickUnlock();
+    }
     event->accept();
 }
 
@@ -2109,6 +2363,12 @@ bool DatabaseWidget::focusNextPrevChild(bool next)
 bool DatabaseWidget::lock()
 {
     if (isLocked() || m_attemptingLock) {
+        if (m_bitwardenUnlocking) {
+            m_bitwardenUnlockCanceled = true;
+        }
+        if (isBitwarden() && isLocked()) {
+            m_bitwardenPassword->clear();
+        }
         return isLocked();
     }
 
@@ -2220,24 +2480,22 @@ bool DatabaseWidget::lock()
 
     endSearch();
     clearAllWidgets();
-    switchToOpenDatabase(m_db->filePath());
 
     auto newDb = QSharedPointer<Database>::create(m_db->filePath());
-    if (!isBitwarden()) {
+    if (isBitwarden()) {
+        newDb->metadata()->setName(m_db->metadata()->name());
+        newDb->markAsClean();
+        m_bitwardenPassword->clear();
+        m_bitwardenUnlockError->clear();
+        m_bitwardenUnlockWidget->setEnabled(false);
+        setCurrentWidget(m_bitwardenUnlockWidget);
+    } else {
+        switchToOpenDatabase(m_db->filePath());
         newDb->open(nullptr);
     }
     replaceDatabase(newDb);
-
     if (isBitwarden()) {
-        const auto session = m_bitwarden;
-        // Local data is cleared before the CLI lock runs.
-        (void) QtConcurrent::run([session] {
-            try {
-                session->lock();
-            } catch (const BitwardenCliError&) {
-                // The adapter clears its session key even when its lock command fails.
-            }
-        });
+        lockBitwardenSession();
     }
 
     m_attemptingLock = false;

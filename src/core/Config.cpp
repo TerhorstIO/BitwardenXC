@@ -97,6 +97,7 @@ static const QHash<Config::ConfigKey, ConfigDirective> configStrings = {
     {Config::DefaultDatabaseFileName,{QS("DefaultDatabaseFileName"), Roaming, {}}},
 
     {Config::LastDatabases, {QS("LastDatabases"), Local, {}}},
+    {Config::LastBitwardenDatabases, {QS("LastBitwardenDatabases"), Local, {}}},
     {Config::LastKeyFiles, {QS("LastKeyFiles"), Local, {}}},
     {Config::LastChallengeResponse, {QS("LastChallengeResponse"), Local, {}}},
     {Config::LastActiveDatabase, {QS("LastActiveDatabase"), Local, {}}},
@@ -310,6 +311,75 @@ void Config::remove(ConfigKey key)
     }
 
     emit changed(key);
+}
+
+static bool isRecentBitwardenDatabaseValid(const QUrl& server, const QString& email)
+{
+    return server.isValid() && server.scheme() == QS("https") && !server.host().isEmpty() && server.userInfo().isEmpty()
+        && !server.hasQuery() && !server.hasFragment() && email.contains(QLatin1Char('@'));
+}
+
+QList<Config::RecentBitwardenDatabase> Config::recentBitwardenDatabases()
+{
+    QList<RecentBitwardenDatabase> databases;
+    if (!get(RememberLastDatabases).toBool()) {
+        return databases;
+    }
+
+    const auto maximum = get(NumberOfRememberedLastDatabases).toInt();
+    const auto values = get(LastBitwardenDatabases).toList();
+    for (const auto& value : values) {
+        if (databases.size() >= maximum) {
+            break;
+        }
+        const auto record = value.toMap();
+        const QUrl server(record.value(QS("server")).toString(), QUrl::StrictMode);
+        const auto email = record.value(QS("email")).toString();
+        if (isRecentBitwardenDatabaseValid(server, email)) {
+            databases.append({server, email});
+        }
+    }
+    return databases;
+}
+
+void Config::rememberBitwardenDatabase(const QUrl& server, const QString& email)
+{
+    if (!get(RememberLastDatabases).toBool() || !isRecentBitwardenDatabaseValid(server, email)) {
+        return;
+    }
+    auto databases = recentBitwardenDatabases();
+    databases.removeIf([&](const auto& database) {
+        return database.server == server && database.email.compare(email, Qt::CaseInsensitive) == 0;
+    });
+    databases.prepend({server, email});
+    setRecentBitwardenDatabases(databases);
+}
+
+void Config::forgetBitwardenDatabase(const QUrl& server, const QString& email)
+{
+    auto databases = recentBitwardenDatabases();
+    databases.removeIf([&](const auto& database) {
+        return database.server == server && database.email.compare(email, Qt::CaseInsensitive) == 0;
+    });
+    setRecentBitwardenDatabases(databases);
+}
+
+void Config::setRecentBitwardenDatabases(const QList<RecentBitwardenDatabase>& databases)
+{
+    QVariantList records;
+    const auto maximum = get(NumberOfRememberedLastDatabases).toInt();
+    for (const auto& database : databases) {
+        if (records.size() >= maximum) {
+            break;
+        }
+        records.append(QVariantMap{{QS("server"), database.server.toString(QUrl::FullyEncoded)},
+                                   {QS("email"), database.email}});
+    }
+    if (records.isEmpty()) {
+        remove(LastBitwardenDatabases);
+    } else {
+        set(LastBitwardenDatabases, records);
+    }
 }
 
 /**
