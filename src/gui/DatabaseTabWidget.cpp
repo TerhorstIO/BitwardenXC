@@ -20,6 +20,7 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QCoreApplication>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QGroupBox>
@@ -178,6 +179,10 @@ void DatabaseTabWidget::openBitwardenDatabase()
     auto* form = new QFormLayout(&dialog);
     auto* cliPath = new QLineEdit(&dialog);
     cliPath->setReadOnly(true);
+    const auto bundledCli = QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("bw.exe"));
+    if (QFileInfo(bundledCli).isFile()) {
+        cliPath->setText(QDir::toNativeSeparators(bundledCli));
+    }
     auto* browse = new QPushButton(tr("Browse..."), &dialog);
     auto* cliRow = new QHBoxLayout;
     cliRow->addWidget(cliPath);

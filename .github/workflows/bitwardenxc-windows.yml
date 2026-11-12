@@ -121,11 +121,26 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'CMake configure failed.' }
           cmake --build build --parallel
 
+      - name: Build Bitwarden CLI companion
+        run: |
+          ./utils/build-bitwardenxc-cli.ps1 `
+            -WorkDirectory (Join-Path $env:RUNNER_TEMP 'bitwardenxc-cli-build') `
+            -OutputDirectory (Join-Path $PWD 'build/companion')
+
       - name: Package and verify portable ZIP
         run: |
           $packageName = 'BitwardenXC-Windows-x64'
           cpack --config build/CPackConfig.cmake -G ZIP -B dist -D "CPACK_PACKAGE_FILE_NAME=$packageName"
           if ($LASTEXITCODE -ne 0) { throw 'CPack failed.' }
+
+          $cliSource = Join-Path $env:RUNNER_TEMP 'bitwardenxc-cli-build/clients'
+          git -C $cliSource add -u
+          if ($LASTEXITCODE -ne 0) { throw 'Could not stage the patched CLI source.' }
+          $tree = git -C $cliSource write-tree
+          if ($LASTEXITCODE -ne 0) { throw 'Could not write the patched CLI source tree.' }
+          $cliSourceZip = Join-Path $PWD 'dist/BitwardenXC-CLI-Source.zip'
+          git -C $cliSource archive --format=zip --prefix=BitwardenXC-CLI/ --output=$cliSourceZip $tree
+          if ($LASTEXITCODE -ne 0) { throw 'Could not archive the patched CLI source.' }
 
           $zip = Get-Item "dist/$packageName.zip"
           $archive = [System.IO.Compression.ZipFile]::Open($zip.FullName, [System.IO.Compression.ZipArchiveMode]::Update)
@@ -148,6 +163,10 @@ jobs:
                 $null = [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $notice.FullName, $entry)
               }
             }
+            $null = [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+              $archive, (Join-Path $PWD 'build/companion/bw.exe'), "${prefix}bw.exe")
+            $null = [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+              $archive, (Join-Path $cliSource 'LICENSE_GPL.txt'), "${prefix}LICENSE-BITWARDEN-CLI.txt")
           } finally {
             $archive.Dispose()
           }
@@ -187,8 +206,17 @@ jobs:
             $process.Dispose()
           }
 
-          $hash = (Get-FileHash -LiteralPath $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  $($zip.Name)" | Set-Content -Encoding ascii dist/SHA256SUMS
+          $env:BITWARDENCLI_APPDATA_DIR = Join-Path $env:RUNNER_TEMP 'bitwardenxc-packaged-cli-smoke'
+          New-Item -ItemType Directory -Force -Path $env:BITWARDENCLI_APPDATA_DIR | Out-Null
+          $cliVersion = & (Join-Path $startInfo.WorkingDirectory 'bw.exe') --version
+          if ($LASTEXITCODE -ne 0 -or $cliVersion -cne '2026.10.1-bitwardenxc.1') {
+            throw 'The packaged Bitwarden CLI could not be verified.'
+          }
+
+          Get-Item $zip.FullName, $cliSourceZip | ForEach-Object {
+            $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $($_.Name)"
+          } | Set-Content -Encoding ascii dist/SHA256SUMS
 
       - name: Upload the build
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -196,6 +224,7 @@ jobs:
           name: bitwardenxc-windows-x64
           path: |
             dist/BitwardenXC-Windows-x64.zip
+            dist/BitwardenXC-CLI-Source.zip
             dist/SHA256SUMS
           if-no-files-found: error
           compression-level: 0
@@ -227,10 +256,10 @@ jobs:
             fi
           fi
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" BitwardenXC-Windows-x64.zip SHA256SUMS --clobber
+            gh release upload "$TAG" BitwardenXC-Windows-x64.zip BitwardenXC-CLI-Source.zip SHA256SUMS --clobber
           else
-            gh release create "$TAG" BitwardenXC-Windows-x64.zip SHA256SUMS \
+            gh release create "$TAG" BitwardenXC-Windows-x64.zip BitwardenXC-CLI-Source.zip SHA256SUMS \
               --target "$GITHUB_SHA" --title "BitwardenXC Windows x64 (${GITHUB_SHA:0:7})" \
-              --notes "Portable Windows x64 build from commit $GITHUB_SHA. Extract the ZIP and run BitwardenXC.exe. The release source archives correspond to this commit." \
+              --notes "Portable Windows x64 build from commit $GITHUB_SHA. Extract the Windows ZIP and run BitwardenXC.exe. The package includes the patched Bitwarden CLI. Its source is available in BitwardenXC-CLI-Source.zip." \
               --prerelease --latest=false
           fi

@@ -1,0 +1,78 @@
+diff --git a/apps/cli/src/program.ts b/apps/cli/src/program.ts
+--- a/apps/cli/src/program.ts
++++ b/apps/cli/src/program.ts
+@@ -35,7 +35,7 @@ export class Program extends BaseProgram {
+       .option("--nointeraction", "Do not prompt for interactive user input.")
+       .option("--session <session>", "Pass session key instead of reading from env.")
+       .version(
+-        await this.serviceContainer.platformUtilsService.getApplicationVersion(),
++        (await this.serviceContainer.platformUtilsService.getApplicationVersion()) + "-bitwardenxc.1",
+         "-v, --version",
+       );
+ 
+diff --git a/libs/common/src/models/export/cipher.export.ts b/libs/common/src/models/export/cipher.export.ts
+--- a/libs/common/src/models/export/cipher.export.ts
++++ b/libs/common/src/models/export/cipher.export.ts
+@@ -62,7 +62,7 @@ export class CipherExport {
+     switch (req.type) {
+       case CipherType.Login:
+         if (req.login != null) {
+-          view.login = LoginExport.toView(req.login);
++          view.login = LoginExport.toView(req.login, view.login ?? undefined);
+         }
+         break;
+       case CipherType.SecureNote:
+diff --git a/libs/common/src/models/export/cipher.export.spec.ts b/libs/common/src/models/export/cipher.export.spec.ts
+--- a/libs/common/src/models/export/cipher.export.spec.ts
++++ b/libs/common/src/models/export/cipher.export.spec.ts
+@@ -2,6 +2,8 @@ import { CipherType } from "../../vault/enums";
+ import { Cipher } from "../../vault/models/domain/cipher";
+ import { Login } from "../../vault/models/domain/login";
+ import { CipherView } from "../../vault/models/view/cipher.view";
++import { LoginUriView } from "../../vault/models/view/login-uri.view";
++import { LoginView } from "../../vault/models/view/login.view";
+ import { conditionalEncString } from "../../vault/utils/domain-utils";
+ 
+ import { CipherExport } from "./cipher.export";
+@@ -10,6 +12,41 @@ import { SshKeyExport } from "./ssh-key.export";
+ 
+ describe("Cipher Export", () => {
+   describe("toView", () => {
++    it.each([true, false])("retains login autofill and untouched collections (%s)", (autofill) => {
++      const existing = new CipherView();
++      const login = new LoginView();
++      login.autofillOnPageLoad = autofill;
++      login.totp = "unchanged";
++      const uri = new LoginUriView();
++      uri.uri = "https://example.invalid";
++      login.uris = [uri];
++      login.fido2Credentials = [];
++      const uris = login.uris;
++      const passkeys = login.fido2Credentials;
++      existing.login = login;
++
++      const request = new CipherExport();
++      request.login = { username: "updated", password: "new-password", totp: "unchanged" };
++      const result = CipherExport.toView(request, existing);
++
++      expect(result.login).toBe(login);
++      expect(result.login.username).toBe("updated");
++      expect(result.login.password).toBe("new-password");
++      expect(result.login.totp).toBe("unchanged");
++      expect(result.login.autofillOnPageLoad).toBe(autofill);
++      expect(result.login.uris).toBe(uris);
++      expect(result.login.fido2Credentials).toBe(passkeys);
++    });
++
++    it("creates a login when there is no existing login", () => {
++      const request = new CipherExport();
++      request.login = { username: "new-user", password: "new-password" };
++      const result = CipherExport.toView(request);
++
++      expect(result.login.username).toBe("new-user");
++      expect(result.login.password).toBe("new-password");
++    });
++
+     it("should preserve existing date values when request dates are undefined", () => {
+       const existingView = new CipherView();
+       existingView.creationDate = new Date("2023-01-01T00:00:00Z");

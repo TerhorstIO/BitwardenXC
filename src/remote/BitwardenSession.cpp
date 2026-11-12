@@ -37,6 +37,33 @@ namespace
             && item.value("edit").toBool(true) && item.value("viewPassword").toBool(true);
     }
 
+    bool supportedFieldName(const QString& name)
+    {
+        return !name.trimmed().isEmpty() && !EntryAttributes::isDefaultAttribute(name)
+            && !name.startsWith("KP2A_", Qt::CaseInsensitive) && !name.startsWith("KPXC_", Qt::CaseInsensitive)
+            && !name.startsWith("KPEX_", Qt::CaseInsensitive) && !name.startsWith("TimeOtp-", Qt::CaseInsensitive)
+            && name != EntryAttributes::RememberCmdExecAttr && name != Totp::ATTRIBUTE_OTP
+            && name != Totp::ATTRIBUTE_SEED && name != Totp::ATTRIBUTE_SETTINGS;
+    }
+
+    QSet<QString> editableFieldNames(const QJsonArray& fields)
+    {
+        QHash<QString, int> names;
+        for (const auto& value : fields) {
+            ++names[value.toObject().value("name").toString()];
+        }
+        QSet<QString> editable;
+        for (const auto& value : fields) {
+            const auto field = value.toObject();
+            const auto name = field.value("name").toString();
+            const auto type = field.value("type").toInt(-1);
+            if (names.value(name) == 1 && supportedFieldName(name) && (type == 0 || type == 1)) {
+                editable.insert(name);
+            }
+        }
+        return editable;
+    }
+
     void setLoginFields(Entry& entry, const QJsonObject& item)
     {
         const auto login = item.value("login").toObject();
@@ -59,6 +86,17 @@ namespace
                 ? totp
                 : QString("otpauth://totp/Bitwarden?secret=%1").arg(QString::fromLatin1(QUrl::toPercentEncoding(totp)));
             entry.setTotp(Totp::parseSettings(settings));
+        }
+
+        const auto fields = item.value("fields").toArray();
+        const auto editable = editableFieldNames(fields);
+        for (const auto& value : fields) {
+            const auto field = value.toObject();
+            const auto name = field.value("name").toString();
+            const auto hidden = field.value("type").toInt() == 1;
+            if (editable.contains(name) && (!hidden || canViewPassword)) {
+                entry.attributes()->set(name, field.value("value").toString(), hidden);
+            }
         }
     }
 
@@ -85,21 +123,91 @@ namespace
             && old.defaultAutoTypeSequence() == current.defaultAutoTypeSequence()
             && old.autoTypeEnabled() == current.autoTypeEnabled() && old.searchingEnabled() == current.searchingEnabled()
             && old.mergeMode() == current.mergeMode() && *old.customData() == *current.customData()
-            && sameOrder(old.children(), current.children()) && sameOrder(old.entries(), current.entries());
+            && sameOrder(old.children(), current.children());
     }
 
     BitwardenCliError unsupportedChange()
     {
-        return BitwardenCliError(QObject::tr("BitwardenXC can save the title and notes of existing personal logins."));
+        return BitwardenCliError(QObject::tr("This change is not supported for the connected Bitwarden vault."));
     }
 
-    QJsonObject updatedLogin(const Entry& entry, Entry& expected, const QJsonObject& item)
+    QJsonArray updatedFields(const Entry& entry, Entry* expected, const QJsonArray& original)
     {
-        if (!personalLogin(item)) {
-            return {};
+        const auto editable = editableFieldNames(original);
+        QSet<QString> existing;
+        QJsonArray fields;
+        const auto* attributes = entry.attributes();
+        for (const auto& value : original) {
+            auto field = value.toObject();
+            const auto name = field.value("name").toString();
+            existing.insert(name);
+            if (!editable.contains(name)) {
+                fields.append(value);
+            } else if (attributes->hasKey(name)) {
+                if (attributes->value(name) != field.value("value").toString()) {
+                    field.insert("value", attributes->value(name));
+                }
+                field.insert("type", attributes->isProtected(name) ? 1 : 0);
+                fields.append(field);
+                if (expected) {
+                    expected->attributes()->set(name, attributes->value(name), attributes->isProtected(name));
+                }
+            } else if (expected) {
+                expected->attributes()->remove(name);
+            }
         }
+        for (const auto& name : attributes->customKeys()) {
+            if (!supportedFieldName(name)) {
+                continue;
+            }
+            if (existing.contains(name)) {
+                if (!editable.contains(name)) {
+                    throw unsupportedChange();
+                }
+                continue;
+            }
+            fields.append(QJsonObject{{"name", name},
+                                      {"value", attributes->value(name)},
+                                      {"type", attributes->isProtected(name) ? 1 : 0}});
+            if (expected) {
+                expected->attributes()->set(name, attributes->value(name), attributes->isProtected(name));
+            }
+        }
+        return fields;
+    }
+
+    QJsonValue folderFor(const Entry& entry, const QUuid& rootId)
+    {
+        const auto id = entry.group()->uuid();
+        return id == rootId ? QJsonValue(QJsonValue::Null) : QJsonValue(id.toString(QUuid::WithoutBraces));
+    }
+
+    void copyTotpAttributes(const Entry& entry, Entry& expected)
+    {
+        for (const auto& key : {Totp::ATTRIBUTE_OTP, Totp::ATTRIBUTE_SEED, Totp::ATTRIBUTE_SETTINGS}) {
+            if (entry.attributes()->hasKey(key)) {
+                expected.attributes()->set(key, entry.attributes()->value(key), entry.attributes()->isProtected(key));
+            } else {
+                expected.attributes()->remove(key);
+            }
+        }
+    }
+
+    QJsonObject updatedLogin(const Entry& entry, Entry& expected, const QJsonObject& item, bool fullEditing)
+    {
         QJsonObject fields;
+        const auto totp = Totp::writeSettings(entry.totpSettings(), {}, {}, true);
+        const auto previousTotp = Totp::writeSettings(expected.totpSettings(), {}, {}, true);
+        if (totp == previousTotp) {
+            copyTotpAttributes(entry, expected);
+        }
+        if (!personalLogin(item)) {
+            return fields;
+        }
         if (entry.title() != expected.title()) {
+            if (entry.title().trimmed().isEmpty()) {
+                throw BitwardenCliError(QObject::tr("Enter a title for the Bitwarden login."));
+            }
             expected.setTitle(entry.title());
             fields.insert("name", entry.title());
         }
@@ -107,7 +215,71 @@ namespace
             expected.setNotes(entry.notes());
             fields.insert("notes", entry.notes());
         }
+        if (!fullEditing) {
+            return fields;
+        }
+
+        QJsonObject login;
+        if (entry.username() != expected.username()) {
+            expected.setUsername(entry.username());
+            login.insert("username", entry.username());
+        }
+        if (entry.password() != expected.password()) {
+            expected.setPassword(entry.password());
+            login.insert("password", entry.password());
+        }
+        if (entry.url() != expected.url()) {
+            auto uris = item.value("login").toObject().value("uris").toArray();
+            if (entry.url().isEmpty()) {
+                if (uris.size() > 1) {
+                    throw BitwardenCliError(QObject::tr("Enter a first URL to keep this login's additional URLs."));
+                }
+                uris = {};
+            } else if (uris.isEmpty()) {
+                uris.append(QJsonObject{{"uri", entry.url()}});
+            } else {
+                auto first = uris.at(0).toObject();
+                first.insert("uri", entry.url());
+                uris.replace(0, first);
+            }
+            expected.setUrl(entry.url());
+            login.insert("uris", uris);
+        }
+        if (totp != previousTotp) {
+            expected.setTotp(entry.totpSettings());
+            copyTotpAttributes(entry, expected);
+            login.insert("totp", totp.isEmpty() ? QJsonValue(QJsonValue::Null) : QJsonValue(totp));
+        }
+        if (!login.isEmpty()) {
+            fields.insert("login", login);
+        }
+        const auto originalFields = item.value("fields").toArray();
+        const auto newFields = updatedFields(entry, &expected, originalFields);
+        if (newFields != originalFields) {
+            fields.insert("fields", newFields);
+        }
         return fields;
+    }
+
+    QJsonObject newLogin(const Entry& entry, const QUuid& rootId)
+    {
+        if (entry.title().trimmed().isEmpty()) {
+            throw BitwardenCliError(QObject::tr("Enter a title for the Bitwarden login."));
+        }
+        QJsonObject login{{"username", entry.username()}, {"password", entry.password()}};
+        if (!entry.url().isEmpty()) {
+            login.insert("uris", QJsonArray{QJsonObject{{"uri", entry.url()}}});
+        }
+        const auto totp = entry.totpSettingsString();
+        if (!totp.isEmpty()) {
+            login.insert("totp", totp);
+        }
+        return {{"type", 1},
+                {"name", entry.title()},
+                {"notes", entry.notes()},
+                {"folderId", folderFor(entry, rootId)},
+                {"fields", updatedFields(entry, nullptr, {})},
+                {"login", login}};
     }
 } // namespace
 
@@ -125,6 +297,7 @@ void BitwardenSession::connect(QByteArray password, QString code, QString client
         clientId.fill(QChar());
         clientSecret.fill('\0');
     });
+    m_fullEditing = m_cli.supportsFullEditing();
     const auto state = m_cli.status().value("status").toString();
     const auto hasProfile = state == "locked" || state == "unlocked";
     if (hasProfile && (!clientId.isEmpty() || !code.isEmpty())) {
@@ -148,24 +321,51 @@ void BitwardenSession::sync()
     auto items = m_cli.listItems();
     m_folders = std::move(folders);
     m_items = std::move(items);
+    m_connected = true;
 }
 
 void BitwardenSession::lock()
 {
     m_items = {};
     m_folders = {};
+    m_connected = false;
     m_cli.lock();
+}
+
+bool BitwardenSession::canCreate() const
+{
+    return m_connected;
+}
+
+bool BitwardenSession::supportsFullEditing() const
+{
+    return m_fullEditing;
+}
+
+bool BitwardenSession::isEditableFieldName(const QString& name)
+{
+    return supportedFieldName(name);
 }
 
 bool BitwardenSession::canEdit(const QUuid& id) const
 {
+    if (!m_connected || id.isNull()) {
+        return false;
+    }
     for (const auto& value : m_items) {
         const auto item = value.toObject();
         if (QUuid(item.value("id").toString()) == id) {
             return visibleItem(item) && personalLogin(item);
         }
     }
-    return false;
+    return true;
+}
+
+bool BitwardenSession::isDraft(const QUuid& id) const
+{
+    return m_connected && !id.isNull() && std::none_of(m_items.begin(), m_items.end(), [&id](const QJsonValue& item) {
+        return QUuid(item.toObject().value("id").toString()) == id;
+    });
 }
 
 QSharedPointer<Database> BitwardenSession::makeDatabase() const
@@ -259,18 +459,26 @@ QList<BitwardenSession::Edit> BitwardenSession::prepareSave(const Database& data
     }
 
     QList<Edit> edits;
+    QSet<QUuid> knownEntries;
     for (qsizetype index = 0; index < m_items.size(); ++index) {
         const auto item = m_items.at(index).toObject();
         if (!visibleItem(item)) {
             continue;
         }
         const QUuid id(item.value("id").toString());
+        knownEntries.insert(id);
         auto* oldEntry = expected->rootGroup()->findEntryByUuid(id);
         const auto* entry = database.rootGroup()->findEntryByUuid(id);
         if (!entry || !oldEntry) {
             throw unsupportedChange();
         }
-        auto updated = updatedLogin(*entry, *oldEntry, item);
+        auto updated = updatedLogin(*entry, *oldEntry, item, m_fullEditing);
+        if (oldEntry->group()->uuid() != entry->group()->uuid()) {
+            if (!m_fullEditing || !personalLogin(item)) {
+                throw unsupportedChange();
+            }
+            updated.insert("folderId", folderFor(*entry, m_rootId));
+        }
         normalizeTimes(*oldEntry, *entry);
         if (!oldEntry->equals(entry, CompareVault)) {
             throw unsupportedChange();
@@ -281,17 +489,43 @@ QList<BitwardenSession::Edit> BitwardenSession::prepareSave(const Database& data
                 throw BitwardenCliError(QObject::tr("Bitwarden did not provide a revision for the edited entry."));
             }
             updated.insert("id", item.value("id"));
-            edits.append({index, updated, revision});
+            edits.append({index, updated, revision, {}});
         }
+    }
+    for (const auto* entry : database.rootGroup()->entriesRecursive()) {
+        if (knownEntries.contains(entry->uuid())) {
+            continue;
+        }
+        if (m_uncertainCreates.contains(entry->uuid())) {
+            throw BitwardenCliError(QObject::tr("Bitwarden did not confirm this creation. Check the server before trying again."));
+        }
+        edits.append({-1, newLogin(*entry, m_rootId), {}, entry->uuid()});
     }
     return edits;
 }
 
-void BitwardenSession::save(const QList<Edit>& edits)
+BitwardenSession::SaveResult BitwardenSession::save(const QList<Edit>& edits)
 {
+    SaveResult result;
     for (const auto& edit : edits) {
-        const auto id = edit.item.value("id").toString();
-        const auto saved = m_cli.editItem(id, edit.item, edit.revision);
-        m_items.replace(edit.index, saved);
+        try {
+            if (!edit.draftId.isNull()) {
+                const auto saved = m_cli.createItem(edit.item);
+                const QUuid id(saved.value("id").toString());
+                m_items.append(saved);
+                result.createdIds.insert(edit.draftId, id);
+            } else {
+                const auto id = edit.item.value("id").toString();
+                const auto saved = m_cli.editItem(id, edit.item, edit.revision);
+                m_items.replace(edit.index, saved);
+            }
+        } catch (const BitwardenCliError& error) {
+            if (!edit.draftId.isNull()) {
+                m_uncertainCreates.insert(edit.draftId);
+            }
+            result.error = error.message();
+            break;
+        }
     }
+    return result;
 }

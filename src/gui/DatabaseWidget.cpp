@@ -284,6 +284,23 @@ bool DatabaseWidget::isBitwarden() const
     return !m_bitwarden.isNull();
 }
 
+bool DatabaseWidget::canCreateBitwardenEntry() const
+{
+    return isBitwarden() && !isLocked() && !m_bitwardenBusy && m_bitwarden->canCreate();
+}
+
+bool DatabaseWidget::canEditBitwardenEntry() const
+{
+    const auto* entry = currentSelectedEntry();
+    return isBitwarden() && !isLocked() && !m_bitwardenBusy && entry && m_bitwarden->canEdit(entry->uuid());
+}
+
+bool DatabaseWidget::canEditBitwardenLogin() const
+{
+    return canEditBitwardenEntry()
+        && (m_bitwarden->supportsFullEditing() || m_bitwarden->isDraft(currentSelectedEntry()->uuid()));
+}
+
 DatabaseWidget::Mode DatabaseWidget::currentMode() const
 {
     auto mode = Mode::None;
@@ -478,6 +495,9 @@ void DatabaseWidget::emitCurrentModeChanged()
 
 void DatabaseWidget::createEntry()
 {
+    if (isBitwarden() && !canCreateBitwardenEntry()) {
+        return;
+    }
     Q_ASSERT(m_groupView->currentGroup());
     if (!m_groupView->currentGroup()) {
         return;
@@ -579,6 +599,9 @@ void DatabaseWidget::copyTotp()
 
 void DatabaseWidget::setupTotp()
 {
+    if (isBitwarden() && !canEditBitwardenLogin()) {
+        return;
+    }
     auto currentEntry = currentSelectedEntry();
     Q_ASSERT(currentEntry);
     if (!currentEntry) {
@@ -1314,16 +1337,19 @@ void DatabaseWidget::switchToEntryEdit(Entry* entry)
 void DatabaseWidget::switchToEntryEdit(Entry* entry, bool create)
 {
     if (isBitwarden()) {
-        if (create || !entry || m_bitwardenBusy || !m_bitwarden->canEdit(entry->uuid())) {
-            showMessage(tr("Only the title and notes of existing personal logins can be edited in BitwardenXC."),
-                        MessageWidget::Information);
+        const auto canEdit = entry && !m_bitwardenBusy
+            && (create ? canCreateBitwardenEntry() : m_bitwarden->canEdit(entry->uuid()));
+        if (!canEdit) {
             return;
         }
+    }
+    if (isBitwarden() && !create && !m_bitwarden->supportsFullEditing() && !m_bitwarden->isDraft(entry->uuid())) {
         QDialog dialog(this);
         dialog.setWindowTitle(tr("Edit Bitwarden entry"));
         auto* layout = new QFormLayout(&dialog);
         auto* title = new QLineEdit(entry->title(), &dialog);
         auto* notes = new QPlainTextEdit(entry->notes(), &dialog);
+        const auto displayedNotes = notes->toPlainText();
         layout->addRow(tr("Title"), title);
         layout->addRow(tr("Notes"), notes);
         auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
@@ -1335,7 +1361,9 @@ void DatabaseWidget::switchToEntryEdit(Entry* entry, bool create)
         if (dialog.exec() == QDialog::Accepted && edited && !isLocked()) {
             edited->beginUpdate();
             edited->setTitle(title->text());
-            edited->setNotes(notes->toPlainText());
+            if (notes->toPlainText() != displayedNotes) {
+                edited->setNotes(notes->toPlainText());
+            }
             edited->endUpdate();
         }
         return;
@@ -2640,19 +2668,21 @@ bool DatabaseWidget::saveBitwarden()
         if (wasEnabled) {
             window->setEnabled(false);
         }
-        const auto error = AsyncTask::runAndWaitForFuture([session, edits] {
-            try {
-                session->save(edits);
-                return QString();
-            } catch (const BitwardenCliError& error) {
-                return error.message();
+        const auto result = AsyncTask::runAndWaitForFuture([session, edits] { return session->save(edits); });
+        for (auto it = result.createdIds.constBegin(); it != result.createdIds.constEnd(); ++it) {
+            if (auto* entry = m_db->rootGroup()->findEntryByUuid(it.key())) {
+                entry->setUuid(it.value());
             }
-        });
+        }
         if (wasEnabled) {
             window->setEnabled(true);
         }
-        if (!error.isEmpty()) {
-            showMessage(error, MessageWidget::Error, true);
+        m_bitwardenBusy = false;
+        if (!result.createdIds.isEmpty()) {
+            emit entrySelectionChanged();
+        }
+        if (!result.error.isEmpty()) {
+            showMessage(result.error, MessageWidget::Error, true);
             return false;
         }
     }
@@ -2669,8 +2699,17 @@ void DatabaseWidget::syncBitwarden()
     if (!isBitwarden() || isLocked() || m_bitwardenBusy) {
         return;
     }
-    if (!isEntryViewActive() || m_db->isModified()) {
-        showMessage(tr("Save or discard your changes before synchronizing Bitwarden."), MessageWidget::Warning, true);
+    if (!isEntryViewActive()) {
+        showMessage(tr("Close the editor before synchronizing Bitwarden."), MessageWidget::Warning, true);
+        return;
+    }
+    if (m_db->isModified()
+        && MessageBox::question(this,
+                                tr("Synchronize Bitwarden"),
+                                tr("Discard unsaved changes and load the current server version?"),
+                                MessageBox::Discard | MessageBox::Cancel,
+                                MessageBox::Cancel)
+            != MessageBox::Discard) {
         return;
     }
 

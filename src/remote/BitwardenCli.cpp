@@ -25,6 +25,17 @@ namespace
     const auto defaultServer = QStringLiteral("https://bitwarden.com");
     const auto passwordVariable = QStringLiteral("KEEPASSXC_BITWARDEN_PASSWORD");
     const auto sessionVariable = QStringLiteral("BW_SESSION");
+    const auto fullEditingVersion = QStringLiteral("2026.10.1-bitwardenxc.1");
+    const auto nameKey = QStringLiteral("name");
+    const auto notesKey = QStringLiteral("notes");
+    const auto idKey = QStringLiteral("id");
+    const auto loginKey = QStringLiteral("login");
+    const auto urisKey = QStringLiteral("uris");
+    const auto uriKey = QStringLiteral("uri");
+    const auto matchKey = QStringLiteral("match");
+    const auto fieldsKey = QStringLiteral("fields");
+    const auto folderIdKey = QStringLiteral("folderId");
+    const QStringList loginTextKeys{QStringLiteral("username"), QStringLiteral("password"), QStringLiteral("totp")};
     constexpr int commandTimeoutMs = 60000;
     constexpr qsizetype outputLimit = 64 * 1024 * 1024;
     constexpr qsizetype diagnosticsLimit = 256 * 1024;
@@ -98,13 +109,18 @@ namespace
         return result;
     }
 
-    QString itemId(const QString& id)
+    bool validId(const QString& id)
     {
         const QUuid uuid(id);
-        if (uuid.isNull() || uuid.toString(QUuid::WithoutBraces).compare(id, Qt::CaseInsensitive) != 0) {
+        return !uuid.isNull() && uuid.toString(QUuid::WithoutBraces).compare(id, Qt::CaseInsensitive) == 0;
+    }
+
+    QString itemId(const QString& id)
+    {
+        if (!validId(id)) {
             throw BitwardenCliError(QStringLiteral("Die Kennung des Tresoreintrags ist ungültig."));
         }
-        return uuid.toString(QUuid::WithoutBraces);
+        return id.toLower();
     }
 
     QJsonDocument parseJson(QByteArray bytes)
@@ -146,6 +162,103 @@ namespace
     bool hasValue(const QJsonValue& value)
     {
         return !value.isNull() && !value.isUndefined();
+    }
+
+    bool optionalString(const QJsonValue& value)
+    {
+        return !hasValue(value) || value.isString();
+    }
+
+    bool validUris(const QJsonValue& value)
+    {
+        const auto uris = value.toArray();
+        return value.isArray() && std::all_of(uris.constBegin(), uris.constEnd(), [](const QJsonValue& entry) {
+            const auto uri = entry.toObject();
+            const auto match = uri.value(matchKey);
+            const auto matchType = match.toInt(-1);
+            return entry.isObject() && optionalString(uri.value(uriKey))
+                   && (!hasValue(match) || (matchType >= 0 && matchType <= 5));
+        });
+    }
+
+    bool validLogin(const QJsonValue& value)
+    {
+        if (!value.isObject()) {
+            return false;
+        }
+        const auto login = value.toObject();
+        for (auto field = login.constBegin(); field != login.constEnd(); ++field) {
+            if (field.key() == urisKey) {
+                if (!validUris(field.value())) {
+                    return false;
+                }
+            } else if (!loginTextKeys.contains(field.key()) || !optionalString(field.value())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool validFields(const QJsonValue& value)
+    {
+        const auto fields = value.toArray();
+        return value.isArray() && std::all_of(fields.constBegin(), fields.constEnd(), [](const QJsonValue& entry) {
+            const auto field = entry.toObject();
+            const auto type = field.value(QStringLiteral("type")).toInt(-1);
+            const auto linkedId = field.value(QStringLiteral("linkedId"));
+            return entry.isObject() && type >= 0 && type <= 3 && optionalString(field.value(nameKey))
+                   && optionalString(field.value(QStringLiteral("value")))
+                   && (!hasValue(linkedId) || linkedId.toInt(-1) >= 0);
+        });
+    }
+
+    bool validItemField(const QString& key, const QJsonValue& value, bool fullEditing)
+    {
+        if (key == nameKey) {
+            return value.isString();
+        }
+        if (key == notesKey) {
+            return optionalString(value);
+        }
+        if (!fullEditing) {
+            return false;
+        }
+        if (key == loginKey) {
+            return validLogin(value);
+        }
+        if (key == fieldsKey) {
+            return validFields(value);
+        }
+        return key == folderIdKey && (value.isNull() || validId(value.toString()));
+    }
+
+    QJsonObject loginForWrite(const QJsonObject& changes, const QJsonObject& current = {})
+    {
+        QJsonObject login;
+        for (const auto& key : loginTextKeys) {
+            const auto value = changes.contains(key) ? changes.value(key) : current.value(key);
+            if (!optionalString(value)) {
+                throw BitwardenCliError(QStringLiteral("Die Bitwarden-CLI hat ungültige Login-Felder geliefert."));
+            }
+            login.insert(key, hasValue(value) ? value : QJsonValue::Null);
+        }
+        if (changes.contains(urisKey)) {
+            // The SDK regenerates URI checksums. Only the URI and its match setting belong in this request.
+            QJsonArray uris;
+            for (const auto& entry : changes.value(urisKey).toArray()) {
+                const auto uri = entry.toObject();
+                QJsonObject updated;
+                for (const auto& key : {uriKey, matchKey}) {
+                    if (uri.contains(key)) {
+                        updated.insert(key, uri.value(key));
+                    }
+                }
+                uris.append(updated);
+            }
+            login.insert(urisKey, uris);
+        }
+        // The patched CLI reuses the native LoginView, including passkeys and other untouched fields.
+        return login;
     }
 
     [[noreturn]] void commandFailed(const QByteArray& diagnostics)
@@ -216,12 +329,27 @@ BitwardenCli::~BitwardenCli()
 QString BitwardenCli::version()
 {
     const QMutexLocker locker(&m_mutex);
+    return cliVersion();
+}
+
+bool BitwardenCli::supportsFullEditing()
+{
+    const QMutexLocker locker(&m_mutex);
+    return cliVersion() == fullEditingVersion;
+}
+
+QString BitwardenCli::cliVersion()
+{
+    if (!m_cliVersion.isEmpty()) {
+        return m_cliVersion;
+    }
     const auto output = QString::fromLatin1(run({QStringLiteral("--version")}).trimmed());
     static const QRegularExpression versionPattern(QStringLiteral(R"(^\d+\.\d+\.\d+(?:[-+][\w.+-]+)?$)"));
     if (!versionPattern.match(output).hasMatch()) {
         throw BitwardenCliError(QStringLiteral("Die ausgewählte Datei meldet keine gültige CLI-Version."));
     }
-    return output;
+    m_cliVersion = output;
+    return m_cliVersion;
 }
 
 QJsonObject BitwardenCli::status()
@@ -358,17 +486,19 @@ QJsonObject BitwardenCli::editItem(const QString& id, const QJsonObject& item, c
     const QMutexLocker locker(&m_mutex);
     ensureUnlocked();
     const auto canonicalId = itemId(id);
-    const auto nameKey = QStringLiteral("name");
-    const auto notesKey = QStringLiteral("notes");
-    const auto idKey = QStringLiteral("id");
+    const bool fullEdit = item.contains(loginKey) || item.contains(fieldsKey) || item.contains(folderIdKey);
+    if (fullEdit && cliVersion() != fullEditingVersion) {
+        throw BitwardenCliError(QStringLiteral("Für diese Änderungen ist die BitwardenXC-CLI erforderlich."));
+    }
     for (auto field = item.constBegin(); field != item.constEnd(); ++field) {
-        if (!field.value().isString()
-            || (field.key() != nameKey && field.key() != notesKey
-                && (field.key() != idKey || field.value() != canonicalId))) {
-            throw BitwardenCliError(QStringLiteral("BitwardenXC kann nur Titel und Notizen eines Eintrags ändern."));
+        if (field.key() == idKey && field.value() == canonicalId) {
+            continue;
+        }
+        if (!validItemField(field.key(), field.value(), fullEdit)) {
+            throw BitwardenCliError(QStringLiteral("Der persönliche Login enthält ungültige Änderungen."));
         }
     }
-    if (!item.contains(nameKey) && !item.contains(notesKey)) {
+    if (!fullEdit && !item.contains(nameKey) && !item.contains(notesKey)) {
         throw BitwardenCliError(QStringLiteral("Für den Eintrag wurden keine Änderungen übergeben."));
     }
 
@@ -382,7 +512,7 @@ QJsonObject BitwardenCli::editItem(const QString& id, const QJsonObject& item, c
         throw BitwardenCliError(QStringLiteral("Dieser persönliche Login kann nicht bearbeitet werden."));
     }
 
-    const auto folder = current.value(QStringLiteral("folderId"));
+    const auto folder = item.contains(folderIdKey) ? item.value(folderIdKey) : current.value(folderIdKey);
     const auto favorite = current.value(QStringLiteral("favorite"));
     const auto reprompt = current.value(QStringLiteral("reprompt"));
     const auto name = item.contains(nameKey) ? item.value(nameKey) : current.value(nameKey);
@@ -392,23 +522,67 @@ QJsonObject BitwardenCli::editItem(const QString& id, const QJsonObject& item, c
         throw BitwardenCliError(QStringLiteral("Die Bitwarden-CLI hat unvollständige Eintragsdaten geliefert."));
     }
 
-    // The CLI keeps the original login, fields and history when those keys are absent.
-    const QJsonObject updated{
+    // Omitted keys keep the existing login, fields and history on the server.
+    QJsonObject updated{
         {QStringLiteral("type"), 1},
-        {QStringLiteral("folderId"), hasValue(folder) ? folder : QJsonValue::Null},
+        {folderIdKey, hasValue(folder) ? folder : QJsonValue::Null},
         {QStringLiteral("favorite"), favorite},
         {QStringLiteral("reprompt"), reprompt},
         {nameKey, name},
         {notesKey, hasValue(notes) ? notes : QJsonValue::Null},
         {QStringLiteral("revisionDate"), expectedRevision},
     };
-    auto input = encodeItem(updated);
-    const auto erase = qScopeGuard([&input] { input.fill('\0'); });
-    const auto saved = parseObject(run({QStringLiteral("edit"), QStringLiteral("item"), canonicalId}, input));
-    if (saved.value(QStringLiteral("id")) != canonicalId) {
+    if (item.contains(loginKey)) {
+        updated.insert(loginKey, loginForWrite(item.value(loginKey).toObject(), current.value(loginKey).toObject()));
+    }
+    if (item.contains(fieldsKey)) {
+        updated.insert(fieldsKey, item.value(fieldsKey));
+    }
+    const auto saved = writeItem({QStringLiteral("edit"), QStringLiteral("item"), canonicalId}, updated);
+    if (saved.value(idKey) != canonicalId) {
         throw BitwardenCliError(QStringLiteral("Die Bitwarden-CLI hat die Änderung nicht bestätigt."));
     }
     return saved;
+}
+
+QJsonObject BitwardenCli::createItem(const QJsonObject& item)
+{
+    const QMutexLocker locker(&m_mutex);
+    ensureUnlocked();
+    const auto typeKey = QStringLiteral("type");
+    const auto favoriteKey = QStringLiteral("favorite");
+    const auto repromptKey = QStringLiteral("reprompt");
+    for (auto field = item.constBegin(); field != item.constEnd(); ++field) {
+        const auto& key = field.key();
+        const auto& value = field.value();
+        if ((key == typeKey && value.toInt() == 1) || (key == favoriteKey && value.isBool())
+            || (key == repromptKey && (value.toInt(-1) == 0 || value.toInt(-1) == 1))
+            || validItemField(key, value, true)) {
+            continue;
+        }
+        throw BitwardenCliError(QStringLiteral("Der neue persönliche Login enthält ungültige Felder."));
+    }
+    if (item.value(nameKey).toString().trimmed().isEmpty() || !item.contains(loginKey)) {
+        throw BitwardenCliError(QStringLiteral("Der neue Login benötigt einen Titel und Login-Daten."));
+    }
+
+    auto created = item;
+    created.insert(typeKey, 1);
+    created.insert(favoriteKey, item.value(favoriteKey).toBool());
+    created.insert(repromptKey, item.value(repromptKey).toInt());
+    created.insert(loginKey, loginForWrite(item.value(loginKey).toObject()));
+    const auto saved = writeItem({QStringLiteral("create"), QStringLiteral("item")}, created);
+    if (!validId(saved.value(idKey).toString())) {
+        throw BitwardenCliError(QStringLiteral("Die Bitwarden-CLI hat den neuen Eintrag nicht bestätigt."));
+    }
+    return saved;
+}
+
+QJsonObject BitwardenCli::writeItem(const QStringList& arguments, const QJsonObject& item) const
+{
+    auto input = encodeItem(item);
+    const auto erase = qScopeGuard([&input] { input.fill('\0'); });
+    return parseObject(run(arguments, input));
 }
 
 QJsonObject BitwardenCli::checkRevision(const QString& id, const QString& expectedRevision) const

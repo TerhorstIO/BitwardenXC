@@ -44,6 +44,7 @@ public:
     ~BitwardenCli();
 
     QString version();
+    bool supportsFullEditing();
     QJsonObject status();
     void login(const QByteArray& masterPassword, const QString& totpCode = {});
     void loginWithApiKey(const QString& clientId, const QByteArray& clientSecret);
@@ -54,11 +55,14 @@ public:
     QJsonArray listFolders();
     QJsonArray listItems();
     QJsonObject editItem(const QString& id, const QJsonObject& item, const QString& expectedRevision);
+    QJsonObject createItem(const QJsonObject& item);
 
 private:
     QByteArray run(const QStringList& arguments,
                    const QByteArray& input = {},
                    const QProcessEnvironment& secrets = {}) const;
+    QString cliVersion();
+    QJsonObject writeItem(const QStringList& arguments, const QJsonObject& item) const;
     QJsonObject profileStatus() const;
     void saveSessionKey(QByteArray key);
     void clearSessionKey();
@@ -71,6 +75,7 @@ private:
     QString m_profileDir;
     QLockFile m_profileLock;
     QMutex m_mutex;
+    QString m_cliVersion;
     QByteArray m_sessionKey;
 };
 

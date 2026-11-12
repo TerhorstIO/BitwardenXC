@@ -82,6 +82,9 @@ public:
 
     QSharedPointer<Database> database() const;
     bool isBitwarden() const;
+    bool canCreateBitwardenEntry() const;
+    bool canEditBitwardenEntry() const;
+    bool canEditBitwardenLogin() const;
     void syncBitwarden();
 
     DatabaseWidget::Mode currentMode() const;

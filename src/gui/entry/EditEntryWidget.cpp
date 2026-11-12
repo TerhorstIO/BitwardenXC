@@ -29,9 +29,11 @@
 #include <QColorDialog>
 #include <QDesktopServices>
 #include <QLineEdit>
+#include <QPlainTextEdit>
 #include <QSortFilterProxyModel>
 #include <QStringListModel>
 #include <QStyledItemDelegate>
+#include <QTextDocument>
 
 #include "autotype/AutoType.h"
 #include "core/AutoTypeAssociations.h"
@@ -66,9 +68,22 @@
 #include "gui/entry/AutoTypeAssociationsModel.h"
 #include "gui/entry/EntryAttributesModel.h"
 #include "gui/entry/EntryHistoryModel.h"
+#include "remote/BitwardenSession.h"
 
 namespace
 {
+    QString editedPlainText(const QPlainTextEdit* editor, const QString& original)
+    {
+        // Qt normalizes line endings on load. Keep the stored text intact when its display is unchanged.
+        QTextDocument originalDocument;
+        originalDocument.setPlainText(original);
+        auto text = editor->document()->toRawText();
+        if (text == originalDocument.toRawText()) {
+            return original;
+        }
+        return text.replace(QChar::ParagraphSeparator, QLatin1Char('\n'));
+    }
+
     // Item delegate to enable completer showing suggestions for the attribute key
     class AttributeKeyDelegate : public QStyledItemDelegate
     {
@@ -185,7 +200,7 @@ EditEntryWidget::EditEntryWidget(QWidget* parent)
             &PasswordWidget::requestPlaceholderResolution,
             this,
             [this](const QString& rawText, QString& resolvedText) {
-                if (m_entry) {
+                if (m_entry && !m_db->hasLiteralEntryValues()) {
                     // Dereferencing the password of the entry
                     resolvedText = m_entry->resolveMultiplePlaceholders(rawText);
                 }
@@ -298,6 +313,9 @@ void EditEntryWidget::setupAdvanced()
             return {};
         }
         QStringList suggestions = m_db->customAttributeKeys(); // List of all attribute keys in the db
+        if (m_db->hasLiteralEntryValues()) {
+            suggestions.removeIf([](const QString& key) { return !BitwardenSession::isEditableFieldName(key); });
+        }
         // Remove keys already present in current entry
         for (const QString& key : m_entryAttributes->keys()) {
             if (!EntryAttributes::isDefaultAttribute(key)) {
@@ -1002,6 +1020,7 @@ void EditEntryWidget::loadEntry(Entry* entry,
     m_db = std::move(database);
     m_create = create;
     m_history = history;
+    const auto bitwarden = m_db->hasLiteralEntryValues();
 
     if (history) {
         setHeadline(QString("%1 \u2022 %2").arg(parentName, tr("Entry history")));
@@ -1010,8 +1029,10 @@ void EditEntryWidget::loadEntry(Entry* entry,
             setHeadline(QString("%1 \u2022 %2").arg(parentName, tr("Add entry")));
         } else {
             setHeadline(QString("%1 \u2022 %2 \u2022 %3").arg(parentName, entry->title(), tr("Edit entry")));
-            // Reload entry details if changed outside of the edit dialog
-            connect(m_entry, &Entry::modified, this, [this] { m_entryModifiedTimer.start(); });
+            if (!bitwarden) {
+                // Reload entry details if changed outside of the edit dialog
+                connect(m_entry, &Entry::modified, this, [this] { m_entryModifiedTimer.start(); });
+            }
         }
     }
 
@@ -1019,9 +1040,27 @@ void EditEntryWidget::loadEntry(Entry* entry,
     setReadOnly(m_history);
 
     switchToPage(Page::Main);
-    setPageHidden(m_historyWidget, m_history || m_entry->historyItems().count() < 1);
+    setPageHidden(m_iconsWidget, bitwarden);
+    setPageHidden(m_autoTypeWidget, bitwarden);
+    setPageHidden(m_editWidgetProperties, bitwarden);
+    setPageHidden(m_historyWidget, bitwarden || m_history || m_entry->historyItems().isEmpty());
+#ifdef KPXC_FEATURE_BROWSER
+    setPageHidden(m_browserWidget, bitwarden || !config()->get(Config::Browser_Enabled).toBool());
+#endif
 #ifdef KPXC_FEATURE_SSHAGENT
-    setPageHidden(m_sshAgentWidget, !sshAgent()->isEnabled());
+    setPageHidden(m_sshAgentWidget, bitwarden || !sshAgent()->isEnabled());
+#endif
+    m_mainUi->tagsLabel->setVisible(!bitwarden);
+    m_mainUi->tagsList->setVisible(!bitwarden);
+    m_mainUi->expireLabel->setVisible(!bitwarden);
+    m_mainUi->expireCheck->setVisible(!bitwarden);
+    m_mainUi->expireDatePicker->setVisible(!bitwarden);
+    m_mainUi->expirePresets->setVisible(!bitwarden);
+    m_advancedUi->attachmentsBox->setVisible(!bitwarden);
+    m_advancedUi->excludeReportsCheckBox->setVisible(!bitwarden);
+    m_advancedUi->colorsBox->setVisible(!bitwarden);
+#ifdef KPXC_FEATURE_NETWORK
+    m_mainUi->fetchFaviconButton->setVisible(!bitwarden);
 #endif
 
     // Force the user to Save/Discard new entries
@@ -1043,6 +1082,7 @@ void EditEntryWidget::loadEntry(Entry* entry,
 
 void EditEntryWidget::setForms(Entry* entry, bool restore)
 {
+    const auto bitwarden = m_db->hasLiteralEntryValues();
 #ifdef KPXC_FEATURE_SSHAGENT
     QSignalBlocker attachmentsBlocker(m_attachments.data());
 #endif
@@ -1092,7 +1132,7 @@ void EditEntryWidget::setForms(Entry* entry, bool restore)
     m_autoTypeUi->windowSequenceEdit->setReadOnly(m_history);
     m_historyWidget->setEnabled(!m_history);
 
-    m_mainUi->urlEdit->setEntry(entry);
+    m_mainUi->urlEdit->setEntry(bitwarden ? nullptr : entry);
     m_mainUi->titleEdit->setText(entry->title());
     m_mainUi->usernameComboBox->lineEdit()->setText(entry->username());
     m_mainUi->urlEdit->setText(entry->url());
@@ -1115,14 +1155,30 @@ void EditEntryWidget::setForms(Entry* entry, bool restore)
 
     m_mainUi->notesEdit->setPlainText(entry->notes());
 
-    m_advancedUi->attachmentsWidget->linkAttachments(m_attachments.data());
-    m_entryAttributes->copyCustomKeysFrom(entry->attributes());
+    if (bitwarden) {
+        m_currentAttribute = QPersistentModelIndex();
+        m_entryAttributes->clear();
+        const auto* attributes = entry->attributes();
+        for (const auto& key : attributes->customKeys()) {
+            if (BitwardenSession::isEditableFieldName(key)) {
+                m_entryAttributes->set(key, attributes->value(key), attributes->isProtected(key));
+            }
+        }
+    } else {
+        m_advancedUi->attachmentsWidget->linkAttachments(m_attachments.data());
+        m_entryAttributes->copyCustomKeysFrom(entry->attributes());
+    }
 
     if (m_attributesModel->rowCount() != 0) {
         m_advancedUi->attributesView->setCurrentIndex(m_attributesModel->index(0, 0));
     } else {
         m_advancedUi->attributesEdit->setPlainText("");
         m_advancedUi->attributesEdit->setEnabled(false);
+    }
+
+    if (bitwarden) {
+        m_mainUi->titleEdit->setFocus();
+        return;
     }
 
     QList<int> sizes = m_advancedUi->attributesSplitter->sizes();
@@ -1238,6 +1294,56 @@ bool EditEntryWidget::commitEntry()
                                  tr("Invalid Entry"),
                                  tr("An external merge operation has invalidated this entry.\n"
                                     "Unfortunately, any changes made have been lost."));
+        return true;
+    }
+
+    if (m_db->hasLiteralEntryValues()) {
+        const auto title = m_mainUi->titleEdit->text();
+        if (title.trimmed().isEmpty() && (m_create || title != m_entry->title())) {
+            showMessage(tr("Enter a title for this Bitwarden login."), MessageWidget::Error);
+            m_mainUi->titleEdit->setFocus();
+            return false;
+        }
+
+        auto keys = m_entryAttributes->keys();
+        keys.removeIf(EntryAttributes::isDefaultAttribute);
+        for (const auto& key : keys) {
+            if (!BitwardenSession::isEditableFieldName(key)) {
+                switchToPage(Page::Advanced);
+                m_advancedUi->attributesView->setCurrentIndex(m_attributesModel->indexByKey(key));
+                showMessage(tr("The custom field name \"%1\" is reserved.").arg(key), MessageWidget::Error);
+                return false;
+            }
+        }
+
+        if (m_currentAttribute.isValid() && m_advancedUi->attributesEdit->isEnabled()) {
+            const auto key = m_attributesModel->keyByIndex(m_currentAttribute);
+            const auto value = editedPlainText(m_advancedUi->attributesEdit, m_entryAttributes->value(key));
+            m_entryAttributes->set(key, value, m_entryAttributes->isProtected(key));
+        }
+
+        m_entry->setTitle(title);
+        m_entry->setUsername(m_mainUi->usernameComboBox->lineEdit()->text());
+        m_entry->setUrl(m_mainUi->urlEdit->text());
+        const auto password = m_mainUi->passwordEdit->text();
+        if (password != m_entry->password()) {
+            m_entry->setPassword(password);
+        }
+        m_entry->setNotes(editedPlainText(m_mainUi->notesEdit, m_entry->notes()));
+
+        auto* attributes = m_entry->attributes();
+        for (const auto& key : attributes->customKeys()) {
+            if (BitwardenSession::isEditableFieldName(key) && !m_entryAttributes->hasKey(key)) {
+                attributes->remove(key);
+            }
+        }
+        for (const auto& key : keys) {
+            attributes->set(key, m_entryAttributes->value(key), m_entryAttributes->isProtected(key));
+        }
+
+        showMessage(tr("Entry updated successfully."), MessageWidget::Positive);
+        setModified(false);
+        m_entryModifiedTimer.stop();
         return true;
     }
 
@@ -1423,7 +1529,8 @@ void EditEntryWidget::cancel()
         return;
     }
 
-    if (!m_entry->iconUuid().isNull() && !m_db->metadata()->hasCustomIcon(m_entry->iconUuid())) {
+    if (!m_db->hasLiteralEntryValues() && !m_entry->iconUuid().isNull()
+        && !m_db->metadata()->hasCustomIcon(m_entry->iconUuid())) {
         m_entry->setIcon(Entry::DefaultIconNumber);
     }
 
@@ -1458,11 +1565,17 @@ void EditEntryWidget::clear()
     m_db.reset();
 
     m_mainUi->titleEdit->setText("");
+    m_mainUi->usernameComboBox->clear();
+    m_mainUi->usernameComboBox->clearEditText();
+    m_usernameCompleterModel->setStringList({});
     m_mainUi->passwordEdit->setText("");
+    m_mainUi->urlEdit->setEntry(nullptr);
     m_mainUi->urlEdit->setText("");
     m_mainUi->notesEdit->clear();
 
+    m_currentAttribute = QPersistentModelIndex();
     m_entryAttributes->clear();
+    displayAttribute({}, false);
 #ifdef KPXC_FEATURE_SSHAGENT
     QSignalBlocker attachmentsBlocker(m_attachments.data());
 #endif
@@ -1543,9 +1656,11 @@ void EditEntryWidget::updateCurrentAttribute()
     if (!m_history && m_currentAttribute != newIndex) {
         // Save changes to the currently selected attribute if editing is enabled
         if (m_currentAttribute.isValid() && m_advancedUi->attributesEdit->isEnabled()) {
-            QString currKey = m_attributesModel->keyByIndex(m_currentAttribute);
-            m_entryAttributes->set(
-                currKey, m_advancedUi->attributesEdit->toPlainText(), m_entryAttributes->isProtected(currKey));
+            const auto currKey = m_attributesModel->keyByIndex(m_currentAttribute);
+            const auto value = m_db && m_db->hasLiteralEntryValues()
+                ? editedPlainText(m_advancedUi->attributesEdit, m_entryAttributes->value(currKey))
+                : m_advancedUi->attributesEdit->toPlainText();
+            m_entryAttributes->set(currKey, value, m_entryAttributes->isProtected(currKey));
         }
     }
 
@@ -1600,7 +1715,10 @@ void EditEntryWidget::protectCurrentAttribute(bool state)
         QString key = m_attributesModel->keyByIndex(index);
         if (state) {
             // Save the current text and protect the attribute
-            m_entryAttributes->set(key, m_advancedUi->attributesEdit->toPlainText(), true);
+            const auto value = m_db && m_db->hasLiteralEntryValues()
+                ? editedPlainText(m_advancedUi->attributesEdit, m_entryAttributes->value(key))
+                : m_advancedUi->attributesEdit->toPlainText();
+            m_entryAttributes->set(key, value, true);
         } else {
             // Unprotect the current attribute value (don't save text as it is obscured)
             m_entryAttributes->set(key, m_entryAttributes->value(key), false);

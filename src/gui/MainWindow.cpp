@@ -910,9 +910,10 @@ void MainWindow::updateMenuActionState()
     bool entryViewAtBottom =
         (groupSelected && dbWidget->currentEntryIndex() == dbWidget->currentGroup()->entries().size() - 1);
 
-    m_ui->actionEntryNew->setEnabled(inDatabase && !bitwarden && !inRecycleBin);
+    m_ui->actionEntryNew->setEnabled(inDatabase && !inRecycleBin
+                                     && (!bitwarden || dbWidget->canCreateBitwardenEntry()));
     m_ui->actionEntryClone->setEnabled(singleEntrySelected && !bitwarden && !inRecycleBin);
-    m_ui->actionEntryEdit->setEnabled(singleEntrySelected);
+    m_ui->actionEntryEdit->setEnabled(singleEntrySelected && (!bitwarden || dbWidget->canEditBitwardenEntry()));
     m_ui->actionEntryExpire->setEnabled(multiEntrySelected && !bitwarden);
     m_ui->actionEntryDelete->setEnabled(multiEntrySelected && !bitwarden);
     if (dbWidget) {
@@ -973,7 +974,7 @@ void MainWindow::updateMenuActionState()
     m_ui->actionEntryTotp->setEnabled(singleEntrySelected && dbWidget->currentEntryHasTotp());
     m_ui->actionEntryCopyTotp->setEnabled(singleEntrySelected && (!bitwarden || dbWidget->currentEntryHasTotp()));
     m_ui->actionEntryCopyPasswordTotp->setEnabled(singleEntrySelected && dbWidget->currentEntryHasTotp());
-    m_ui->actionEntrySetupTotp->setEnabled(singleEntrySelected && !bitwarden);
+    m_ui->actionEntrySetupTotp->setEnabled(singleEntrySelected && (!bitwarden || dbWidget->canEditBitwardenLogin()));
     m_ui->actionEntryTotpQRCode->setEnabled(singleEntrySelected && dbWidget->currentEntryHasTotp());
     m_ui->actionEntryDownloadIcon->setEnabled(
         !bitwarden && ((multiEntrySelected && !singleEntrySelected)
