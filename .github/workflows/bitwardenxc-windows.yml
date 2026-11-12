@@ -17,6 +17,7 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 60
     env:
+      QT_ROOT_DIR: ${{ github.workspace }}/.ci-qt
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.ci-vcpkg-cache
     steps:
       - name: Check out source
@@ -48,19 +49,52 @@ jobs:
           path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           key: vcpkg-windows-2025-x64-${{ hashFiles('vcpkg.json', 'vcpkg-configuration.json') }}
 
-      - name: Set up Python for aqtinstall
-        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      - name: Restore Qt 6.11.2
+        id: qt-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          python-version: '3.12'
+          path: ${{ env.QT_ROOT_DIR }}
+          key: qt-6.11.2-msvc2022-x64-202608131017-v1
 
       - name: Install Qt 6.11.2
-        uses: jurplel/install-qt-action/action@12aa0336e1e410b3c6dff5e0722547f7a37e8c60 # v4.2.1
-        with:
-          version: '6.11.2'
-          host: windows
-          target: desktop
-          arch: win64_msvc2022_64
-          cache: true
+        if: steps.qt-cache.outputs.cache-hit != 'true'
+        run: |
+          $repository = 'https://download.qt.io/online/qtsdkrepository/windows_x86/desktop/qt6_6112/qt6_6112_msvc2022_64/qt.qt6.6112.win64_msvc2022_64'
+          $packageVersion = '6.11.2-0-202608131017'
+          $suffix = 'Windows-Windows_11_24H2-MSVC2022-Windows-Windows_11_24H2-X86_64.7z'
+          $archives = [ordered]@{
+            "qtbase-$suffix" = 'fd984b7264361b4dd3fd2a417702ca1258e4086268f2ee6a69b9a393d9c3f6bb'
+            "qtsvg-$suffix" = '417f44499c835b2303f3ff78043179bb23442f33d5d2816fbf7e8dbf275b1c89'
+            "qtdeclarative-$suffix" = '5591ca564c1a9299a45a15b6b1d324c86e0aaed7cf6c47b7e6fe464aecae2587'
+            "qttools-$suffix" = '5f2b387a1f8055102b1388ff4ea743124ed6389d442f75c659728bb5c2a56946'
+            "qttranslations-$suffix" = '1c9516ce25d286ecf97e7aaaa5c8fa395823f21af5fa3dcb7bd06f648453dd77'
+            'd3dcompiler_47-x64.7z' = 'b1c379f739fa59a495a388c0878757e3d90fb72e0df771237a1ee4a2c1675d15'
+            'opengl32sw-64-mesa_11_2_2-signed_sha256.7z' = '59a086716cfd4bdec035698d501ba45526f8d2ecb5c0c428a356d8be0b5d2c79'
+          }
+          New-Item -ItemType Directory -Force -Path $env:QT_ROOT_DIR | Out-Null
+          foreach ($archive in $archives.GetEnumerator()) {
+            $filename = "$packageVersion$($archive.Key)"
+            $download = Join-Path $env:RUNNER_TEMP $filename
+            curl.exe --fail --silent --show-error --location --retry 3 --connect-timeout 30 --max-time 300 `
+              --output $download "$repository/$filename"
+            if ($LASTEXITCODE -ne 0) { throw "Qt download failed for $filename." }
+            $sha256 = (Get-FileHash -LiteralPath $download -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($sha256 -cne $archive.Value) { throw "Qt SHA-256 mismatch for $filename." }
+            tar.exe -xf $download -C $env:QT_ROOT_DIR
+            if ($LASTEXITCODE -ne 0) { throw "Qt extraction failed for $filename." }
+            Remove-Item -LiteralPath $download
+          }
+          Copy-Item -LiteralPath (Join-Path $env:QT_ROOT_DIR 'd3dcompiler_47.dll'), `
+            (Join-Path $env:QT_ROOT_DIR 'opengl32sw.dll') -Destination (Join-Path $env:QT_ROOT_DIR 'bin')
+
+      - name: Verify and expose Qt
+        run: |
+          $qtBin = Join-Path $env:QT_ROOT_DIR 'bin'
+          $qtConfig = Join-Path $env:QT_ROOT_DIR 'lib/cmake/Qt6/Qt6Config.cmake'
+          if (-not (Test-Path -LiteralPath $qtConfig -PathType Leaf)) { throw 'Qt 6 configuration is missing.' }
+          $version = & (Join-Path $qtBin 'windeployqt.exe') --version
+          if ($LASTEXITCODE -ne 0 -or $version -ne '6.11.2') { throw 'Qt 6.11.2 tools are unavailable.' }
+          $qtBin >> $env:GITHUB_PATH
 
       - name: Set up Visual Studio 2022 x64
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
