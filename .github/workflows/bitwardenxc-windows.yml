@@ -96,11 +96,10 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or $version -ne '6.11.2') { throw 'Qt 6.11.2 tools are unavailable.' }
           $qtBin >> $env:GITHUB_PATH
 
-      - name: Set up Visual Studio 2022 x64
+      - name: Set up Visual Studio x64
         uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         with:
           arch: x64
-          vsversion: '2022'
 
       - name: Bootstrap vcpkg
         run: .\.ci-vcpkg\bootstrap-vcpkg.bat -disableMetrics
