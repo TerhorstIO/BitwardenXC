@@ -13,7 +13,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Tag the source commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: build-${{ github.sha }}
+        run: |
+          if target=$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq .object.sha 2>/dev/null); then
+            if [[ "$target" != "$GITHUB_SHA" ]]; then
+              echo "Release tag $TAG points to $target instead of $GITHUB_SHA." >&2
+              exit 1
+            fi
+          else
+            gh api --method POST "repos/$GH_REPO/git/refs" \
+              -f "ref=refs/tags/$TAG" -f "sha=$GITHUB_SHA" >/dev/null
+          fi
+
   build:
+    needs: tag
     runs-on: windows-2025
     timeout-minutes: 90
     env:
@@ -261,17 +284,16 @@ jobs:
           TAG: build-${{ github.sha }}
         run: |
           sha256sum --check SHA256SUMS
-          if tag_commit=$(gh api "repos/$GH_REPO/commits/$TAG" --jq .sha 2>/dev/null); then
-            if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
-              echo "Release tag $TAG points to $tag_commit instead of $GITHUB_SHA." >&2
-              exit 1
-            fi
+          tag_commit=$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq .object.sha)
+          if [[ "$tag_commit" != "$GITHUB_SHA" ]]; then
+            echo "Release tag $TAG points to $tag_commit instead of $GITHUB_SHA." >&2
+            exit 1
           fi
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" BitwardenXC-Windows-x64.zip BitwardenXC-CLI-Source.zip SHA256SUMS --clobber
           else
             gh release create "$TAG" BitwardenXC-Windows-x64.zip BitwardenXC-CLI-Source.zip SHA256SUMS \
-              --target "$GITHUB_SHA" --title "BitwardenXC Windows x64 (${GITHUB_SHA:0:7})" \
+              --verify-tag --title "BitwardenXC Windows x64 (${GITHUB_SHA:0:7})" \
               --notes "Portable Windows x64 build from commit $GITHUB_SHA. Extract the Windows ZIP and run BitwardenXC.exe. The package includes the patched Bitwarden CLI. Its source is available in BitwardenXC-CLI-Source.zip." \
               --prerelease --latest=false
           fi
