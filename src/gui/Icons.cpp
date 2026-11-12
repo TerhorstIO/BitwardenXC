@@ -71,6 +71,8 @@ QString Icons::trayIconAppearance() const
     if (iconAppearance.isNull()) {
 #ifdef Q_OS_MACOS
         iconAppearance = osUtils->isDarkMode() ? "monochrome-light" : "monochrome-dark";
+#elif defined(Q_OS_WIN)
+        iconAppearance = "colorful";
 #else
         iconAppearance = "monochrome-light";
 #endif
