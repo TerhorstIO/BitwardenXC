@@ -45,13 +45,14 @@ public:
 
     QString version();
     bool supportsFullEditing();
-    QJsonObject status();
-    void login(const QByteArray& masterPassword, const QString& totpCode = {});
-    void loginWithApiKey(const QString& clientId, const QByteArray& clientSecret);
+    // True when a fresh login successfully refreshed the vault during this call.
+    bool connect(const QByteArray& masterPassword,
+                 const QString& totpCode,
+                 const QString& clientId,
+                 const QByteArray& clientSecret);
     void unlock(const QByteArray& masterPassword);
     void lock();
-    void logout();
-    void sync();
+    void sync(bool force = true);
     QJsonArray listFolders();
     QJsonArray listItems();
     QJsonObject editItem(const QString& id, const QJsonObject& item, const QString& expectedRevision);
@@ -64,7 +65,8 @@ private:
     QString cliVersion();
     QJsonObject writeItem(const QStringList& arguments, const QJsonObject& item) const;
     QJsonObject profileStatus() const;
-    void saveSessionKey(QByteArray key);
+    QJsonObject unlockProfile(const QProcessEnvironment& secrets);
+    QJsonObject saveSessionKey(QByteArray key);
     void clearSessionKey();
     void ensureUnlocked() const;
     QJsonObject checkRevision(const QString& id, const QString& expectedRevision) const;

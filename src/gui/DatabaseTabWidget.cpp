@@ -27,12 +27,14 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QProgressBar>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QScopeGuard>
 #include <QTabBar>
 #include <QUrl>
 
+#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -60,6 +62,28 @@ namespace
 {
     constexpr char BitwardenServerProperty[] = "bitwardenServer";
     constexpr char BitwardenEmailProperty[] = "bitwardenEmail";
+
+    struct BitwardenOpenAttempt
+    {
+        std::atomic<BitwardenSession::OpenStage> stage{BitwardenSession::OpenStage::CheckingProfile};
+        std::atomic_bool canceled{false};
+        bool running = false;
+    };
+
+    struct BitwardenOpenResult
+    {
+        QSharedPointer<BitwardenSession> session;
+        QString error;
+    };
+
+    void lockFailedBitwardenOpen(const QSharedPointer<BitwardenSession>& session)
+    {
+        try {
+            session->lock();
+        } catch (...) {
+            // The adapter also clears its session key when locking fails.
+        }
+    }
 }
 
 DatabaseTabWidget::DatabaseTabWidget(QWidget* parent)
@@ -200,36 +224,38 @@ void DatabaseTabWidget::openRecentBitwardenDatabase(const QUrl& initialServer, c
 
     m_bitwardenOpenInProgress = true;
     m_bitwardenOpenCanceled = false;
-    QDialog dialog(this);
-    dialog.setWindowTitle(tr("Connect BitwardenXC"));
-    auto* form = new QFormLayout(&dialog);
-    auto* cliPath = new QLineEdit(&dialog);
+    auto* dialog = new QDialog(this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
+    dialog->setWindowTitle(tr("Connect BitwardenXC"));
+    auto* form = new QFormLayout(dialog);
+    auto* cliPath = new QLineEdit(dialog);
     cliPath->setReadOnly(true);
     const auto bundledCli = QDir(QCoreApplication::applicationDirPath()).filePath(QStringLiteral("bw.exe"));
     if (QFileInfo(bundledCli).isFile()) {
         cliPath->setText(QDir::toNativeSeparators(bundledCli));
     }
-    auto* browse = new QPushButton(tr("Browse..."), &dialog);
+    auto* browse = new QPushButton(tr("Browse..."), dialog);
     auto* cliRow = new QHBoxLayout;
     cliRow->addWidget(cliPath);
     cliRow->addWidget(browse);
     form->addRow(tr("Bitwarden CLI"), cliRow);
-    connect(browse, &QPushButton::clicked, &dialog, [&dialog, cliPath] {
+    connect(browse, &QPushButton::clicked, dialog, [dialog, cliPath] {
+        const QPointer<QLineEdit> selectedCli(cliPath);
         const auto path =
-            fileDialog()->getOpenFileName(&dialog, tr("Select the Bitwarden CLI"), {}, tr("Bitwarden CLI (bw.exe)"));
-        if (!path.isEmpty()) {
-            cliPath->setText(QDir::toNativeSeparators(path));
+            fileDialog()->getOpenFileName(dialog, tr("Select the Bitwarden CLI"), {}, tr("Bitwarden CLI (bw.exe)"));
+        if (selectedCli && !path.isEmpty()) {
+            selectedCli->setText(QDir::toNativeSeparators(path));
         }
     });
 
-    auto* serverField = new QLineEdit(&dialog);
+    auto* serverField = new QLineEdit(dialog);
     serverField->setPlaceholderText(QStringLiteral("https://vault.example.org"));
     serverField->setText(initialServer.toString(QUrl::FullyEncoded));
-    auto* emailField = new QLineEdit(&dialog);
+    auto* emailField = new QLineEdit(dialog);
     emailField->setText(initialEmail);
-    auto* passwordField = new QLineEdit(&dialog);
+    auto* passwordField = new QLineEdit(dialog);
     passwordField->setEchoMode(QLineEdit::Password);
-    auto* codeField = new QLineEdit(&dialog);
+    auto* codeField = new QLineEdit(dialog);
     codeField->setEchoMode(QLineEdit::Password);
     codeField->setMaxLength(6);
     form->addRow(tr("Server URL"), serverField);
@@ -237,7 +263,7 @@ void DatabaseTabWidget::openRecentBitwardenDatabase(const QUrl& initialServer, c
     form->addRow(tr("Master password"), passwordField);
     form->addRow(tr("Authenticator code (optional)"), codeField);
 
-    auto* apiKeyGroup = new QGroupBox(tr("Use a personal API key"), &dialog);
+    auto* apiKeyGroup = new QGroupBox(tr("Use a personal API key"), dialog);
     apiKeyGroup->setCheckable(true);
     apiKeyGroup->setChecked(false);
     auto* apiKeyForm = new QFormLayout(apiKeyGroup);
@@ -249,30 +275,101 @@ void DatabaseTabWidget::openRecentBitwardenDatabase(const QUrl& initialServer, c
     form->addRow(apiKeyGroup);
     auto* apiKeyHelp = new QLabel(tr("The Bitwarden CLI stores sign-in data locally. Signing in with a personal API key "
                                      "also stores the client secret in the CLI profile."),
-                                  &dialog);
+                                  dialog);
     apiKeyHelp->setWordWrap(true);
     form->addRow(apiKeyHelp);
 
-    auto* errorLabel = new QLabel(&dialog);
+    auto* errorLabel = new QLabel(dialog);
+    errorLabel->setTextFormat(Qt::PlainText);
     errorLabel->setWordWrap(true);
     errorLabel->hide();
     form->addRow(errorLabel);
-    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-    buttons->button(QDialogButtonBox::Ok)->setText(tr("Connect"));
+    auto* progressLabel = new QLabel(dialog);
+    progressLabel->setTextFormat(Qt::PlainText);
+    progressLabel->setWordWrap(true);
+    progressLabel->hide();
+    form->addRow(progressLabel);
+    auto* progressBar = new QProgressBar(dialog);
+    progressBar->setRange(0, 0);
+    progressBar->hide();
+    form->addRow(progressBar);
+    auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, dialog);
+    auto* connectButton = buttons->button(QDialogButtonBox::Ok);
+    connectButton->setText(tr("Connect"));
     form->addRow(buttons);
 
-    QString executable;
-    QUrl server;
-    QString email;
-    int existingTab = -1;
-    connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-    connect(buttons, &QDialogButtonBox::accepted, &dialog, [&] {
-        const auto showError = [errorLabel](const QString& message, QWidget* field) {
-            errorLabel->setText(message);
-            errorLabel->show();
-            field->setFocus();
-        };
-        server = QUrl(serverField->text().trimmed(), QUrl::StrictMode);
+    using OpenStage = BitwardenSession::OpenStage;
+    const auto attempt = std::make_shared<BitwardenOpenAttempt>();
+    const QPointer<QDialog> openDialog(dialog);
+    const QList<QWidget*> inputs{cliPath, browse, serverField, emailField, passwordField, codeField, apiKeyGroup};
+    const auto setBusy = [inputs, connectButton, progressLabel, progressBar](bool busy) {
+        for (auto* input : inputs) {
+            input->setEnabled(!busy);
+        }
+        connectButton->setEnabled(!busy);
+        progressLabel->setVisible(busy);
+        progressBar->setVisible(busy);
+    };
+    const auto showError = [errorLabel](const QString& message, QWidget* field) {
+        errorLabel->setText(message);
+        errorLabel->show();
+        field->setFocus();
+    };
+    const auto isCanceled = [this, attempt, openDialog] {
+        return m_bitwardenOpenCanceled || attempt->canceled.load() || !openDialog;
+    };
+    const auto finishFailure = [=, this](const QString& error) {
+        attempt->running = false;
+        if (isCanceled()) {
+            m_bitwardenOpenInProgress = false;
+            if (openDialog) {
+                openDialog->reject();
+            }
+            return;
+        }
+        setBusy(false);
+        showError(error, passwordField);
+    };
+    const auto discardSession = [this, finishFailure](QSharedPointer<BitwardenSession> session, const QString& error) {
+        AsyncTask::runThenCallback(
+            [session = std::move(session)]() mutable {
+                lockFailedBitwardenOpen(session);
+                session.reset();
+                return true;
+            },
+            this,
+            [finishFailure, error](bool) { finishFailure(error); });
+    };
+    auto* progressTimer = new QTimer(dialog);
+    progressTimer->setInterval(75);
+    connect(progressTimer, &QTimer::timeout, dialog, [=] {
+        if (isCanceled()) {
+            dialog->reject();
+        } else if (attempt->running) {
+            const auto text = BitwardenSession::stageText(attempt->stage.load());
+            if (progressLabel->text() != text) {
+                progressLabel->setText(text);
+            }
+        }
+    });
+    progressTimer->start();
+
+    connect(dialog, &QObject::destroyed, [attempt] { attempt->canceled.store(true); });
+    connect(dialog, &QDialog::finished, this, [this, attempt, progressTimer](int result) {
+        progressTimer->stop();
+        if (result == QDialog::Rejected) {
+            attempt->canceled.store(true);
+        }
+        if (!attempt->running) {
+            m_bitwardenOpenInProgress = false;
+        }
+    });
+    connect(buttons, &QDialogButtonBox::rejected, dialog, &QDialog::reject);
+    connect(buttons, &QDialogButtonBox::accepted, dialog, [=, this] {
+        if (attempt->running || isCanceled()) {
+            return;
+        }
+        auto server = QUrl(serverField->text().trimmed(), QUrl::StrictMode);
         if (!server.isValid() || server.scheme() != QStringLiteral("https") || server.host().isEmpty()
             || !server.userInfo().isEmpty() || server.hasQuery() || server.hasFragment()) {
             showError(tr("Enter an HTTPS server URL without credentials, a query, or a fragment."), serverField);
@@ -282,25 +379,28 @@ void DatabaseTabWidget::openRecentBitwardenDatabase(const QUrl& initialServer, c
         if (server.port() == 443) {
             server.setPort(-1);
         }
-        email = emailField->text().trimmed();
+        const auto email = emailField->text().trimmed();
         if (!email.contains(QLatin1Char('@'))) {
             showError(tr("Enter the email address for your vault account."), emailField);
             return;
         }
 
-        existingTab = findExistingTab(server, email);
+        const auto existingTab = findExistingTab(server, email);
         if (existingTab != -1) {
-            dialog.accept();
+            dialog->accept();
+            setCurrentIndex(existingTab);
+            if (auto* tab = databaseWidgetFromIndex(existingTab)) {
+                tab->focusBitwardenUnlock();
+            }
             return;
         }
 
         const QFileInfo cli(cliPath->text());
-        if (!cli.isAbsolute() || !cli.isFile() || !cli.isExecutable()
-            || cli.fileName().compare(QStringLiteral("bw.exe"), Qt::CaseInsensitive) != 0) {
+        if (!cli.isAbsolute() || cli.fileName().compare(QStringLiteral("bw.exe"), Qt::CaseInsensitive) != 0) {
             showError(tr("Select the Bitwarden CLI executable (bw.exe)."), browse);
             return;
         }
-        executable = cli.absoluteFilePath();
+        const auto executable = cli.absoluteFilePath();
         if (passwordField->text().isEmpty()) {
             showError(tr("Enter your master password."), passwordField);
             return;
@@ -320,108 +420,121 @@ void DatabaseTabWidget::openRecentBitwardenDatabase(const QUrl& initialServer, c
                 return;
             }
         }
-        dialog.accept();
+        const QSharedPointer<QByteArray> password(new QByteArray(passwordField->text().toUtf8()), [](QByteArray* value) {
+            value->fill('\0');
+            delete value;
+        });
+        auto code = codeField->text();
+        auto clientId = apiKeyGroup->isChecked() ? clientIdField->text().trimmed() : QString{};
+        auto clientSecret = apiKeyGroup->isChecked() ? clientSecretField->text().toUtf8() : QByteArray{};
+        passwordField->setText({});
+        codeField->setText({});
+        clientIdField->setText({});
+        clientSecretField->setText({});
+        errorLabel->hide();
+        attempt->running = true;
+        attempt->stage.store(OpenStage::CheckingProfile);
+        progressLabel->setText(BitwardenSession::stageText(OpenStage::CheckingProfile));
+        setBusy(true);
+        AsyncTask::runThenCallback(
+            [attempt,
+             executable,
+             server,
+             email,
+             password,
+             code = std::move(code),
+             clientId = std::move(clientId),
+             clientSecret = std::move(clientSecret)]() mutable -> BitwardenOpenResult {
+                const auto wipe = qScopeGuard([&] {
+                    code.fill(QChar());
+                    clientId.fill(QChar());
+                    clientSecret.fill('\0');
+                });
+                const auto updateProgress = [attempt](OpenStage stage) {
+                    if (attempt->canceled.load()) {
+                        throw BitwardenCliError(tr("Connection canceled."));
+                    }
+                    attempt->stage.store(stage);
+                };
+                QSharedPointer<BitwardenSession> session;
+                QString error;
+                try {
+                    updateProgress(OpenStage::CheckingProfile);
+                    session = QSharedPointer<BitwardenSession>::create(executable, server, email);
+                    session->connect(
+                        *password, std::move(code), std::move(clientId), std::move(clientSecret), updateProgress);
+                    updateProgress(OpenStage::PreparingView);
+                    return {session, {}};
+                } catch (const BitwardenCliError& connectionError) {
+                    error = connectionError.message();
+                } catch (...) {
+                    error = tr("Could not connect to the Bitwarden vault.");
+                }
+                password->fill('\0');
+                if (session) {
+                    lockFailedBitwardenOpen(session);
+                }
+                return {{}, error};
+            },
+            this,
+            [=, this](const BitwardenOpenResult& result) {
+                if (!result.session) {
+                    finishFailure(result.error);
+                    return;
+                }
+                if (isCanceled()) {
+                    password->fill('\0');
+                    discardSession(result.session, {});
+                    return;
+                }
+
+                progressLabel->setText(BitwardenSession::stageText(OpenStage::PreparingView));
+                // Let the dialog paint the phase before creating the GUI-owned database and view.
+                QTimer::singleShot(25, this, [=, this] {
+                    if (isCanceled()) {
+                        password->fill('\0');
+                        discardSession(result.session, {});
+                        return;
+                    }
+                    std::unique_ptr<DatabaseWidget> tab;
+                    try {
+                        auto db = result.session->makeDatabase();
+                        tab = std::make_unique<DatabaseWidget>(db, this, result.session);
+                    } catch (const BitwardenCliError& openError) {
+                        password->fill('\0');
+                        discardSession(result.session, openError.message());
+                        return;
+                    } catch (...) {
+                        password->fill('\0');
+                        discardSession(result.session, tr("Could not open the Bitwarden vault."));
+                        return;
+                    }
+                    if (isCanceled()) {
+                        password->fill('\0');
+                        discardSession(result.session, {});
+                        return;
+                    }
+                    tab->setProperty(BitwardenServerProperty, server);
+                    tab->setProperty(BitwardenEmailProperty, email);
+                    const QPointer<DatabaseWidget> openedTab(tab.get());
+                    addDatabaseTab(tab.release());
+                    config()->rememberBitwardenDatabase(server, email);
+                    attempt->running = false;
+                    m_bitwardenOpenInProgress = false;
+                    if (openDialog) {
+                        openDialog->accept();
+                    }
+                    if (openedTab && !m_bitwardenOpenCanceled) {
+                        openedTab->offerBitwardenQuickUnlock(std::move(*password));
+                    }
+                });
+            });
     });
 
     if (!initialServer.isEmpty() && !initialEmail.isEmpty()) {
         passwordField->setFocus();
     }
-    if (dialog.exec() != QDialog::Accepted || m_bitwardenOpenCanceled) {
-        m_bitwardenOpenInProgress = false;
-        return;
-    }
-    if (existingTab != -1) {
-        m_bitwardenOpenInProgress = false;
-        setCurrentIndex(existingTab);
-        databaseWidgetFromIndex(existingTab)->focusBitwardenUnlock();
-        return;
-    }
-
-    const QSharedPointer<QByteArray> password(new QByteArray(passwordField->text().toUtf8()), [](QByteArray* value) {
-        value->fill('\0');
-        delete value;
-    });
-    auto code = codeField->text();
-    auto clientId = apiKeyGroup->isChecked() ? clientIdField->text().trimmed() : QString{};
-    auto clientSecret = apiKeyGroup->isChecked() ? clientSecretField->text().toUtf8() : QByteArray{};
-    passwordField->setText({});
-    codeField->setText({});
-    clientIdField->setText({});
-    clientSecretField->setText({});
-    QSharedPointer<BitwardenSession> session;
-    try {
-        session = QSharedPointer<BitwardenSession>::create(executable, server, email);
-    } catch (const BitwardenCliError& error) {
-        m_bitwardenOpenInProgress = false;
-        emit messageGlobal(error.message(), MessageWidget::Error);
-        return;
-    }
-    emit messageGlobal(tr("Connecting to Bitwarden..."), MessageWidget::Information);
-    AsyncTask::runThenCallback(
-        [session,
-         password,
-         code = std::move(code),
-         clientId = std::move(clientId),
-         clientSecret = std::move(clientSecret)]() mutable -> QString {
-            try {
-                session->connect(*password, std::move(code), std::move(clientId), std::move(clientSecret));
-                return {};
-            } catch (const BitwardenCliError& error) {
-                return error.message();
-            } catch (...) {
-                return tr("Could not connect to the Bitwarden vault.");
-            }
-        },
-        this,
-        [this, session, server, email, password](const QString& connectionError) {
-            const QPointer<DatabaseTabWidget> self(this);
-            bool connected = false;
-            const auto cleanup = qScopeGuard([self, session, password, &connected] {
-                password->fill('\0');
-                if (self) {
-                    self->m_bitwardenOpenInProgress = false;
-                }
-                if (!connected) {
-                    (void) QtConcurrent::run([session] {
-                        try {
-                            session->lock();
-                        } catch (...) {
-                            // Discarding the adapter also clears its session key.
-                        }
-                    });
-                }
-            });
-            emit messageDismissGlobal();
-            if (!self || m_bitwardenOpenCanceled) {
-                return;
-            }
-            if (!connectionError.isEmpty()) {
-                emit messageGlobal(connectionError, MessageWidget::Error);
-                return;
-            }
-
-            try {
-                auto db = session->makeDatabase();
-                if (db) {
-                    auto tab = std::make_unique<DatabaseWidget>(db, nullptr, session);
-                    tab->rememberBitwardenPassword(*password);
-                    password->fill('\0');
-                    if (!self || m_bitwardenOpenCanceled) {
-                        return;
-                    }
-                    tab->setProperty(BitwardenServerProperty, server);
-                    tab->setProperty(BitwardenEmailProperty, email);
-                    connected = true;
-                    addDatabaseTab(tab.release());
-                    config()->rememberBitwardenDatabase(server, email);
-                    return;
-                }
-            } catch (const BitwardenCliError& error) {
-                emit messageGlobal(error.message(), MessageWidget::Error);
-                return;
-            }
-            emit messageGlobal(tr("Could not open the Bitwarden vault."), MessageWidget::Error);
-        });
+    dialog->open();
 }
 
 void DatabaseTabWidget::syncBitwardenDatabase()

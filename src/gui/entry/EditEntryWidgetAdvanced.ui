@@ -24,6 +24,42 @@
     <number>0</number>
    </property>
    <item>
+    <widget class="QGroupBox" name="bitwardenTotpBox">
+     <property name="title">
+      <string>Time-based one-time password (TOTP)</string>
+     </property>
+     <layout class="QHBoxLayout" name="bitwardenTotpLayout">
+      <item>
+       <widget class="QLabel" name="bitwardenTotpStatus">
+        <property name="textFormat">
+         <enum>Qt::PlainText</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="bitwardenTotpSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="bitwardenTotpButton">
+        <property name="text">
+         <string>Set Up TOTP…</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="QGroupBox" name="attributesBox">
      <property name="title">
       <string>Additional attributes</string>
@@ -163,6 +199,31 @@
          </widget>
         </item>
        </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="bitwardenPasskeysBox">
+     <property name="title">
+      <string>Passkeys</string>
+     </property>
+     <layout class="QVBoxLayout" name="bitwardenPasskeysLayout">
+      <item>
+       <widget class="QPlainTextEdit" name="bitwardenPasskeysText">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>100</height>
+         </size>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+        <property name="accessibleName">
+         <string>Saved Bitwarden passkeys</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -313,6 +374,7 @@
   </customwidget>
  </customwidgets>
  <tabstops>
+  <tabstop>bitwardenTotpButton</tabstop>
   <tabstop>attributesView</tabstop>
   <tabstop>attributesEdit</tabstop>
   <tabstop>addAttributeButton</tabstop>
@@ -320,6 +382,7 @@
   <tabstop>editAttributeButton</tabstop>
   <tabstop>protectAttributeButton</tabstop>
   <tabstop>revealAttributeButton</tabstop>
+  <tabstop>bitwardenPasskeysText</tabstop>
   <tabstop>excludeReportsCheckBox</tabstop>
   <tabstop>fgColorCheckBox</tabstop>
   <tabstop>fgColorButton</tabstop>

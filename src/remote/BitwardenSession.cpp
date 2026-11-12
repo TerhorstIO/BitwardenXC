@@ -11,6 +11,7 @@
 #include "core/Metadata.h"
 #include "core/Totp.h"
 
+#include <QCoreApplication>
 #include <QHash>
 #include <QScopeGuard>
 #include <QSet>
@@ -70,6 +71,22 @@ namespace
         const bool canViewPassword = item.value("viewPassword").toBool(true);
         entry.setUsername(login.value("username").toString());
         entry.setPassword(canViewPassword ? login.value("password").toString() : QString());
+        if (canViewPassword) {
+            QVariantList passkeys;
+            for (const auto& value : login.value("fido2Credentials").toArray()) {
+                if (!value.isObject()) {
+                    continue;
+                }
+                const auto credential = value.toObject();
+                passkeys.append(QVariantMap{{"rpId", credential.value("rpId").toString()},
+                                             {"rpName", credential.value("rpName").toString()},
+                                             {"userName", credential.value("userName").toString()},
+                                             {"userDisplayName", credential.value("userDisplayName").toString()}});
+            }
+            if (!passkeys.isEmpty()) {
+                entry.setProperty("bitwardenPasskeys", passkeys);
+            }
+        }
         const auto uris = login.value("uris").toArray();
         for (qsizetype i = 0; i < uris.size(); ++i) {
             const auto uri = uris.at(i).toObject().value("uri").toString();
@@ -289,7 +306,28 @@ BitwardenSession::BitwardenSession(QString executable, QUrl server, QString emai
 {
 }
 
-void BitwardenSession::connect(QByteArray password, QString code, QString clientId, QByteArray clientSecret)
+QString BitwardenSession::stageText(OpenStage stage)
+{
+    switch (stage) {
+    case OpenStage::CheckingProfile:
+        return QCoreApplication::translate("BitwardenSession", "Preparing the Bitwarden CLI…");
+    case OpenStage::Authenticating:
+        return QCoreApplication::translate("BitwardenSession", "Signing in or unlocking the Bitwarden vault…");
+    case OpenStage::Synchronizing:
+        return QCoreApplication::translate("BitwardenSession", "Synchronizing with the Bitwarden server…");
+    case OpenStage::ReadingVault:
+        return QCoreApplication::translate("BitwardenSession", "Reading and decrypting folders and entries…");
+    case OpenStage::PreparingView:
+        return QCoreApplication::translate("BitwardenSession", "Preparing the vault view…");
+    }
+    return {};
+}
+
+void BitwardenSession::connect(QByteArray password,
+                               QString code,
+                               QString clientId,
+                               QByteArray clientSecret,
+                               const OpenProgress& progress)
 {
     const auto wipe = qScopeGuard([&] {
         password.fill('\0');
@@ -297,26 +335,33 @@ void BitwardenSession::connect(QByteArray password, QString code, QString client
         clientId.fill(QChar());
         clientSecret.fill('\0');
     });
+    if (progress) {
+        progress(OpenStage::CheckingProfile);
+    }
     m_fullEditing = m_cli.supportsFullEditing();
-    const auto state = m_cli.status().value("status").toString();
-    const auto hasProfile = state == "locked" || state == "unlocked";
-    if (hasProfile && (!clientId.isEmpty() || !code.isEmpty())) {
-        m_cli.logout();
+    if (progress) {
+        progress(OpenStage::Authenticating);
     }
-    if (hasProfile && clientId.isEmpty() && code.isEmpty()) {
-        m_cli.unlock(password);
-    } else if (!clientId.isEmpty()) {
-        m_cli.loginWithApiKey(clientId, clientSecret);
-        m_cli.unlock(password);
-    } else {
-        m_cli.login(password, code);
-    }
-    sync();
+    const auto alreadySynced = m_cli.connect(password, code, clientId, clientSecret);
+    loadVault(!alreadySynced, false, progress);
 }
 
 void BitwardenSession::sync()
 {
-    m_cli.sync();
+    loadVault(true, true, {});
+}
+
+void BitwardenSession::loadVault(bool synchronize, bool force, const OpenProgress& progress)
+{
+    if (synchronize) {
+        if (progress) {
+            progress(OpenStage::Synchronizing);
+        }
+        m_cli.sync(force);
+    }
+    if (progress) {
+        progress(OpenStage::ReadingVault);
+    }
     auto folders = m_cli.listFolders();
     auto items = m_cli.listItems();
     m_folders = std::move(folders);
@@ -324,12 +369,15 @@ void BitwardenSession::sync()
     m_connected = true;
 }
 
-void BitwardenSession::unlock(QByteArray password)
+void BitwardenSession::unlock(QByteArray password, const OpenProgress& progress)
 {
     const auto wipe = qScopeGuard([&password] { password.fill('\0'); });
     try {
+        if (progress) {
+            progress(OpenStage::Authenticating);
+        }
         m_cli.unlock(password);
-        sync();
+        loadVault(true, false, progress);
     } catch (...) {
         try {
             lock();
@@ -448,10 +496,9 @@ QSharedPointer<Database> BitwardenSession::makeDatabase() const
     }
 
     database->setEmitModified(true);
+    // The saved signal refreshes the username and custom attribute indexes.
     database->markAsClean();
-    database->updateCommonUsernames();
     database->updateTagList();
-    database->updateCustomAttributeKeys();
     return database;
 }
 

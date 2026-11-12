@@ -14,11 +14,23 @@
 #include <QSharedPointer>
 #include <QUuid>
 
+#include <functional>
+
 class Database;
 
 class BitwardenSession
 {
 public:
+    enum class OpenStage
+    {
+        CheckingProfile = 1,
+        Authenticating,
+        Synchronizing,
+        ReadingVault,
+        PreparingView
+    };
+    using OpenProgress = std::function<void(OpenStage)>;
+
     struct Edit
     {
         qsizetype index;
@@ -35,8 +47,12 @@ public:
 
     BitwardenSession(QString executable, QUrl server, QString email);
 
-    void connect(QByteArray password, QString code = {}, QString clientId = {}, QByteArray clientSecret = {});
-    void unlock(QByteArray password);
+    void connect(QByteArray password,
+                 QString code = {},
+                 QString clientId = {},
+                 QByteArray clientSecret = {},
+                 const OpenProgress& progress = {});
+    void unlock(QByteArray password, const OpenProgress& progress = {});
     void sync();
     void lock();
     SaveResult save(const QList<Edit>& edits);
@@ -46,10 +62,13 @@ public:
     bool isDraft(const QUuid& id) const;
     bool canCreate() const;
     bool supportsFullEditing() const;
+    static QString stageText(OpenStage stage);
     static bool isEditableFieldName(const QString& name);
     QList<Edit> prepareSave(const Database& database) const;
 
 private:
+    void loadVault(bool synchronize, bool force, const OpenProgress& progress);
+
     BitwardenCli m_cli;
     QString m_name;
     QUuid m_rootId = QUuid::createUuid();

@@ -44,6 +44,7 @@ class QMenu;
 class QScrollArea;
 class QSortFilterProxyModel;
 class QStringListModel;
+class TotpSetupDialog;
 #ifdef KPXC_FEATURE_SSHAGENT
 #include "sshagent/KeeAgentSettings.h"
 class OpenSSHKey;
@@ -62,6 +63,11 @@ namespace Ui
     class EditEntryWidgetHistory;
     class EditWidget;
 } // namespace Ui
+
+namespace Totp
+{
+    struct Settings;
+}
 
 class EditEntryWidget : public EditWidget
 {
@@ -165,6 +171,8 @@ private:
     void setupHistory();
     void setupEntryUpdate();
     void setupColorButton(bool foreground, const QColor& color);
+    void setupBitwardenTotp();
+    void updateBitwardenTotp();
 
     void setForms(Entry* entry, bool restore = false);
     QMenu* createPresetsMenu();
@@ -180,6 +188,8 @@ private:
 
     QPointer<Entry> m_entry;
     QSharedPointer<Database> m_db;
+    QSharedPointer<Totp::Settings> m_bitwardenTotpSettings;
+    QPointer<TotpSetupDialog> m_bitwardenTotpDialog;
 
     bool m_create;
     bool m_history;

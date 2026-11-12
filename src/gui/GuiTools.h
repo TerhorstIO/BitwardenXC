@@ -20,6 +20,7 @@
 
 #include <QEvent>
 #include <QList>
+#include <QStringList>
 #include <QWidget>
 
 class Entry;
@@ -30,6 +31,7 @@ namespace GuiTools
     bool confirmDeletePluginData(QWidget* parent, const QList<Entry*>& entries);
     size_t deleteEntriesResolveReferences(QWidget* parent, const QList<Entry*>& entries, bool permanent);
     void centerWidgetOnActiveScreen(QWidget* widget);
+    QStringList bitwardenPasskeyLabels(const Entry& entry, bool showAccount);
 } // namespace GuiTools
 
 /**

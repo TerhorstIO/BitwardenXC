@@ -159,4 +159,37 @@ namespace GuiTools
         frameGeometry.moveCenter(screenGeometry.center());
         widget->move(frameGeometry.topLeft());
     }
+
+    QStringList bitwardenPasskeyLabels(const Entry& entry, bool showAccount)
+    {
+        const auto plainText = [](const QVariant& value) {
+            auto text = value.toString().simplified();
+            text.removeIf([](QChar ch) {
+                return ch.category() == QChar::Other_Control || ch.category() == QChar::Other_Format;
+            });
+            return text.left(256);
+        };
+        const auto describe = [](const QString& name, const QString& identifier) {
+            if (name.isEmpty() || name == identifier) {
+                return identifier;
+            }
+            return identifier.isEmpty() ? name : QObject::tr("%1 (%2)").arg(name, identifier);
+        };
+
+        QStringList labels;
+        const auto records = entry.property("bitwardenPasskeys").toList();
+        for (const auto& record : records) {
+            const auto metadata = record.toMap();
+            const auto site = describe(plainText(metadata.value("rpName")), plainText(metadata.value("rpId")));
+            const auto account = showAccount
+                ? describe(plainText(metadata.value("userDisplayName")), plainText(metadata.value("userName")))
+                : QString();
+            if (account.isEmpty()) {
+                labels.append(site.isEmpty() ? QObject::tr("Passkey") : site);
+            } else {
+                labels.append(site.isEmpty() ? account : QObject::tr("%1 · %2").arg(site, account));
+            }
+        }
+        return labels;
+    }
 } // namespace GuiTools

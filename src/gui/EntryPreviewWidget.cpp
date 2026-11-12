@@ -24,6 +24,7 @@
 #include "core/Config.h"
 #include "core/Totp.h"
 #include "gui/Font.h"
+#include "gui/GuiTools.h"
 #include "gui/Icons.h"
 #include "keeshare/KeeShare.h"
 #include "keeshare/KeeShareSettings.h"
@@ -56,6 +57,7 @@ EntryPreviewWidget::EntryPreviewWidget(QWidget* parent)
 
     m_ui->entryAttachmentsWidget->setReadOnly(true);
     m_ui->entryAttachmentsWidget->setButtonsVisible(false);
+    m_ui->entryPasskeysBox->hide();
 
     // Match background of read-only text edit fields with the window
     m_ui->entryPasswordLabel->setBackgroundRole(QPalette::Window);
@@ -126,6 +128,8 @@ void EntryPreviewWidget::clear()
     m_currentEntry = nullptr;
     m_currentGroup = nullptr;
     m_ui->entryAttachmentsWidget->unlinkAttachments();
+    m_ui->entryPasskeysText->clear();
+    m_ui->entryPasskeysBox->hide();
 }
 
 void EntryPreviewWidget::setEntry(Entry* selectedEntry)
@@ -412,10 +416,19 @@ void EntryPreviewWidget::updateEntryAdvancedTab()
     const QStringList customAttributes = attributes->customKeys();
     const bool hasAttributes = !customAttributes.isEmpty();
     const bool hasAttachments = !m_currentEntry->attachments()->isEmpty();
+    const auto passkeys =
+        GuiTools::bitwardenPasskeyLabels(*m_currentEntry, !config()->get(Config::GUI_HideUsernames).toBool());
+    const bool hasPasskeys = !passkeys.isEmpty();
+    m_ui->entryPasskeysText->setPlainText(passkeys.join(QLatin1Char('\n')));
+    m_ui->entryPasskeysBox->setVisible(hasPasskeys);
+    m_ui->attributesTitleLabel->setVisible(!hasPasskeys || hasAttributes);
+    m_ui->entryAttributesTable->setVisible(!hasPasskeys || hasAttributes);
+    m_ui->attachmentsTitleLabel->setVisible(!hasPasskeys || hasAttachments);
+    m_ui->entryAttachmentsWidget->setVisible(!hasPasskeys || hasAttachments);
     m_ui->entryAttributesTable->setRowCount(customAttributes.size());
     m_ui->entryAttributesTable->setColumnCount(3);
 
-    setTabEnabled(m_ui->entryTabWidget, m_ui->entryAdvancedTab, hasAttributes || hasAttachments);
+    setTabEnabled(m_ui->entryTabWidget, m_ui->entryAdvancedTab, hasAttributes || hasAttachments || hasPasskeys);
     if (hasAttributes) {
         auto i = 0;
         QFont font;

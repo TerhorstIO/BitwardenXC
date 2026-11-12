@@ -6,6 +6,7 @@
 #include "BitwardenCli.h"
 
 #include <QCryptographicHash>
+#include <QDateTime>
 #include <QDeadlineTimer>
 #include <QDir>
 #include <QFileInfo>
@@ -25,6 +26,7 @@ namespace
     const auto defaultServer = QStringLiteral("https://bitwarden.com");
     const auto passwordVariable = QStringLiteral("KEEPASSXC_BITWARDEN_PASSWORD");
     const auto sessionVariable = QStringLiteral("BW_SESSION");
+    const auto upstreamVersion = QStringLiteral("2026.10.1");
     const auto fullEditingVersion = QStringLiteral("2026.10.1-bitwardenxc.1");
     const auto nameKey = QStringLiteral("name");
     const auto notesKey = QStringLiteral("notes");
@@ -39,6 +41,11 @@ namespace
     constexpr int commandTimeoutMs = 60000;
     constexpr qsizetype outputLimit = 64 * 1024 * 1024;
     constexpr qsizetype diagnosticsLimit = 256 * 1024;
+
+    QDateTime lastSync(const QJsonObject& status)
+    {
+        return QDateTime::fromString(status.value(QStringLiteral("lastSync")).toString(), Qt::ISODateWithMs);
+    }
 
     QString executablePath(const QString& path)
     {
@@ -352,12 +359,6 @@ QString BitwardenCli::cliVersion()
     return m_cliVersion;
 }
 
-QJsonObject BitwardenCli::status()
-{
-    const QMutexLocker locker(&m_mutex);
-    return profileStatus();
-}
-
 QJsonObject BitwardenCli::profileStatus() const
 {
     const auto result = parseObject(run({QStringLiteral("status")}));
@@ -377,59 +378,77 @@ QJsonObject BitwardenCli::profileStatus() const
     return result;
 }
 
-void BitwardenCli::login(const QByteArray& masterPassword, const QString& totpCode)
+bool BitwardenCli::connect(const QByteArray& masterPassword,
+                           const QString& totpCode,
+                           const QString& clientId,
+                           const QByteArray& clientSecret)
 {
     const QMutexLocker locker(&m_mutex);
-    const auto secrets = passwordEnvironment(masterPassword);
-    const auto state = profileStatus().value(QStringLiteral("status")).toString();
-    if (state != QStringLiteral("unauthenticated")) {
-        saveSessionKey(run({QStringLiteral("unlock"), QStringLiteral("--passwordenv"), passwordVariable}, {}, secrets));
-        return;
-    }
-    run({QStringLiteral("config"), QStringLiteral("server"), m_server});
-    QStringList arguments{QStringLiteral("login"), m_email, QStringLiteral("--passwordenv"), passwordVariable};
-    if (!totpCode.isEmpty()) {
+    const auto passwordSecrets = passwordEnvironment(masterPassword);
+    const bool useApiKey = !clientId.isEmpty();
+    const auto id = clientId.trimmed();
+    if (useApiKey) {
+        static const QRegularExpression clientIdPattern(QStringLiteral(R"(^user\.[0-9a-fA-F-]{36}$)"));
+        if (!clientIdPattern.match(id).hasMatch() || clientSecret.isEmpty() || clientSecret.contains('\0')) {
+            throw BitwardenCliError(QStringLiteral("Gib die Client-ID und das Client Secret deines persönlichen API-Schlüssels ein."));
+        }
+    } else if (!totpCode.isEmpty()) {
         static const QRegularExpression otpPattern(QStringLiteral(R"(^[0-9]{6,8}$)"));
         if (!otpPattern.match(totpCode).hasMatch()) {
             throw BitwardenCliError(QStringLiteral("Gib den Zahlencode aus deiner Authenticator-App ein."));
         }
-        // The CLI takes a noninteractive TOTP only through --code. The master password stays in the child environment.
-        arguments << QStringLiteral("--method") << QStringLiteral("0") << QStringLiteral("--code") << totpCode;
     }
-    try {
-        saveSessionKey(run(arguments, {}, secrets));
-    } catch (const BitwardenCliError& error) {
-        if (!totpCode.isEmpty() && error.reason() == BitwardenCliError::Reason::TwoFactorRequired) {
-            throw BitwardenCliError(QStringLiteral("Bitwarden verlangt eine weitere Bestätigung, etwa per E-Mail."),
+
+    const auto previousStatus = profileStatus();
+    const bool hasProfile = previousStatus.value(QStringLiteral("status")) != QStringLiteral("unauthenticated");
+    if (hasProfile && !useApiKey && totpCode.isEmpty()) {
+        unlockProfile(passwordSecrets);
+        return false;
+    }
+    if (hasProfile) {
+        const auto erase = qScopeGuard([this] { clearSessionKey(); });
+        run({QStringLiteral("logout")});
+    } else {
+        clearSessionKey();
+    }
+    run({QStringLiteral("config"), QStringLiteral("server"), m_server});
+
+    const auto loginStarted = QDateTime::currentDateTimeUtc();
+    QJsonObject unlockedStatus;
+    if (useApiKey) {
+        QProcessEnvironment apiSecrets;
+        apiSecrets.insert(QStringLiteral("BW_CLIENTID"), id);
+        apiSecrets.insert(QStringLiteral("BW_CLIENTSECRET"), QString::fromUtf8(clientSecret));
+        auto output = run({QStringLiteral("login"), QStringLiteral("--apikey")}, {}, apiSecrets);
+        output.fill('\0');
+        if (profileStatus().value(QStringLiteral("status")) != QStringLiteral("locked")) {
+            throw BitwardenCliError(QStringLiteral("Die Anmeldung mit dem persönlichen API-Schlüssel konnte nicht bestätigt werden."),
                                    BitwardenCliError::Reason::AuthenticationRequired);
         }
-        throw;
+        unlockedStatus = unlockProfile(passwordSecrets);
+    } else {
+        QStringList arguments{QStringLiteral("login"), m_email, QStringLiteral("--passwordenv"), passwordVariable};
+        if (!totpCode.isEmpty()) {
+            // The CLI takes noninteractive TOTP through --code. The master password stays in the child environment.
+            arguments << QStringLiteral("--method") << QStringLiteral("0") << QStringLiteral("--code") << totpCode;
+        }
+        try {
+            unlockedStatus = saveSessionKey(run(arguments, {}, passwordSecrets));
+        } catch (const BitwardenCliError& error) {
+            if (!totpCode.isEmpty() && error.reason() == BitwardenCliError::Reason::TwoFactorRequired) {
+                throw BitwardenCliError(QStringLiteral("Bitwarden verlangt eine weitere Bestätigung, etwa per E-Mail."),
+                                       BitwardenCliError::Reason::AuthenticationRequired);
+            }
+            throw;
+        }
     }
-}
 
-void BitwardenCli::loginWithApiKey(const QString& clientId, const QByteArray& clientSecret)
-{
-    const QMutexLocker locker(&m_mutex);
-    const auto id = clientId.trimmed();
-    static const QRegularExpression pattern(QStringLiteral(R"(^user\.[0-9a-fA-F-]{36}$)"));
-    if (!pattern.match(id).hasMatch() || clientSecret.isEmpty() || clientSecret.contains('\0')) {
-        throw BitwardenCliError(QStringLiteral("Gib die Client-ID und das Client Secret deines persönlichen API-Schlüssels ein."));
-    }
-    if (profileStatus().value(QStringLiteral("status")) != QStringLiteral("unauthenticated")) {
-        throw BitwardenCliError(QStringLiteral("Für dieses Profil besteht bereits eine Bitwarden-Anmeldung."));
-    }
-
-    clearSessionKey();
-    run({QStringLiteral("config"), QStringLiteral("server"), m_server});
-    QProcessEnvironment secrets;
-    secrets.insert(QStringLiteral("BW_CLIENTID"), id);
-    secrets.insert(QStringLiteral("BW_CLIENTSECRET"), QString::fromUtf8(clientSecret));
-    auto output = run({QStringLiteral("login"), QStringLiteral("--apikey")}, {}, secrets);
-    output.fill('\0');
-    if (profileStatus().value(QStringLiteral("status")) != QStringLiteral("locked")) {
-        throw BitwardenCliError(QStringLiteral("Die Anmeldung mit dem persönlichen API-Schlüssel konnte nicht bestätigt werden."),
-                               BitwardenCliError::Reason::AuthenticationRequired);
-    }
+    // These CLI versions force a full sync on login, but login can succeed even if that sync failed.
+    const auto syncedAt = lastSync(unlockedStatus);
+    const auto previousSync = lastSync(previousStatus);
+    return (m_cliVersion == upstreamVersion || m_cliVersion == fullEditingVersion) && syncedAt.isValid()
+           && syncedAt >= loginStarted && syncedAt <= QDateTime::currentDateTimeUtc()
+           && (!previousSync.isValid() || syncedAt > previousSync);
 }
 
 void BitwardenCli::unlock(const QByteArray& masterPassword)
@@ -440,7 +459,12 @@ void BitwardenCli::unlock(const QByteArray& masterPassword)
         throw BitwardenCliError(QStringLiteral("Melde dich zuerst bei Bitwarden an."),
                                BitwardenCliError::Reason::AuthenticationRequired);
     }
-    saveSessionKey(run({QStringLiteral("unlock"), QStringLiteral("--passwordenv"), passwordVariable}, {}, secrets));
+    unlockProfile(secrets);
+}
+
+QJsonObject BitwardenCli::unlockProfile(const QProcessEnvironment& secrets)
+{
+    return saveSessionKey(run({QStringLiteral("unlock"), QStringLiteral("--passwordenv"), passwordVariable}, {}, secrets));
 }
 
 void BitwardenCli::lock()
@@ -452,19 +476,14 @@ void BitwardenCli::lock()
     }
 }
 
-void BitwardenCli::logout()
+void BitwardenCli::sync(bool force)
 {
     const QMutexLocker locker(&m_mutex);
-    const auto erase = qScopeGuard([this] { clearSessionKey(); });
-    if (profileStatus().value(QStringLiteral("status")) != QStringLiteral("unauthenticated")) {
-        run({QStringLiteral("logout")});
+    QStringList arguments{QStringLiteral("sync")};
+    if (force) {
+        arguments.append(QStringLiteral("--force"));
     }
-}
-
-void BitwardenCli::sync()
-{
-    const QMutexLocker locker(&m_mutex);
-    run({QStringLiteral("sync"), QStringLiteral("--force")});
+    run(arguments);
 }
 
 QJsonArray BitwardenCli::listFolders()
@@ -600,7 +619,7 @@ QJsonObject BitwardenCli::checkRevision(const QString& id, const QString& expect
     return latest;
 }
 
-void BitwardenCli::saveSessionKey(QByteArray key)
+QJsonObject BitwardenCli::saveSessionKey(QByteArray key)
 {
     key = key.trimmed();
     auto decoded = QByteArray::fromBase64(key);
@@ -612,11 +631,13 @@ void BitwardenCli::saveSessionKey(QByteArray key)
     clearSessionKey();
     m_sessionKey = std::move(key);
     auto eraseOnFailure = qScopeGuard([this] { clearSessionKey(); });
-    if (profileStatus().value(QStringLiteral("status")) != QStringLiteral("unlocked")) {
+    const auto status = profileStatus();
+    if (status.value(QStringLiteral("status")) != QStringLiteral("unlocked")) {
         throw BitwardenCliError(QStringLiteral("Die Bitwarden-CLI hat den Tresor nicht entsperrt."),
                                BitwardenCliError::Reason::AuthenticationRequired);
     }
     eraseOnFailure.dismiss();
+    return status;
 }
 
 void BitwardenCli::clearSessionKey()

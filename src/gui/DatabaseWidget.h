@@ -89,6 +89,7 @@ public:
     bool canEditBitwardenLogin() const;
     void syncBitwarden();
     void rememberBitwardenPassword(const QByteArray& password);
+    void offerBitwardenQuickUnlock(QByteArray password);
     void focusBitwardenUnlock();
 
     DatabaseWidget::Mode currentMode() const;
@@ -326,11 +327,13 @@ private:
     bool m_bitwardenBusy = false;
     bool m_bitwardenUnlocking = false;
     bool m_bitwardenUnlockCanceled = false;
+    quint64 m_bitwardenQuickUnlockGeneration = 0;
     QUuid m_bitwardenQuickUnlockId;
     QPointer<QWidget> m_bitwardenUnlockWidget;
     QPointer<QLineEdit> m_bitwardenPassword;
     QPointer<QPushButton> m_bitwardenPasswordButton;
     QPointer<QPushButton> m_bitwardenHelloButton;
+    QPointer<QLabel> m_bitwardenUnlockStatus;
     QPointer<QLabel> m_bitwardenUnlockError;
 
     QPointer<QWidget> m_mainWidget;

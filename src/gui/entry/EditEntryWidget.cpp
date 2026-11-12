@@ -46,6 +46,7 @@
 #include "core/Metadata.h"
 #include "core/PasswordGenerator.h"
 #include "core/TimeDelta.h"
+#include "core/Totp.h"
 #include "gui/PasswordWidget.h"
 #ifdef KPXC_FEATURE_SSHAGENT
 #include "sshagent/OpenSSHKey.h"
@@ -65,6 +66,7 @@
 #include "gui/GuiTools.h"
 #include "gui/Icons.h"
 #include "gui/MessageBox.h"
+#include "gui/TotpSetupDialog.h"
 #include "gui/entry/AutoTypeAssociationsModel.h"
 #include "gui/entry/EntryAttributesModel.h"
 #include "gui/entry/EntryHistoryModel.h"
@@ -297,6 +299,10 @@ void EditEntryWidget::setupAdvanced()
     m_advancedUi->setupUi(m_advancedWidget);
     addPage(tr("Advanced"), icons()->icon("preferences-other"), m_advancedWidget);
 
+    m_advancedUi->bitwardenTotpBox->hide();
+    m_advancedUi->bitwardenPasskeysBox->hide();
+    connect(m_advancedUi->bitwardenTotpButton, &QPushButton::clicked, this, &EditEntryWidget::setupBitwardenTotp);
+
     m_advancedUi->attachmentsWidget->setReadOnly(false);
     m_advancedUi->attachmentsWidget->setButtonsVisible(true);
 
@@ -339,6 +345,36 @@ void EditEntryWidget::setupAdvanced()
     connect(m_advancedUi->fgColorButton, SIGNAL(clicked()), SLOT(pickColor()));
     connect(m_advancedUi->bgColorButton, SIGNAL(clicked()), SLOT(pickColor()));
     // clang-format on
+}
+
+void EditEntryWidget::setupBitwardenTotp()
+{
+    if (!m_entry || !m_db || !m_db->hasLiteralEntryValues() || m_history || m_bitwardenTotpDialog) {
+        return;
+    }
+
+    // The native dialog edits its entry directly. Give it a detached entry so Cancel still discards editor changes.
+    auto* draft = new Entry;
+    draft->setTotp(m_bitwardenTotpSettings);
+    auto* dialog = new TotpSetupDialog(this, draft);
+    draft->setParent(dialog);
+    m_bitwardenTotpDialog = dialog;
+    connect(dialog, &TotpSetupDialog::totpUpdated, this, [this, draft] {
+        const auto settings = draft->totpSettings();
+        if (Totp::writeSettings(settings, {}, {}, true) != Totp::writeSettings(m_bitwardenTotpSettings, {}, {}, true)) {
+            m_bitwardenTotpSettings = settings;
+            updateBitwardenTotp();
+            setModified(true);
+        }
+    });
+    dialog->open();
+}
+
+void EditEntryWidget::updateBitwardenTotp()
+{
+    const auto configured = !m_bitwardenTotpSettings.isNull();
+    m_advancedUi->bitwardenTotpStatus->setText(configured ? tr("Configured") : tr("Not configured"));
+    m_advancedUi->bitwardenTotpButton->setText(configured ? tr("Edit TOTP…") : tr("Set Up TOTP…"));
 }
 
 void EditEntryWidget::setupIcon()
@@ -1083,6 +1119,16 @@ void EditEntryWidget::loadEntry(Entry* entry,
 void EditEntryWidget::setForms(Entry* entry, bool restore)
 {
     const auto bitwarden = m_db->hasLiteralEntryValues();
+    m_bitwardenTotpSettings = bitwarden ? entry->totpSettings() : QSharedPointer<Totp::Settings>();
+    m_advancedUi->bitwardenTotpBox->setVisible(bitwarden);
+    m_advancedUi->bitwardenTotpButton->setEnabled(!m_history);
+    updateBitwardenTotp();
+    const auto passkeys = bitwarden ? GuiTools::bitwardenPasskeyLabels(
+                                          *entry, !config()->get(Config::GUI_HideUsernames).toBool())
+                                    : QStringList();
+    m_advancedUi->bitwardenPasskeysText->setPlainText(passkeys.join(QLatin1Char('\n')));
+    m_advancedUi->bitwardenPasskeysBox->setVisible(!passkeys.isEmpty());
+
 #ifdef KPXC_FEATURE_SSHAGENT
     QSignalBlocker attachmentsBlocker(m_attachments.data());
 #endif
@@ -1341,6 +1387,11 @@ bool EditEntryWidget::commitEntry()
             attributes->set(key, m_entryAttributes->value(key), m_entryAttributes->isProtected(key));
         }
 
+        if (Totp::writeSettings(m_bitwardenTotpSettings, {}, {}, true)
+            != Totp::writeSettings(m_entry->totpSettings(), {}, {}, true)) {
+            m_entry->setTotp(m_bitwardenTotpSettings);
+        }
+
         showMessage(tr("Entry updated successfully."), MessageWidget::Positive);
         setModified(false);
         m_entryModifiedTimer.stop();
@@ -1557,6 +1608,15 @@ void EditEntryWidget::cancel()
 
 void EditEntryWidget::clear()
 {
+    if (m_bitwardenTotpDialog) {
+        m_bitwardenTotpDialog->close();
+        m_bitwardenTotpDialog.clear();
+    }
+    m_bitwardenTotpSettings.reset();
+    m_advancedUi->bitwardenTotpBox->hide();
+    m_advancedUi->bitwardenPasskeysText->clear();
+    m_advancedUi->bitwardenPasskeysBox->hide();
+
     if (m_entry) {
         m_entry->disconnect(this);
     }

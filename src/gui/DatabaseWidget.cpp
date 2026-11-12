@@ -30,6 +30,7 @@
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QProcess>
+#include <QPromise>
 #include <QPushButton>
 #include <QScopeGuard>
 #include <QScopedValueRollback>
@@ -344,6 +345,10 @@ void DatabaseWidget::initBitwardenUnlockWidget()
     m_bitwardenPasswordButton = new QPushButton(tr("Unlock"), m_bitwardenUnlockWidget);
     m_bitwardenPasswordButton->setObjectName(QStringLiteral("bitwardenUnlockButton"));
     form->addRow(m_bitwardenPasswordButton);
+    m_bitwardenUnlockStatus = new QLabel(m_bitwardenUnlockWidget);
+    m_bitwardenUnlockStatus->setWordWrap(true);
+    m_bitwardenUnlockStatus->hide();
+    form->addRow(m_bitwardenUnlockStatus);
     m_bitwardenUnlockError = new QLabel(m_bitwardenUnlockWidget);
     m_bitwardenUnlockError->setTextFormat(Qt::PlainText);
     m_bitwardenUnlockError->setWordWrap(true);
@@ -360,8 +365,9 @@ void DatabaseWidget::initBitwardenUnlockWidget()
 
 void DatabaseWidget::updateBitwardenUnlockWidget()
 {
-    m_bitwardenUnlockWidget->setEnabled(!m_bitwardenBusy);
-    m_bitwardenPasswordButton->setEnabled(!m_bitwardenPassword->text().isEmpty());
+    m_bitwardenPassword->setEnabled(!m_bitwardenBusy);
+    m_bitwardenPasswordButton->setEnabled(!m_bitwardenBusy && !m_bitwardenPassword->text().isEmpty());
+    m_bitwardenHelloButton->setEnabled(!m_bitwardenBusy);
     m_bitwardenHelloButton->setVisible(!m_bitwardenQuickUnlockId.isNull()
                                        && config()->get(Config::Security_QuickUnlock).toBool()
                                        && getQuickUnlock()->hasKey(m_bitwardenQuickUnlockId));
@@ -378,16 +384,38 @@ void DatabaseWidget::focusBitwardenUnlock()
     }
 }
 
+void DatabaseWidget::offerBitwardenQuickUnlock(QByteArray password)
+{
+    const auto wipe = qScopeGuard([&password] { password.fill('\0'); });
+    if (!isBitwarden() || isLocked() || password.isEmpty() || !config()->get(Config::Security_QuickUnlock).toBool()
+        || !m_bitwardenQuickUnlockId.isNull()) {
+        return;
+    }
+    const auto generation = m_bitwardenQuickUnlockGeneration;
+    const QSharedPointer<QByteArray> pending(new QByteArray(std::move(password)), [](QByteArray* value) {
+        value->fill('\0');
+        delete value;
+    });
+    // Let the vault paint before offering native Windows Hello setup.
+    QTimer::singleShot(25, this, [this, pending, generation] {
+        if (generation == m_bitwardenQuickUnlockGeneration) {
+            rememberBitwardenPassword(*pending);
+        }
+    });
+}
+
 void DatabaseWidget::rememberBitwardenPassword(const QByteArray& password)
 {
 #ifdef Q_OS_WIN
-    if (!isBitwarden() || password.isEmpty() || !config()->get(Config::Security_QuickUnlock).toBool()
+    if (!isBitwarden() || isLocked() || password.isEmpty() || !config()->get(Config::Security_QuickUnlock).toBool()
         || !m_bitwardenQuickUnlockId.isNull()) {
         return;
     }
     const QPointer<DatabaseWidget> self(this);
-    const auto canStore = [self] {
-        return self && !self->m_bitwardenUnlockCanceled && config()->get(Config::Security_QuickUnlock).toBool();
+    const auto generation = m_bitwardenQuickUnlockGeneration;
+    const auto canStore = [self, generation] {
+        return self && !self->isLocked() && self->m_bitwardenQuickUnlockGeneration == generation
+               && config()->get(Config::Security_QuickUnlock).toBool();
     };
     try {
         auto* provider = getQuickUnlock();
@@ -412,6 +440,7 @@ void DatabaseWidget::rememberBitwardenPassword(const QByteArray& password)
 
 void DatabaseWidget::resetBitwardenQuickUnlock()
 {
+    ++m_bitwardenQuickUnlockGeneration;
     if (!m_bitwardenQuickUnlockId.isNull()) {
         getQuickUnlock()->reset(m_bitwardenQuickUnlockId);
         m_bitwardenQuickUnlockId = QUuid();
@@ -440,6 +469,7 @@ void DatabaseWidget::unlockBitwarden(bool useHello)
         if (self) {
             self->m_bitwardenBusy = false;
             self->m_bitwardenUnlocking = false;
+            self->m_bitwardenUnlockStatus->hide();
             self->updateBitwardenUnlockWidget();
             if (self->isLocked()) {
                 self->m_bitwardenPassword->setFocus();
@@ -450,6 +480,8 @@ void DatabaseWidget::unlockBitwarden(bool useHello)
     const auto wipe = qScopeGuard([&password] { password.fill('\0'); });
     updateBitwardenUnlockWidget();
     if (useHello) {
+        m_bitwardenUnlockStatus->setText(tr("Waiting for Windows Hello…"));
+        m_bitwardenUnlockStatus->show();
         bool authenticated = false;
         bool helloFailed = false;
         try {
@@ -475,26 +507,40 @@ void DatabaseWidget::unlockBitwarden(bool useHello)
     m_bitwardenPassword->clear();
 
     const auto session = m_bitwarden;
-    auto error = AsyncTask::runAndWaitForFuture([session, &password]() -> QString {
-        try {
-            session->unlock(password);
-            return {};
-        } catch (const BitwardenCliError& error) {
-            if (error.reason() == BitwardenCliError::Reason::AuthenticationRequired) {
-                return error.message() + QLatin1Char('\n')
-                    + tr("If Bitwarden requires sign-in again, close this tab and reopen the connection from Recent.");
-            }
-            return error.message();
-        } catch (...) {
-            return tr("Could not unlock the Bitwarden vault.");
+    const auto setStage = [self](int stage) {
+        if (self && stage >= int(BitwardenSession::OpenStage::CheckingProfile)) {
+            self->m_bitwardenUnlockStatus->setText(BitwardenSession::stageText(BitwardenSession::OpenStage(stage)));
+            self->m_bitwardenUnlockStatus->show();
         }
+    };
+    setStage(int(BitwardenSession::OpenStage::Authenticating));
+    QFutureWatcher<QString> watcher;
+    connect(&watcher, &QFutureWatcher<QString>::progressValueChanged, this, setStage);
+    auto future = QtConcurrent::run([session, &password](QPromise<QString>& promise) {
+        promise.setProgressRange(int(BitwardenSession::OpenStage::CheckingProfile),
+                                 int(BitwardenSession::OpenStage::PreparingView));
+        QString result;
+        try {
+            session->unlock(password, [&promise](auto stage) { promise.setProgressValue(int(stage)); });
+        } catch (const BitwardenCliError& error) {
+            result = error.message();
+            if (error.reason() == BitwardenCliError::Reason::AuthenticationRequired) {
+                result += QLatin1Char('\n');
+                result += tr("If Bitwarden requires sign-in again, close this tab and reopen the connection from Recent.");
+            }
+        } catch (...) {
+            result = tr("Could not unlock the Bitwarden vault.");
+        }
+        promise.addResult(std::move(result));
     });
+    watcher.setFuture(future);
+    auto error = AsyncTask::waitForFuture(future);
+    watcher.disconnect();
     const auto sessionUnlocked = error.isEmpty();
     if (sessionUnlocked && canUnlock()) {
         try {
-            if (!useHello) {
-                rememberBitwardenPassword(password);
-            }
+            setStage(int(BitwardenSession::OpenStage::PreparingView));
+            m_bitwardenUnlockStatus->repaint();
             if (canUnlock()) {
                 auto database = session->makeDatabase();
                 emit databaseAboutToUnlock();
@@ -505,8 +551,12 @@ void DatabaseWidget::unlockBitwarden(bool useHello)
                 m_entryBeforeLock = QUuid();
                 m_bitwardenBusy = false;
                 m_bitwardenUnlocking = false;
+                m_bitwardenUnlockStatus->hide();
                 updateBitwardenUnlockWidget();
                 restore.dismiss();
+                if (!useHello) {
+                    offerBitwardenQuickUnlock(std::move(password));
+                }
                 emit databaseUnlocked();
                 return;
             }
@@ -530,10 +580,13 @@ void DatabaseWidget::unlockBitwarden(bool useHello)
 void DatabaseWidget::lockBitwardenSession()
 {
     m_bitwardenBusy = true;
+    m_bitwardenUnlockStatus->setText(tr("Locking the Bitwarden vault…"));
+    m_bitwardenUnlockStatus->show();
     updateBitwardenUnlockWidget();
     AsyncTask::runThenCallback(
         [session = m_bitwarden] { return lockBitwarden(session); }, this, [this](bool) {
             m_bitwardenBusy = false;
+            m_bitwardenUnlockStatus->hide();
             updateBitwardenUnlockWidget();
             if (isVisible()) {
                 focusBitwardenUnlock();
@@ -2483,11 +2536,11 @@ bool DatabaseWidget::lock()
 
     auto newDb = QSharedPointer<Database>::create(m_db->filePath());
     if (isBitwarden()) {
+        ++m_bitwardenQuickUnlockGeneration;
         newDb->metadata()->setName(m_db->metadata()->name());
         newDb->markAsClean();
         m_bitwardenPassword->clear();
         m_bitwardenUnlockError->clear();
-        m_bitwardenUnlockWidget->setEnabled(false);
         setCurrentWidget(m_bitwardenUnlockWidget);
     } else {
         switchToOpenDatabase(m_db->filePath());

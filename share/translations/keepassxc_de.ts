@@ -2768,6 +2768,14 @@ Das ist definitiv ein Programmfehler, bitte benachrichtigen Sie die Entwickler.<
 <context>
     <name>DatabaseWidget</name>
     <message>
+        <source>Waiting for Windows Hello…</source>
+        <translation>Warten auf Windows Hello …</translation>
+    </message>
+    <message>
+        <source>Locking the Bitwarden vault…</source>
+        <translation>Bitwarden-Tresor wird gesperrt …</translation>
+    </message>
+    <message>
         <source>Searches and Tags</source>
         <translation>Suchen und Tags</translation>
     </message>
@@ -3037,6 +3045,22 @@ Sicheres Speichern deaktivieren und erneut versuchen?</translation>
 </context>
 <context>
     <name>EditEntryWidget</name>
+    <message>
+        <source>Configured</source>
+        <translation>Eingerichtet</translation>
+    </message>
+    <message>
+        <source>Not configured</source>
+        <translation>Nicht eingerichtet</translation>
+    </message>
+    <message>
+        <source>Edit TOTP…</source>
+        <translation>TOTP bearbeiten …</translation>
+    </message>
+    <message>
+        <source>Set Up TOTP…</source>
+        <translation>TOTP einrichten …</translation>
+    </message>
     <message>
         <source>Entry</source>
         <translation>Eintrag</translation>
@@ -10815,6 +10839,29 @@ Example: JBSWY3DPEHPK3PXP</source>
         <source>Unknown</source>
         <comment>Unknown hardware key name</comment>
         <translation>Unbekannt</translation>
+    </message>
+</context>
+<context>
+    <name>BitwardenSession</name>
+    <message>
+        <source>Preparing the Bitwarden CLI…</source>
+        <translation>Bitwarden-CLI wird vorbereitet …</translation>
+    </message>
+    <message>
+        <source>Signing in or unlocking the Bitwarden vault…</source>
+        <translation>Anmeldung oder Entsperren läuft …</translation>
+    </message>
+    <message>
+        <source>Synchronizing with the Bitwarden server…</source>
+        <translation>Tresor wird mit dem Bitwarden-Server synchronisiert …</translation>
+    </message>
+    <message>
+        <source>Reading and decrypting folders and entries…</source>
+        <translation>Ordner und Einträge werden gelesen und entschlüsselt …</translation>
+    </message>
+    <message>
+        <source>Preparing the vault view…</source>
+        <translation>Tresoransicht wird vorbereitet …</translation>
     </message>
 </context>
 </TS>
