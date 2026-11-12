@@ -479,6 +479,7 @@ QList<BitwardenSession::Edit> BitwardenSession::prepareSave(const Database& data
             }
             updated.insert("folderId", folderFor(*entry, m_rootId));
         }
+        oldEntry->setPreviousParentGroupUuid(entry->previousParentGroupUuid());
         normalizeTimes(*oldEntry, *entry);
         if (!oldEntry->equals(entry, CompareVault)) {
             throw unsupportedChange();
