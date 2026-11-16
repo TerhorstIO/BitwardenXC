@@ -461,7 +461,7 @@ MainWindow::MainWindow()
     connect(syncBitwardenAction, &QAction::triggered, m_ui->tabWidget, &DatabaseTabWidget::syncBitwardenDatabase);
     connect(m_ui->menuFile, &QMenu::aboutToShow, this, [this, syncBitwardenAction] {
         auto* dbWidget = m_ui->tabWidget->currentDatabaseWidget();
-        syncBitwardenAction->setEnabled(dbWidget && dbWidget->isBitwarden()
+        syncBitwardenAction->setEnabled(dbWidget && dbWidget->canSyncBitwarden()
                                         && dbWidget->currentMode() == DatabaseWidget::Mode::ViewMode);
     });
 #endif
@@ -1041,7 +1041,8 @@ void MainWindow::updateMenuActionState()
     m_ui->actionClearSSHAgent->setEnabled(sshAgent()->isEnabled());
 #endif
 
-    m_ui->actionGroupNew->setEnabled(groupSelected && !inRecycleBin);
+    m_ui->actionGroupNew->setEnabled((groupSelected && !inRecycleBin)
+                                     || (inDatabase && bitwarden && dbWidget->canCreateBitwardenFolder()));
     m_ui->actionGroupEdit->setEnabled(groupSelected);
     m_ui->actionGroupClone->setEnabled(groupSelected && dbWidget->canCloneCurrentGroup());
     m_ui->actionGroupDelete->setEnabled(groupSelected && dbWidget->canDeleteCurrentGroup());

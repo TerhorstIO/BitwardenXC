@@ -2768,6 +2768,22 @@ Das ist definitiv ein Programmfehler, bitte benachrichtigen Sie die Entwickler.<
 <context>
     <name>DatabaseWidget</name>
     <message>
+        <source>New Bitwarden Folder</source>
+        <translation>Neuer Bitwarden-Ordner</translation>
+    </message>
+    <message>
+        <source>Folder name:</source>
+        <translation>Ordnername:</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Erstellen</translation>
+    </message>
+    <message>
+        <source>Could not create the Bitwarden folder.</source>
+        <translation>Der Bitwarden-Ordner konnte nicht erstellt werden.</translation>
+    </message>
+    <message>
         <source>Synchronizing Bitwarden in the background…</source>
         <translation>Bitwarden wird im Hintergrund synchronisiert …</translation>
     </message>
@@ -7647,6 +7663,26 @@ Möchten Sie diese überschreiben?</translation>
 </context>
 <context>
     <name>QObject</name>
+    <message>
+        <source>Enter a folder name without a slash or line break.</source>
+        <translation>Gib einen Ordnernamen ohne Schrägstrich oder Zeilenumbruch ein.</translation>
+    </message>
+    <message>
+        <source>The selected Bitwarden vault or parent folder is unavailable.</source>
+        <translation>Der ausgewählte Bitwarden-Tresor oder übergeordnete Ordner ist nicht verfügbar.</translation>
+    </message>
+    <message>
+        <source>The selected Bitwarden parent folder is missing or ambiguous.</source>
+        <translation>Der ausgewählte übergeordnete Ordner fehlt oder ist nicht eindeutig.</translation>
+    </message>
+    <message>
+        <source>A Bitwarden folder with this path already exists.</source>
+        <translation>Ein Bitwarden-Ordner mit diesem Pfad ist bereits vorhanden.</translation>
+    </message>
+    <message>
+        <source>The new Bitwarden folder could not be added to this view. Synchronize the vault to reload it.</source>
+        <translation>Der neue Bitwarden-Ordner konnte nicht zur Ansicht hinzugefügt werden. Synchronisiere den Tresor, um ihn zu laden.</translation>
+    </message>
     <message>
         <source>Database not opened</source>
         <translation>Datenbank nicht geöffnet</translation>

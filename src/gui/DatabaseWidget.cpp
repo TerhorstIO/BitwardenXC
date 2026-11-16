@@ -34,9 +34,12 @@
 #include <QPushButton>
 #include <QScopeGuard>
 #include <QScopedValueRollback>
+#include <QSignalBlocker>
 #include <QSplitter>
 #include <QTextDocumentFragment>
 #include <QTextEdit>
+
+#include <utility>
 
 #include "autotype/AutoType.h"
 #include "core/AsyncTask.h"
@@ -311,6 +314,12 @@ bool DatabaseWidget::isBitwarden() const
 bool DatabaseWidget::canCreateBitwardenEntry() const
 {
     return isBitwarden() && !isLocked() && !m_bitwardenBusy && m_bitwarden->canCreate();
+}
+
+bool DatabaseWidget::canCreateBitwardenFolder() const
+{
+    return isEntryViewActive() && !m_attemptingLock && !m_bitwardenFolderCreating && currentGroup()
+        && canCreateBitwardenEntry();
 }
 
 bool DatabaseWidget::canEditBitwardenEntry() const
@@ -1437,6 +1446,10 @@ Entry* DatabaseWidget::currentSelectedEntry() const
 
 void DatabaseWidget::createGroup()
 {
+    if (isBitwarden()) {
+        createBitwardenFolder();
+        return;
+    }
     Q_ASSERT(m_groupView->currentGroup());
     if (!m_groupView->currentGroup()) {
         return;
@@ -1446,6 +1459,91 @@ void DatabaseWidget::createGroup()
     m_newGroup->setUuid(QUuid::createUuid());
     m_newParent = m_groupView->currentGroup();
     switchToGroupEdit(m_newGroup.data(), true);
+}
+
+void DatabaseWidget::createBitwardenFolder()
+{
+    if (!canCreateBitwardenFolder() || QApplication::activeModalWidget()) {
+        return;
+    }
+
+    const QPointer<Database> requestedDatabase(m_db.data());
+    const auto parentId = currentGroup()->uuid();
+    QInputDialog dialog(this);
+    dialog.setWindowTitle(tr("New Bitwarden Folder"));
+    dialog.setLabelText(tr("Folder name:"));
+    dialog.setOkButtonText(tr("Create"));
+    connect(this, &DatabaseWidget::databaseLockRequested, &dialog, &QInputDialog::reject);
+    if (dialog.exec() != QDialog::Accepted || requestedDatabase != m_db.data() || !canCreateBitwardenFolder()) {
+        return;
+    }
+
+    QString path;
+    try {
+        path = m_bitwarden->folderPathForCreate(parentId, dialog.textValue());
+    } catch (const BitwardenCliError& error) {
+        showMessage(error.message().toHtmlEscaped(), MessageWidget::Error, true);
+        return;
+    }
+
+    struct Result
+    {
+        QJsonObject folder;
+        QString error;
+    };
+
+    m_bitwardenFolderCreating = true;
+    cancelBitwardenSync();
+    emit groupChanged();
+    AsyncTask::runThenCallback(
+        [session = m_bitwarden, parentId, path]() -> Result {
+            try {
+                return {session->createFolder(parentId, path), {}};
+            } catch (const BitwardenCliError& error) {
+                return {{}, error.message()};
+            } catch (...) {
+                return {{}, tr("Could not create the Bitwarden folder.")};
+            }
+        },
+        this,
+        [this, requestedDatabase, parentId](const Result& result) {
+            auto finish = [this, requestedDatabase, parentId, result] {
+                m_bitwardenFolderCreating = false;
+                emit groupChanged();
+                if (isLocked() || requestedDatabase != m_db.data()) {
+                    // A lock discards the old view. A subsequent unlock may need its own sync.
+                    startBitwardenInitialSync();
+                    return;
+                }
+                if (!result.error.isEmpty()) {
+                    showMessage(result.error.toHtmlEscaped(), MessageWidget::Error, true);
+                    return;
+                }
+                try {
+                    m_bitwarden->adoptCreatedFolder(result.folder, *m_db);
+                } catch (const BitwardenCliError& error) {
+                    showMessage(error.message().toHtmlEscaped(), MessageWidget::Error, true);
+                    return;
+                }
+                const auto id = QUuid(result.folder.value(QStringLiteral("id")).toString());
+                auto* group = m_db->rootGroup()->findGroupByUuid(id);
+                if (group && isVisible() && isEntryViewActive() && !isSearchActive() && !m_attemptingLock
+                    && !QApplication::activeModalWidget() && currentGroup() && currentGroup()->uuid() == parentId) {
+                    if (auto* parent = group->parentGroup()) {
+                        // Expanding a server-created folder must not mark the vault dirty.
+                        const QSignalBlocker blocker(parent);
+                        m_groupView->expandGroup(parent);
+                    }
+                    m_groupView->setCurrentGroup(group);
+                }
+            };
+            if (m_bitwardenBusy && !isLocked() && requestedDatabase == m_db.data()) {
+                // Save waits in a nested event loop. Apply the folder after that write finishes.
+                m_finishBitwardenFolderCreate = std::move(finish);
+            } else {
+                finish();
+            }
+        });
 }
 
 void DatabaseWidget::cloneGroup()
@@ -2036,6 +2134,9 @@ void DatabaseWidget::switchToEntryEdit()
 
 void DatabaseWidget::switchToGroupEdit()
 {
+    if (isBitwarden()) {
+        return;
+    }
     auto group = m_groupView->currentGroup();
     if (!group) {
         return;
@@ -2966,6 +3067,11 @@ bool DatabaseWidget::saveBitwarden()
     if (m_bitwardenBusy) {
         return false;
     }
+    const auto finishFolderAfterSave = qScopeGuard([this] {
+        if (m_finishBitwardenFolderCreate) {
+            QTimer::singleShot(0, this, std::exchange(m_finishBitwardenFolderCreate, std::function<void()>{}));
+        }
+    });
 
     QList<BitwardenSession::Edit> edits;
     try {
@@ -3012,16 +3118,22 @@ bool DatabaseWidget::saveBitwarden()
 
 void DatabaseWidget::startBitwardenInitialSync()
 {
-    if (isBitwarden() && !isLocked() && !m_bitwardenBusy && m_bitwarden->needsInitialSync()) {
+    if (isBitwarden() && !isLocked() && !m_bitwardenBusy && !m_bitwardenFolderCreating
+        && m_bitwarden->needsInitialSync()) {
         startBitwardenSync(false);
     }
 }
 
 void DatabaseWidget::syncBitwarden()
 {
-    if (isBitwarden() && !isLocked() && !m_bitwardenBusy && !m_bitwardenSyncCanceled) {
+    if (canSyncBitwarden()) {
         startBitwardenSync(true);
     }
+}
+
+bool DatabaseWidget::canSyncBitwarden() const
+{
+    return isBitwarden() && !isLocked() && !m_bitwardenBusy && !m_bitwardenFolderCreating && !m_bitwardenSyncCanceled;
 }
 
 DatabaseWidget::BitwardenSyncStatus DatabaseWidget::bitwardenSyncStatus() const

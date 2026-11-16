@@ -22,6 +22,7 @@
 #include <QStackedWidget>
 
 #include <atomic>
+#include <functional>
 #include <memory>
 
 #include "core/Database.h"
@@ -95,8 +96,10 @@ public:
     QSharedPointer<Database> database() const;
     bool isBitwarden() const;
     bool canCreateBitwardenEntry() const;
+    bool canCreateBitwardenFolder() const;
     bool canEditBitwardenEntry() const;
     bool canEditBitwardenLogin() const;
+    bool canSyncBitwarden() const;
     void startBitwardenInitialSync();
     void syncBitwarden();
     BitwardenSyncStatus bitwardenSyncStatus() const;
@@ -330,6 +333,7 @@ private:
     void performIconDownloads(const QList<Entry*>& entries, bool force = false, bool downloadInBackground = false);
     bool performSave(QString& errorMessage, const QString& fileName = {});
     bool saveBitwarden();
+    void createBitwardenFolder();
     void startBitwardenSync(bool force);
     void cancelBitwardenSync();
     void setBitwardenSyncStatus(BitwardenSyncStatus status, const QString& text = {});
@@ -346,6 +350,8 @@ private:
     bool m_bitwardenRestartInitialSync = false;
     BitwardenSyncStatus m_bitwardenSyncStatus = BitwardenSyncStatus::Hidden;
     QString m_bitwardenSyncText;
+    std::function<void()> m_finishBitwardenFolderCreate;
+    bool m_bitwardenFolderCreating = false;
     bool m_bitwardenBusy = false;
     bool m_bitwardenUnlocking = false;
     bool m_bitwardenUnlockCanceled = false;

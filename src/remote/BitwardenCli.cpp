@@ -15,6 +15,7 @@
 #include <QProcessEnvironment>
 #include <QRegularExpression>
 #include <QScopeGuard>
+#include <QSet>
 #include <QStandardPaths>
 #include <QUuid>
 
@@ -170,9 +171,9 @@ namespace
         return document.array();
     }
 
-    QByteArray encodeItem(const QJsonObject& item)
+    QByteArray encodeObject(const QJsonObject& object)
     {
-        auto json = QJsonDocument(item).toJson(QJsonDocument::Compact);
+        auto json = QJsonDocument(object).toJson(QJsonDocument::Compact);
         const auto erase = qScopeGuard([&json] { json.fill('\0'); });
         return json.toBase64();
     }
@@ -647,7 +648,7 @@ QJsonObject BitwardenCli::editItem(const QString& id, const QJsonObject& item, c
     if (item.contains(fieldsKey)) {
         updated.insert(fieldsKey, item.value(fieldsKey));
     }
-    const auto saved = writeItem({QStringLiteral("edit"), QStringLiteral("item"), canonicalId}, updated);
+    const auto saved = writeObject({QStringLiteral("edit"), QStringLiteral("item"), canonicalId}, updated);
     if (saved.value(idKey) != canonicalId) {
         throw BitwardenCliError(QStringLiteral("Die Bitwarden-CLI hat die Änderung nicht bestätigt."));
     }
@@ -680,16 +681,76 @@ QJsonObject BitwardenCli::createItem(const QJsonObject& item)
     created.insert(favoriteKey, item.value(favoriteKey).toBool());
     created.insert(repromptKey, item.value(repromptKey).toInt());
     created.insert(loginKey, loginForWrite(item.value(loginKey).toObject()));
-    const auto saved = writeItem({QStringLiteral("create"), QStringLiteral("item")}, created);
+    const auto saved = writeObject({QStringLiteral("create"), QStringLiteral("item")}, created);
     if (!validId(saved.value(idKey).toString())) {
         throw BitwardenCliError(QStringLiteral("Die Bitwarden-CLI hat den neuen Eintrag nicht bestätigt."));
     }
     return saved;
 }
 
-QJsonObject BitwardenCli::writeItem(const QStringList& arguments, const QJsonObject& item) const
+QJsonObject BitwardenCli::createFolder(const QUuid& parentId, const QString& path)
 {
-    auto input = encodeItem(item);
+    const QMutexLocker locker(&m_mutex);
+    ensureUnlocked();
+    const auto separator = path.lastIndexOf(QLatin1Char('/'));
+    const auto leaf = path.mid(separator + 1);
+    if (leaf.isEmpty() || leaf.trimmed() != leaf || path.contains(QChar::Null)
+        || (parentId.isNull() ? separator != -1 : separator <= 0)) {
+        throw BitwardenCliError(QStringLiteral("Der Bitwarden-Ordnerpfad ist ungültig."));
+    }
+
+    syncVault(true);
+    const auto folders = parseArray(run({QStringLiteral("list"), QStringLiteral("folders")}));
+    const auto parentPath = path.left(separator);
+    QSet<QUuid> folderIds;
+    int parentPathMatches = 0;
+    int parentIdMatches = 0;
+    bool parentUnchanged = false;
+    for (const auto& value : folders) {
+        const auto folder = value.toObject();
+        const auto idString = folder.value(idKey).toString();
+        if (!validId(idString)) {
+            continue;
+        }
+        const QUuid id(idString);
+        folderIds.insert(id);
+        const auto name = folder.value(nameKey).toString();
+        if (name == path) {
+            throw BitwardenCliError(QStringLiteral("Ein Bitwarden-Ordner mit diesem Pfad ist bereits vorhanden."),
+                                   BitwardenCliError::Reason::Conflict);
+        }
+        if (!parentId.isNull()) {
+            if (name == parentPath) {
+                ++parentPathMatches;
+            }
+            if (id == parentId) {
+                ++parentIdMatches;
+                parentUnchanged = name == parentPath;
+            }
+        }
+    }
+    if (!parentId.isNull() && (!parentUnchanged || parentPathMatches != 1 || parentIdMatches != 1)) {
+        throw BitwardenCliError(QStringLiteral("Der übergeordnete Bitwarden-Ordner wurde geändert. Synchronisiere den Tresor und versuche es erneut."),
+                               BitwardenCliError::Reason::Conflict);
+    }
+
+    const auto uncertain = QStringLiteral("Bitwarden hat die Ordnererstellung nicht bestätigt. Synchronisiere den Tresor, bevor du es erneut versuchst.");
+    QJsonObject saved;
+    try {
+        saved = writeObject({QStringLiteral("create"), QStringLiteral("folder")}, {{nameKey, path}});
+    } catch (const BitwardenCliError& error) {
+        throw BitwardenCliError(uncertain, error.reason());
+    }
+    const auto id = saved.value(idKey).toString();
+    if (!validId(id) || folderIds.contains(QUuid(id)) || saved.value(nameKey) != path) {
+        throw BitwardenCliError(uncertain);
+    }
+    return saved;
+}
+
+QJsonObject BitwardenCli::writeObject(const QStringList& arguments, const QJsonObject& object) const
+{
+    auto input = encodeObject(object);
     const auto erase = qScopeGuard([&input] { input.fill('\0'); });
     return parseObject(run(arguments, input));
 }

@@ -60,6 +60,9 @@ public:
     QSharedPointer<Database> applySync(VaultSnapshot snapshot);
     void lock();
     SaveResult save(const QList<Edit>& edits);
+    QString folderPathForCreate(const QUuid& parent, const QString& name) const;
+    QJsonObject createFolder(const QUuid& parent, const QString& path);
+    void adoptCreatedFolder(const QJsonObject& folder, Database& database);
 
     QSharedPointer<Database> makeDatabase() const;
     bool canEdit(const QUuid& id) const;

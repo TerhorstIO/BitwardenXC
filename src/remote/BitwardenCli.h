@@ -15,6 +15,7 @@
 #include <QString>
 #include <QStringList>
 #include <QUrl>
+#include <QUuid>
 #include <functional>
 #include <optional>
 #include <stdexcept>
@@ -68,13 +69,14 @@ public:
     QJsonArray listItems();
     QJsonObject editItem(const QString& id, const QJsonObject& item, const QString& expectedRevision);
     QJsonObject createItem(const QJsonObject& item);
+    QJsonObject createFolder(const QUuid& parentId, const QString& path);
 
 private:
     QByteArray run(const QStringList& arguments,
                    const QByteArray& input = {},
                    const QProcessEnvironment& secrets = {}) const;
     QString cliVersion();
-    QJsonObject writeItem(const QStringList& arguments, const QJsonObject& item) const;
+    QJsonObject writeObject(const QStringList& arguments, const QJsonObject& object) const;
     QJsonObject profileStatus() const;
     void verifyProfile(const QString& server, const QString& email) const;
     void syncVault(bool force) const;

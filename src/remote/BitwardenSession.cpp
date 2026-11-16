@@ -125,11 +125,13 @@ namespace
         expected.setTimeInfo(time);
     }
 
-    template <typename Item> bool sameOrder(const QList<Item*>& left, const QList<Item*>& right)
+    QSet<QUuid> childIds(const Group& group)
     {
-        return std::equal(left.begin(), left.end(), right.begin(), right.end(), [](const Item* a, const Item* b) {
-            return a->uuid() == b->uuid();
-        });
+        QSet<QUuid> ids;
+        for (const auto* child : group.children()) {
+            ids.insert(child->uuid());
+        }
+        return ids;
     }
 
     bool sameFolder(const Group& old, const Group& current)
@@ -140,7 +142,26 @@ namespace
             && old.defaultAutoTypeSequence() == current.defaultAutoTypeSequence()
             && old.autoTypeEnabled() == current.autoTypeEnabled() && old.searchingEnabled() == current.searchingEnabled()
             && old.mergeMode() == current.mergeMode() && *old.customData() == *current.customData()
-            && sameOrder(old.children(), current.children());
+            && childIds(old) == childIds(current);
+    }
+
+    QString folderPath(const QJsonArray& folders, const QUuid& id)
+    {
+        for (const auto& value : folders) {
+            const auto folder = value.toObject();
+            if (QUuid(folder.value("id").toString()) == id) {
+                return folder.value("name").toString();
+            }
+        }
+        return {};
+    }
+
+    qsizetype countFolderPath(const QJsonArray& folders, const QString& path)
+    {
+        return std::count_if(folders.begin(), folders.end(), [&path](const QJsonValue& value) {
+            const auto folder = value.toObject();
+            return !QUuid(folder.value("id").toString()).isNull() && folder.value("name") == path;
+        });
     }
 
     BitwardenCliError unsupportedChange()
@@ -480,6 +501,89 @@ bool BitwardenSession::isDraft(const QUuid& id) const
 QSharedPointer<Database> BitwardenSession::makeDatabase() const
 {
     return makeDatabase({m_folders, m_items});
+}
+
+QString BitwardenSession::folderPathForCreate(const QUuid& parent, const QString& name) const
+{
+    const auto leaf = name.trimmed();
+    if (leaf.isEmpty() || leaf.contains('/') || leaf.contains(QChar::Null) || leaf.contains('\r') || leaf.contains('\n')) {
+        throw BitwardenCliError(QObject::tr("Enter a folder name without a slash or line break."));
+    }
+    if (!m_connected || parent.isNull()) {
+        throw BitwardenCliError(QObject::tr("The selected Bitwarden vault or parent folder is unavailable."));
+    }
+
+    auto path = leaf;
+    if (parent != m_rootId) {
+        const auto prefix = folderPath(m_folders, parent);
+        if (prefix.isEmpty() || countFolderPath(m_folders, prefix) != 1) {
+            throw BitwardenCliError(QObject::tr("The selected Bitwarden parent folder is missing or ambiguous."));
+        }
+        path.prepend(prefix + '/');
+    }
+    if (countFolderPath(m_folders, path) != 0) {
+        throw BitwardenCliError(QObject::tr("A Bitwarden folder with this path already exists."),
+                               BitwardenCliError::Reason::Conflict);
+    }
+    return path;
+}
+
+QJsonObject BitwardenSession::createFolder(const QUuid& parent, const QString& path)
+{
+    if (parent.isNull()) {
+        throw BitwardenCliError(QObject::tr("The selected Bitwarden vault or parent folder is unavailable."));
+    }
+    return m_cli.createFolder(parent == m_rootId ? QUuid() : parent, path);
+}
+
+void BitwardenSession::adoptCreatedFolder(const QJsonObject& folder, Database& database)
+{
+    auto* root = database.rootGroup();
+    const QUuid id(folder.value("id").toString());
+    const auto path = folder.value("name").toString();
+    const auto separator = path.lastIndexOf('/');
+    auto* parent = root;
+    if (separator > 0) {
+        const auto prefix = path.left(separator);
+        for (const auto& value : m_folders) {
+            const auto existing = value.toObject();
+            const QUuid existingId(existing.value("id").toString());
+            if (!existingId.isNull() && existing.value("name") == prefix) {
+                parent = root->findGroupByUuid(existingId);
+                break;
+            }
+        }
+    }
+    const auto leaf = path.mid(separator + 1);
+    if (!m_connected || root->uuid() != m_rootId || id.isNull() || root->findGroupByUuid(id) || leaf.isEmpty()
+        || countFolderPath(m_folders, path) != 0 || !parent || (separator != -1 && parent == root)) {
+        throw BitwardenCliError(QObject::tr("The new Bitwarden folder could not be added to this view. Synchronize the vault to reload it."));
+    }
+
+    auto* group = new Group();
+    group->setEmitModified(false);
+    group->setUuid(id);
+    group->setName(leaf);
+    group->setParent(parent);
+    group->setEmitModified(true);
+
+    // Folder names encode parent paths. Creating a missing parent can attach existing root folders.
+    for (const auto& value : m_folders) {
+        const auto existing = value.toObject();
+        const auto existingPath = existing.value("name").toString();
+        const auto childSeparator = existingPath.lastIndexOf('/');
+        if (childSeparator <= 0 || existingPath.left(childSeparator) != path) {
+            continue;
+        }
+        auto* child = root->findGroupByUuid(QUuid(existing.value("id").toString()));
+        if (child && child != root && child->parentGroup() == root) {
+            child->setEmitModified(false);
+            child->setName(existingPath.mid(childSeparator + 1));
+            child->setParent(group, -1, false);
+            child->setEmitModified(true);
+        }
+    }
+    m_folders.append(folder);
 }
 
 QSharedPointer<Database> BitwardenSession::makeDatabase(const VaultSnapshot& snapshot) const
