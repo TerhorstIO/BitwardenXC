@@ -2768,24 +2768,24 @@ Das ist definitiv ein Programmfehler, bitte benachrichtigen Sie die Entwickler.<
 <context>
     <name>DatabaseWidget</name>
     <message>
-        <source>Showing the cached vault while Bitwarden synchronizes.</source>
-        <translation>Lokaler Tresor geöffnet. Bitwarden synchronisiert im Hintergrund.</translation>
+        <source>Synchronizing Bitwarden in the background…</source>
+        <translation>Bitwarden wird im Hintergrund synchronisiert …</translation>
     </message>
     <message>
-        <source>Showing the cached vault. Use Sync Bitwarden to refresh.</source>
-        <translation>Der lokale Tresor wird angezeigt. Verwende „Bitwarden synchronisieren“ zum Aktualisieren.</translation>
+        <source>Bitwarden synchronization was interrupted. Click to retry.</source>
+        <translation>Die Bitwarden-Synchronisierung wurde unterbrochen. Klicke hier, um es erneut zu versuchen.</translation>
     </message>
     <message>
-        <source>Synchronization failed. Showing the cached vault. Use Sync Bitwarden to try again.</source>
-        <translation>Synchronisierung fehlgeschlagen. Der lokale Tresor wird angezeigt. Verwende „Bitwarden synchronisieren“ für einen neuen Versuch.</translation>
+        <source>Bitwarden synchronization failed. Click to retry.</source>
+        <translation>Die Bitwarden-Synchronisierung ist fehlgeschlagen. Klicke hier, um es erneut zu versuchen.</translation>
     </message>
     <message>
         <source>Could not open the synchronized Bitwarden vault.</source>
         <translation>Der synchronisierte Bitwarden-Tresor konnte nicht geöffnet werden.</translation>
     </message>
     <message>
-        <source>Bitwarden is already synchronizing.</source>
-        <translation>Bitwarden wird bereits synchronisiert.</translation>
+        <source>Bitwarden update pending. Finish editing and save your changes, then click to retry.</source>
+        <translation>Ein Bitwarden-Abgleich steht aus. Beende die Bearbeitung und speichere deine Änderungen. Klicke dann hier für einen neuen Versuch.</translation>
     </message>
     <message>
         <source>Waiting for Windows Hello…</source>
@@ -5864,6 +5864,10 @@ Wollen Sie wirklich mit dieser Datei fortfahren?</translation>
 </context>
 <context>
     <name>MainWindow</name>
+    <message>
+        <source>Bitwarden synchronization</source>
+        <translation>Bitwarden-Synchronisierung</translation>
+    </message>
     <message>
         <source>&amp;Database</source>
         <translation>&amp;Datenbank</translation>

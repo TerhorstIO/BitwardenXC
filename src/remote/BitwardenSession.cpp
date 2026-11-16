@@ -364,11 +364,6 @@ bool BitwardenSession::openCachedVault(const QByteArray& password, const OpenPro
     return true;
 }
 
-void BitwardenSession::sync()
-{
-    loadVault(true, true, {});
-}
-
 void BitwardenSession::loadVault(bool synchronize, bool force, const OpenProgress& progress)
 {
     if (synchronize) {
@@ -396,14 +391,14 @@ bool BitwardenSession::needsInitialSync() const
     return m_needsInitialSync;
 }
 
-BitwardenSession::VaultSnapshot BitwardenSession::fetchInitialSync(const std::function<bool()>& canceled)
+BitwardenSession::VaultSnapshot BitwardenSession::fetchSync(bool force, const std::function<bool()>& canceled)
 {
-    return m_cli.readVault(true, false, canceled);
+    return m_cli.readVault(true, force, canceled);
 }
 
-QSharedPointer<Database> BitwardenSession::applyInitialSync(VaultSnapshot snapshot)
+QSharedPointer<Database> BitwardenSession::applySync(VaultSnapshot snapshot)
 {
-    if (!m_connected || !m_needsInitialSync) {
+    if (!m_connected) {
         return {};
     }
     if (snapshot.folders == m_folders && snapshot.items == m_items) {

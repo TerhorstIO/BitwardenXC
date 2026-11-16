@@ -77,6 +77,13 @@ public:
         DatabaseSettingsMode
     };
 
+    enum class BitwardenSyncStatus
+    {
+        Hidden,
+        Running,
+        Attention
+    };
+
     explicit DatabaseWidget(QSharedPointer<Database> db,
                             QWidget* parent = nullptr,
                             QSharedPointer<BitwardenSession> bitwarden = {});
@@ -92,6 +99,8 @@ public:
     bool canEditBitwardenLogin() const;
     void startBitwardenInitialSync();
     void syncBitwarden();
+    BitwardenSyncStatus bitwardenSyncStatus() const;
+    QString bitwardenSyncStatusText() const;
     void rememberBitwardenPassword(const QByteArray& password);
     void offerBitwardenQuickUnlock(QByteArray password);
     void focusBitwardenUnlock();
@@ -159,6 +168,7 @@ signals:
     void databaseUnlocked();
     void databaseLockRequested();
     void databaseLocked();
+    void bitwardenSyncStatusChanged();
 
     // Emitted in replaceDatabase, may be caused by lock, reload, unlock, load.
     void databaseReplaced(const QSharedPointer<Database>& oldDb, const QSharedPointer<Database>& newDb);
@@ -320,8 +330,10 @@ private:
     void performIconDownloads(const QList<Entry*>& entries, bool force = false, bool downloadInBackground = false);
     bool performSave(QString& errorMessage, const QString& fileName = {});
     bool saveBitwarden();
-    void cancelBitwardenInitialSync();
-    void replaceBitwardenDatabase(QSharedPointer<Database> database, bool preserveSearch = false);
+    void startBitwardenSync(bool force);
+    void cancelBitwardenSync();
+    void setBitwardenSyncStatus(BitwardenSyncStatus status, const QString& text = {});
+    void replaceBitwardenDatabase(QSharedPointer<Database> database);
     void initBitwardenUnlockWidget();
     void updateBitwardenUnlockWidget();
     void unlockBitwarden(bool useHello);
@@ -330,8 +342,10 @@ private:
 
     QSharedPointer<Database> m_db;
     QSharedPointer<BitwardenSession> m_bitwarden;
-    std::shared_ptr<std::atomic_bool> m_bitwardenInitialSync;
+    std::shared_ptr<std::atomic_bool> m_bitwardenSyncCanceled;
     bool m_bitwardenRestartInitialSync = false;
+    BitwardenSyncStatus m_bitwardenSyncStatus = BitwardenSyncStatus::Hidden;
+    QString m_bitwardenSyncText;
     bool m_bitwardenBusy = false;
     bool m_bitwardenUnlocking = false;
     bool m_bitwardenUnlockCanceled = false;
@@ -343,7 +357,6 @@ private:
     QPointer<QPushButton> m_bitwardenHelloButton;
     QPointer<QLabel> m_bitwardenUnlockStatus;
     QPointer<QLabel> m_bitwardenUnlockError;
-    QPointer<MessageWidget> m_bitwardenSyncStatus;
 
     QPointer<QWidget> m_mainWidget;
     QPointer<QSplitter> m_mainSplitter;

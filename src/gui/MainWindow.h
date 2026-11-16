@@ -38,6 +38,7 @@ namespace Ui
 class InactivityTimer;
 class SearchWidget;
 class MainWindowEventFilter;
+class QToolButton;
 
 class MainWindow : public QMainWindow
 {
@@ -172,6 +173,7 @@ private:
 
     void initViewMenu();
     void initActionCollection();
+    void updateBitwardenSyncIndicator();
 
     const QScopedPointer<Ui::MainWindow> m_ui;
     SignalMultiplexer m_actionMultiplexer;
@@ -190,6 +192,8 @@ private:
     QPointer<QProgressBar> m_progressBar;
     QPointer<QLabel> m_progressBarLabel;
     QPointer<QLabel> m_statusBarLabel;
+    QPointer<QToolButton> m_bitwardenSyncIndicator;
+    QMetaObject::Connection m_bitwardenSyncStatusConnection;
 
     Q_DISABLE_COPY(MainWindow)
 

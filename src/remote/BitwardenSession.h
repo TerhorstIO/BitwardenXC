@@ -55,10 +55,9 @@ public:
                  QByteArray clientSecret = {},
                  const OpenProgress& progress = {});
     void unlock(QByteArray password, const OpenProgress& progress = {});
-    void sync();
     bool needsInitialSync() const;
-    VaultSnapshot fetchInitialSync(const std::function<bool()>& canceled = {});
-    QSharedPointer<Database> applyInitialSync(VaultSnapshot snapshot);
+    VaultSnapshot fetchSync(bool force, const std::function<bool()>& canceled = {});
+    QSharedPointer<Database> applySync(VaultSnapshot snapshot);
     void lock();
     SaveResult save(const QList<Edit>& edits);
 

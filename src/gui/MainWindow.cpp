@@ -679,6 +679,31 @@ MainWindow::MainWindow()
     m_statusBarLabel->setObjectName("statusBarLabel");
     statusBar()->addPermanentWidget(m_statusBarLabel);
 
+    m_bitwardenSyncIndicator = new QToolButton(statusBar());
+    m_bitwardenSyncIndicator->setObjectName(QStringLiteral("bitwardenSyncIndicator"));
+    m_bitwardenSyncIndicator->setAccessibleName(tr("Bitwarden synchronization"));
+    m_bitwardenSyncIndicator->setAutoRaise(true);
+    m_bitwardenSyncIndicator->setIconSize(QSize(16, 16));
+    m_bitwardenSyncIndicator->hide();
+    statusBar()->addPermanentWidget(m_bitwardenSyncIndicator);
+    connect(m_bitwardenSyncIndicator, &QToolButton::clicked, this, [this] {
+        auto* database = m_ui->tabWidget->currentDatabaseWidget();
+        if (database && database->bitwardenSyncStatus() == DatabaseWidget::BitwardenSyncStatus::Attention) {
+            database->syncBitwarden();
+        }
+    });
+    connect(m_ui->tabWidget, &DatabaseTabWidget::activeDatabaseChanged, this, [this](DatabaseWidget* database) {
+        disconnect(m_bitwardenSyncStatusConnection);
+        if (database) {
+            m_bitwardenSyncStatusConnection = connect(database,
+                                                     &DatabaseWidget::bitwardenSyncStatusChanged,
+                                                     this,
+                                                     &MainWindow::updateBitwardenSyncIndicator);
+        }
+        updateBitwardenSyncIndicator();
+    });
+    connect(m_ui->stackedWidget, &QStackedWidget::currentChanged, this, &MainWindow::updateBitwardenSyncIndicator);
+
     restoreConfigState();
     updateMenuActionState();
 }
@@ -1641,6 +1666,28 @@ void MainWindow::updateEntryCountLabel()
     } else {
         m_statusBarLabel->setText("");
     }
+}
+
+void MainWindow::updateBitwardenSyncIndicator()
+{
+    using SyncStatus = DatabaseWidget::BitwardenSyncStatus;
+    auto* database = m_ui->tabWidget->currentDatabaseWidget();
+    const auto status = database && m_ui->stackedWidget->currentIndex() == DatabaseTabScreen
+        ? database->bitwardenSyncStatus()
+        : SyncStatus::Hidden;
+    if (status == SyncStatus::Hidden) {
+        m_bitwardenSyncIndicator->hide();
+        return;
+    }
+
+    const bool attention = status == SyncStatus::Attention;
+    m_bitwardenSyncIndicator->setIcon(attention ? icons()->icon("dialog-warning", false) : icons()->icon("remote-sync"));
+    m_bitwardenSyncIndicator->setFocusPolicy(attention ? Qt::TabFocus : Qt::NoFocus);
+    const auto description = database->bitwardenSyncStatusText();
+    m_bitwardenSyncIndicator->setAccessibleDescription(description);
+    m_bitwardenSyncIndicator->setToolTip(
+        QStringLiteral("<qt>%1</qt>").arg(description.toHtmlEscaped().replace('\n', "<br>")));
+    m_bitwardenSyncIndicator->show();
 }
 
 void MainWindow::obtainContextFocusLock()
