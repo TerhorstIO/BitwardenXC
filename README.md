@@ -9,7 +9,7 @@ BitwardenXC is a Windows fork of KeePassXC 2.8.0. Bitwarden and Vaultwarden vaul
 
 With **Remember previously used databases** enabled, the server address and email appear in **Database → Recent Databases** and on the welcome screen. Select the vault to reuse those details. **Clear history** removes the saved connection details alongside the local database history.
 
-To add a personal folder, select the vault root or an existing folder and choose **Groups → New Group**. BitwardenXC creates the folder on the server and adds it to the tree on confirmation. This requires a server connection.
+Choose **Groups → New Group** to add a personal folder under the selected group. Use **Groups → Edit Group** to rename it or choose a new parent. The folder tree updates immediately. BitwardenXC keeps pending changes encrypted locally and sends them to the server in the background. It retries temporary failures while the vault is open. The status icon shows progress and lets you retry manually. Entries can be saved in a new folder after the server assigns it an ID.
 
 The connection dialog shows the current step while signing in, syncing, decrypting, and preparing the vault view. Locking a connected vault keeps its tab open and clears the decrypted view. If **Enable database quick unlock (Touch ID / Windows Hello)** is enabled and Windows Hello is available, the vault opens before the Windows Hello setup prompt. Then use **Unlock with Windows Hello** on the locked tab. You can also unlock with your master password. Quick Unlock keeps the password encrypted in memory. Disabling Quick Unlock, closing the tab, or exiting BitwardenXC clears the encrypted copy.
 

@@ -115,6 +115,7 @@ set(gui_SOURCES
         gui/DatabaseTabWidget.cpp
         gui/DatabaseWidget.cpp
         remote/BitwardenCli.cpp
+        remote/BitwardenFolderJournal.cpp
         remote/BitwardenSession.cpp
         gui/DatabaseWidgetStateSync.cpp
         gui/EntryPreviewWidget.cpp

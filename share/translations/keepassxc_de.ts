@@ -2780,8 +2780,36 @@ Das ist definitiv ein Programmfehler, bitte benachrichtigen Sie die Entwickler.<
         <translation>Erstellen</translation>
     </message>
     <message>
-        <source>Could not create the Bitwarden folder.</source>
-        <translation>Der Bitwarden-Ordner konnte nicht erstellt werden.</translation>
+        <source>Edit Bitwarden Folder</source>
+        <translation>Bitwarden-Ordner bearbeiten</translation>
+    </message>
+    <message>
+        <source>Parent folder:</source>
+        <translation>Übergeordneter Ordner:</translation>
+    </message>
+    <message>
+        <source>Discard Pending Folder Changes?</source>
+        <translation>Ausstehende Ordneränderungen verwerfen?</translation>
+    </message>
+    <message>
+        <source>Discard the pending local folder changes and reload the folders from Bitwarden? Changes already sent to the server will remain.</source>
+        <translation>Ausstehende lokale Ordneränderungen verwerfen und die Ordner aus Bitwarden neu laden? Bereits übertragene Änderungen bleiben auf dem Server erhalten.</translation>
+    </message>
+    <message>
+        <source>Bitwarden folder changes are pending. Click to retry.</source>
+        <translation>Bitwarden-Ordneränderungen stehen aus. Klicke hier, um es erneut zu versuchen.</translation>
+    </message>
+    <message>
+        <source>Bitwarden folder conflict. Use the Database menu to discard the pending changes and reload.</source>
+        <translation>Konflikt bei Bitwarden-Ordnern. Über das Menü „Datenbank“ kannst du die ausstehenden Änderungen verwerfen und die Ordner neu laden.</translation>
+    </message>
+    <message>
+        <source>Synchronizing Bitwarden folder changes in the background…</source>
+        <translation>Bitwarden-Ordneränderungen werden im Hintergrund synchronisiert …</translation>
+    </message>
+    <message>
+        <source>Could not synchronize the Bitwarden folders.</source>
+        <translation>Die Bitwarden-Ordner konnten nicht synchronisiert werden.</translation>
     </message>
     <message>
         <source>Synchronizing Bitwarden in the background…</source>
@@ -5881,6 +5909,10 @@ Wollen Sie wirklich mit dieser Datei fortfahren?</translation>
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Discard Pending Bitwarden Folder Changes...</source>
+        <translation>Ausstehende Bitwarden-Ordneränderungen verwerfen …</translation>
+    </message>
+    <message>
         <source>Bitwarden synchronization</source>
         <translation>Bitwarden-Synchronisierung</translation>
     </message>
@@ -7680,8 +7712,40 @@ Möchten Sie diese überschreiben?</translation>
         <translation>Ein Bitwarden-Ordner mit diesem Pfad ist bereits vorhanden.</translation>
     </message>
     <message>
-        <source>The new Bitwarden folder could not be added to this view. Synchronize the vault to reload it.</source>
-        <translation>Der neue Bitwarden-Ordner konnte nicht zur Ansicht hinzugefügt werden. Synchronisiere den Tresor, um ihn zu laden.</translation>
+        <source>The local Bitwarden folder queue is invalid.</source>
+        <translation>Die lokale Warteschlange für Bitwarden-Ordner ist ungültig.</translation>
+    </message>
+    <message>
+        <source>The selected Bitwarden folder is missing or ambiguous.</source>
+        <translation>Der ausgewählte Bitwarden-Ordner fehlt oder ist nicht eindeutig.</translation>
+    </message>
+    <message>
+        <source>A Bitwarden folder cannot be moved into itself or one of its subfolders.</source>
+        <translation>Ein Bitwarden-Ordner kann nicht in sich selbst oder in einen seiner Unterordner verschoben werden.</translation>
+    </message>
+    <message>
+        <source>The destination already has Bitwarden subfolders.</source>
+        <translation>Am Ziel sind bereits Bitwarden-Unterordner vorhanden.</translation>
+    </message>
+    <message>
+        <source>Could not confirm the pending Bitwarden folder change.</source>
+        <translation>Die ausstehende Bitwarden-Ordneränderung konnte nicht bestätigt werden.</translation>
+    </message>
+    <message>
+        <source>Save or discard entry changes before discarding pending folder changes.</source>
+        <translation>Speichere oder verwirf zuerst die Änderungen an Einträgen.</translation>
+    </message>
+    <message>
+        <source>Synchronize the new Bitwarden folder before saving entries in it.</source>
+        <translation>Synchronisiere den neuen Bitwarden-Ordner, bevor du Einträge darin speicherst.</translation>
+    </message>
+    <message>
+        <source>Could not read the encrypted Bitwarden folder changes. The local data was kept.</source>
+        <translation>Die verschlüsselten Bitwarden-Ordneränderungen konnten nicht gelesen werden. Die lokalen Daten bleiben erhalten.</translation>
+    </message>
+    <message>
+        <source>Could not save the Bitwarden folder changes locally.</source>
+        <translation>Die Bitwarden-Ordneränderungen konnten lokal nicht gespeichert werden.</translation>
     </message>
     <message>
         <source>Database not opened</source>

@@ -459,10 +459,22 @@ MainWindow::MainWindow()
     syncBitwardenAction->setEnabled(false);
     m_ui->menuFile->insertAction(m_ui->menuRemoteSync->menuAction(), syncBitwardenAction);
     connect(syncBitwardenAction, &QAction::triggered, m_ui->tabWidget, &DatabaseTabWidget::syncBitwardenDatabase);
-    connect(m_ui->menuFile, &QMenu::aboutToShow, this, [this, syncBitwardenAction] {
+
+    auto* discardBitwardenFoldersAction =
+        new QAction(icons()->icon("edit-delete"), tr("Discard Pending Bitwarden Folder Changes..."), this);
+    discardBitwardenFoldersAction->setObjectName(QStringLiteral("actionDiscardBitwardenFolders"));
+    discardBitwardenFoldersAction->setVisible(false);
+    m_ui->menuFile->insertAction(m_ui->menuRemoteSync->menuAction(), discardBitwardenFoldersAction);
+    connect(discardBitwardenFoldersAction, &QAction::triggered, this, [this] {
+        if (auto* database = m_ui->tabWidget->currentDatabaseWidget()) {
+            database->discardBitwardenFolderWrites();
+        }
+    });
+    connect(m_ui->menuFile, &QMenu::aboutToShow, this, [this, syncBitwardenAction, discardBitwardenFoldersAction] {
         auto* dbWidget = m_ui->tabWidget->currentDatabaseWidget();
         syncBitwardenAction->setEnabled(dbWidget && dbWidget->canSyncBitwarden()
-                                        && dbWidget->currentMode() == DatabaseWidget::Mode::ViewMode);
+                                         && dbWidget->currentMode() == DatabaseWidget::Mode::ViewMode);
+        discardBitwardenFoldersAction->setVisible(dbWidget && dbWidget->canDiscardBitwardenFolderWrites());
     });
 #endif
     connect(m_ui->actionDatabaseSave, SIGNAL(triggered()), m_ui->tabWidget, SLOT(saveDatabase()));
@@ -1043,7 +1055,7 @@ void MainWindow::updateMenuActionState()
 
     m_ui->actionGroupNew->setEnabled((groupSelected && !inRecycleBin)
                                      || (inDatabase && bitwarden && dbWidget->canCreateBitwardenFolder()));
-    m_ui->actionGroupEdit->setEnabled(groupSelected);
+    m_ui->actionGroupEdit->setEnabled(groupSelected || (inDatabase && bitwarden && dbWidget->canEditBitwardenFolder()));
     m_ui->actionGroupClone->setEnabled(groupSelected && dbWidget->canCloneCurrentGroup());
     m_ui->actionGroupDelete->setEnabled(groupSelected && dbWidget->canDeleteCurrentGroup());
     m_ui->actionGroupSortAsc->setVisible(groupHasChildren);

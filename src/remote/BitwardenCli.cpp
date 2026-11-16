@@ -10,6 +10,7 @@
 #include <QDeadlineTimer>
 #include <QDir>
 #include <QFileInfo>
+#include <QHash>
 #include <QJsonDocument>
 #include <QProcess>
 #include <QProcessEnvironment>
@@ -141,6 +142,54 @@ namespace
         }
         return id.toLower();
     }
+
+    bool validFolderLeaf(const QString& name)
+    {
+        return !name.isEmpty() && name.trimmed() == name && !name.contains(QChar::Null)
+               && !name.contains(QLatin1Char('\r')) && !name.contains(QLatin1Char('\n'));
+    }
+
+    QString folderParentPath(const QString& path, const QUuid& parentId)
+    {
+        const auto separator = path.lastIndexOf(QLatin1Char('/'));
+        if (!validFolderLeaf(path.mid(separator + 1)) || path.contains(QChar::Null)
+            || (parentId.isNull() ? separator != -1 : separator <= 0)) {
+            throw BitwardenCliError(QStringLiteral("Der Bitwarden-Ordnerpfad ist ungültig."));
+        }
+        return separator == -1 ? QString{} : path.left(separator);
+    }
+
+    struct FolderIndex
+    {
+        explicit FolderIndex(const QJsonArray& folders)
+        {
+            for (const auto& value : folders) {
+                const auto folder = value.toObject();
+                const auto idString = folder.value(idKey).toString();
+                if (!validId(idString)) {
+                    continue;
+                }
+                const QUuid id(idString);
+                if (byId.contains(id)) {
+                    throw BitwardenCliError(QStringLiteral("Die Bitwarden-CLI hat doppelte Ordnerkennungen geliefert."));
+                }
+                byId.insert(id, folder);
+                byPath.insert(folder.value(nameKey).toString(), id);
+            }
+        }
+
+        void verifyParent(const QUuid& id, const QString& path) const
+        {
+            if (!id.isNull() && (byId.value(id).value(nameKey) != path || byPath.count(path) != 1)) {
+                throw BitwardenCliError(
+                    QStringLiteral("Der übergeordnete Bitwarden-Ordner wurde geändert. Synchronisiere den Tresor und versuche es erneut."),
+                    BitwardenCliError::Reason::Conflict);
+            }
+        }
+
+        QHash<QUuid, QJsonObject> byId;
+        QMultiHash<QString, QUuid> byPath;
+    };
 
     QJsonDocument parseJson(QByteArray bytes)
     {
@@ -688,49 +737,28 @@ QJsonObject BitwardenCli::createItem(const QJsonObject& item)
     return saved;
 }
 
-QJsonObject BitwardenCli::createFolder(const QUuid& parentId, const QString& path)
+QString BitwardenCli::folderJournalPath() const
+{
+    return QDir(m_profileDir).filePath(QStringLiteral("pending-folders.v1"));
+}
+
+QJsonObject BitwardenCli::createFolder(const QUuid& parentId, const QString& path, bool recoverUncertain)
 {
     const QMutexLocker locker(&m_mutex);
     ensureUnlocked();
-    const auto separator = path.lastIndexOf(QLatin1Char('/'));
-    const auto leaf = path.mid(separator + 1);
-    if (leaf.isEmpty() || leaf.trimmed() != leaf || path.contains(QChar::Null)
-        || (parentId.isNull() ? separator != -1 : separator <= 0)) {
-        throw BitwardenCliError(QStringLiteral("Der Bitwarden-Ordnerpfad ist ungültig."));
-    }
+    const auto parentPath = folderParentPath(path, parentId);
 
-    syncVault(true);
-    const auto folders = parseArray(run({QStringLiteral("list"), QStringLiteral("folders")}));
-    const auto parentPath = path.left(separator);
-    QSet<QUuid> folderIds;
-    int parentPathMatches = 0;
-    int parentIdMatches = 0;
-    bool parentUnchanged = false;
-    for (const auto& value : folders) {
-        const auto folder = value.toObject();
-        const auto idString = folder.value(idKey).toString();
-        if (!validId(idString)) {
-            continue;
+    // Ordinary writes only need a vault update if the account revision changed.
+    // Recovery checks the server even if a timed-out create failed to update the CLI cache.
+    syncVault(recoverUncertain);
+    const FolderIndex folders(parseArray(run({QStringLiteral("list"), QStringLiteral("folders")})));
+    folders.verifyParent(parentId, parentPath);
+    const auto existing = folders.byPath.values(path);
+    if (!existing.isEmpty()) {
+        if (recoverUncertain && existing.size() == 1) {
+            return folders.byId.value(existing.first());
         }
-        const QUuid id(idString);
-        folderIds.insert(id);
-        const auto name = folder.value(nameKey).toString();
-        if (name == path) {
-            throw BitwardenCliError(QStringLiteral("Ein Bitwarden-Ordner mit diesem Pfad ist bereits vorhanden."),
-                                   BitwardenCliError::Reason::Conflict);
-        }
-        if (!parentId.isNull()) {
-            if (name == parentPath) {
-                ++parentPathMatches;
-            }
-            if (id == parentId) {
-                ++parentIdMatches;
-                parentUnchanged = name == parentPath;
-            }
-        }
-    }
-    if (!parentId.isNull() && (!parentUnchanged || parentPathMatches != 1 || parentIdMatches != 1)) {
-        throw BitwardenCliError(QStringLiteral("Der übergeordnete Bitwarden-Ordner wurde geändert. Synchronisiere den Tresor und versuche es erneut."),
+        throw BitwardenCliError(QStringLiteral("Ein Bitwarden-Ordner mit diesem Pfad ist bereits vorhanden."),
                                BitwardenCliError::Reason::Conflict);
     }
 
@@ -739,13 +767,92 @@ QJsonObject BitwardenCli::createFolder(const QUuid& parentId, const QString& pat
     try {
         saved = writeObject({QStringLiteral("create"), QStringLiteral("folder")}, {{nameKey, path}});
     } catch (const BitwardenCliError& error) {
-        throw BitwardenCliError(uncertain, error.reason());
+        if (error.reason() != BitwardenCliError::Reason::Failed) {
+            throw;
+        }
+        throw BitwardenCliError(uncertain, BitwardenCliError::Reason::WriteUncertain);
     }
     const auto id = saved.value(idKey).toString();
-    if (!validId(id) || folderIds.contains(QUuid(id)) || saved.value(nameKey) != path) {
-        throw BitwardenCliError(uncertain);
+    if (!validId(id) || folders.byId.contains(QUuid(id)) || saved.value(nameKey) != path) {
+        throw BitwardenCliError(uncertain, BitwardenCliError::Reason::WriteUncertain);
     }
     return saved;
+}
+
+QList<QJsonObject> BitwardenCli::editFolders(const QList<FolderEdit>& edits, const QUuid& destinationParentId)
+{
+    const QMutexLocker locker(&m_mutex);
+    ensureUnlocked();
+    if (edits.isEmpty()) {
+        return {};
+    }
+
+    const auto& first = edits.first();
+    const auto parentPath = folderParentPath(first.newPath, destinationParentId);
+    const auto oldPrefix = first.oldPath + QLatin1Char('/');
+    const auto newPrefix = first.newPath + QLatin1Char('/');
+    const auto invalid = QStringLiteral("Die Bitwarden-Ordneränderung ist ungültig.");
+    if (first.oldPath.isEmpty() || first.newPath == first.oldPath || first.newPath.startsWith(oldPrefix)) {
+        throw BitwardenCliError(invalid);
+    }
+    QSet<QUuid> ids;
+    QSet<QString> oldPaths;
+    for (const auto& edit : edits) {
+        if (edit.id.isNull() || edit.id == destinationParentId || ids.contains(edit.id)
+            || oldPaths.contains(edit.oldPath) || edit.newPath.contains(QChar::Null)
+            || (edit.oldPath != first.oldPath && !edit.oldPath.startsWith(oldPrefix))
+            || edit.newPath != first.newPath + edit.oldPath.mid(first.oldPath.size())) {
+            throw BitwardenCliError(invalid);
+        }
+        ids.insert(edit.id);
+        oldPaths.insert(edit.oldPath);
+    }
+
+    // A batch is a sequence of Bitwarden requests. A fresh preflight lets us resume a partially applied batch.
+    syncVault(true);
+    const FolderIndex folders(parseArray(run({QStringLiteral("list"), QStringLiteral("folders")})));
+    folders.verifyParent(destinationParentId, parentPath);
+    const auto conflict =
+        QStringLiteral("Ein Bitwarden-Ordner wurde auf einem anderen Gerät geändert. Synchronisiere den Tresor und prüfe die Ordner.");
+    for (auto entry = folders.byPath.constBegin(); entry != folders.byPath.constEnd(); ++entry) {
+        const auto& path = entry.key();
+        if (!ids.contains(entry.value()) && (path.startsWith(oldPrefix) || path.startsWith(newPrefix))) {
+            throw BitwardenCliError(conflict, BitwardenCliError::Reason::Conflict);
+        }
+    }
+    for (const auto& edit : edits) {
+        const auto current = folders.byId.value(edit.id).value(nameKey);
+        if (!current.isString() || (current != edit.oldPath && current != edit.newPath)
+            || folders.byPath.count(current.toString()) != 1
+            || (current == edit.newPath && folders.byPath.contains(edit.oldPath))) {
+            throw BitwardenCliError(conflict, BitwardenCliError::Reason::Conflict);
+        }
+        if (current == edit.oldPath && folders.byPath.contains(edit.newPath)) {
+            throw BitwardenCliError(QStringLiteral("Ein Bitwarden-Ordner mit diesem Pfad ist bereits vorhanden."),
+                                   BitwardenCliError::Reason::Conflict);
+        }
+    }
+
+    const auto uncertain =
+        QStringLiteral("Bitwarden hat die Ordneränderung nicht vollständig bestätigt. Versuche die Synchronisierung erneut.");
+    QList<QJsonObject> results;
+    results.reserve(edits.size());
+    for (const auto& edit : edits) {
+        auto folder = folders.byId.value(edit.id);
+        if (folder.value(nameKey) != edit.newPath) {
+            const auto id = edit.id.toString(QUuid::WithoutBraces);
+            try {
+                folder = writeObject({QStringLiteral("edit"), QStringLiteral("folder"), id}, {{nameKey, edit.newPath}});
+            } catch (const BitwardenCliError& error) {
+                throw BitwardenCliError(uncertain, error.reason());
+            }
+            if (folder.value(idKey) != id || folder.value(nameKey) != edit.newPath) {
+                throw BitwardenCliError(uncertain);
+            }
+        }
+        results.append(std::move(folder));
+    }
+    return results;
 }
 
 QJsonObject BitwardenCli::writeObject(const QStringList& arguments, const QJsonObject& object) const

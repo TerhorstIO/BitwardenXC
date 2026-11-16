@@ -97,9 +97,12 @@ public:
     bool isBitwarden() const;
     bool canCreateBitwardenEntry() const;
     bool canCreateBitwardenFolder() const;
+    bool canEditBitwardenFolder() const;
     bool canEditBitwardenEntry() const;
     bool canEditBitwardenLogin() const;
     bool canSyncBitwarden() const;
+    bool canDiscardBitwardenFolderWrites() const;
+    void discardBitwardenFolderWrites();
     void startBitwardenInitialSync();
     void syncBitwarden();
     BitwardenSyncStatus bitwardenSyncStatus() const;
@@ -334,6 +337,9 @@ private:
     bool performSave(QString& errorMessage, const QString& fileName = {});
     bool saveBitwarden();
     void createBitwardenFolder();
+    void editBitwardenFolder();
+    void selectBitwardenFolder(Group* folder);
+    bool startBitwardenFolderSync();
     void startBitwardenSync(bool force);
     void cancelBitwardenSync();
     void setBitwardenSyncStatus(BitwardenSyncStatus status, const QString& text = {});
@@ -350,8 +356,9 @@ private:
     bool m_bitwardenRestartInitialSync = false;
     BitwardenSyncStatus m_bitwardenSyncStatus = BitwardenSyncStatus::Hidden;
     QString m_bitwardenSyncText;
-    std::function<void()> m_finishBitwardenFolderCreate;
-    bool m_bitwardenFolderCreating = false;
+    std::function<void()> m_finishBitwardenFolderWrite;
+    QPointer<QTimer> m_bitwardenFolderRetry;
+    bool m_bitwardenFolderWriting = false;
     bool m_bitwardenBusy = false;
     bool m_bitwardenUnlocking = false;
     bool m_bitwardenUnlockCanceled = false;

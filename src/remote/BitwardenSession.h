@@ -7,6 +7,7 @@
 #define BITWARDENXC_SESSION_H
 
 #include "remote/BitwardenCli.h"
+#include "remote/BitwardenFolderJournal.h"
 
 #include <QList>
 #include <QHash>
@@ -47,6 +48,15 @@ public:
         QString error;
     };
 
+    struct FolderWrite
+    {
+        QUuid id;
+        QUuid parent;
+        QString path;
+        QList<BitwardenCli::FolderEdit> edits;
+        bool attempted = false;
+    };
+
     BitwardenSession(QString executable, QUrl server, QString email);
 
     void connect(QByteArray password,
@@ -60,9 +70,17 @@ public:
     QSharedPointer<Database> applySync(VaultSnapshot snapshot);
     void lock();
     SaveResult save(const QList<Edit>& edits);
-    QString folderPathForCreate(const QUuid& parent, const QString& name) const;
-    QJsonObject createFolder(const QUuid& parent, const QString& path);
-    void adoptCreatedFolder(const QJsonObject& folder, Database& database);
+    QUuid queueFolderCreate(Database& database, const QUuid& parent, const QString& name);
+    void queueFolderUpdate(Database& database, const QUuid& id, const QUuid& parent, const QString& name);
+    bool hasPendingFolderWrites() const;
+    QString folderQueueError() const;
+    bool isPendingFolder(const QUuid& id) const;
+    bool canEditFolder(const QUuid& id) const;
+    std::optional<FolderWrite> beginFolderWrite();
+    QList<QJsonObject> flushFolderWrite(const FolderWrite& write);
+    void applyFolderWrite(Database& database, const FolderWrite& write, const QList<QJsonObject>& result);
+    void rejectFolderWrite(const FolderWrite& write, BitwardenCliError::Reason reason);
+    void discardPendingFolderWrites(Database& database);
 
     QSharedPointer<Database> makeDatabase() const;
     bool canEdit(const QUuid& id) const;
@@ -77,11 +95,22 @@ private:
     bool openCachedVault(const QByteArray& password, const OpenProgress& progress);
     void loadVault(bool synchronize, bool force, const OpenProgress& progress);
     void setVault(VaultSnapshot snapshot, bool needsInitialSync);
+    void loadFolderWrites(const QByteArray& password);
+    void restoreFolderWrites(const QJsonArray& records);
+    void storeFolderWrites(QList<FolderWrite> writes);
+    void projectFolderWrites();
+    void reconcileGroups(Database& database);
+    QString folderPathForWrite(const QUuid& parent, const QString& name) const;
     QSharedPointer<Database> makeDatabase(const VaultSnapshot& snapshot) const;
 
     BitwardenCli m_cli;
+    BitwardenFolderJournal m_folderJournal;
     QString m_name;
     QUuid m_rootId = QUuid::createUuid();
+    QList<FolderWrite> m_folderWrites;
+    QString m_folderQueueError;
+    QJsonArray m_confirmedFolders;
+    QHash<QUuid, QUuid> m_pendingFolderAliases;
     QJsonArray m_folders;
     QJsonArray m_items;
     QSet<QUuid> m_uncertainCreates;

@@ -9,6 +9,7 @@
 #include <QByteArray>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QList>
 #include <QLockFile>
 #include <QMutex>
 #include <QProcessEnvironment>
@@ -28,7 +29,8 @@ public:
         Failed,
         AuthenticationRequired,
         TwoFactorRequired,
-        Conflict
+        Conflict,
+        WriteUncertain
     };
 
     explicit BitwardenCliError(const QString& message, Reason reason = Reason::Failed);
@@ -47,6 +49,13 @@ public:
     {
         QJsonArray folders;
         QJsonArray items;
+    };
+
+    struct FolderEdit
+    {
+        QUuid id;
+        QString oldPath;
+        QString newPath;
     };
 
     BitwardenCli(const QString& executable, const QUrl& server, const QString& email);
@@ -69,7 +78,10 @@ public:
     QJsonArray listItems();
     QJsonObject editItem(const QString& id, const QJsonObject& item, const QString& expectedRevision);
     QJsonObject createItem(const QJsonObject& item);
-    QJsonObject createFolder(const QUuid& parentId, const QString& path);
+    QString folderJournalPath() const;
+    QJsonObject createFolder(const QUuid& parentId, const QString& path, bool recoverUncertain = false);
+    // The first edit is the renamed or moved folder. Remaining edits preserve the paths below it.
+    QList<QJsonObject> editFolders(const QList<FolderEdit>& edits, const QUuid& destinationParentId = {});
 
 private:
     QByteArray run(const QStringList& arguments,
