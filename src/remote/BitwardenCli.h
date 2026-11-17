@@ -78,10 +78,23 @@ public:
     void sync(bool force = true);
     QJsonObject editItem(const QString& id, const QJsonObject& item, const QString& expectedRevision);
     QJsonObject createItem(const QJsonObject& item);
+    QJsonObject moveItem(const QString& id,
+                         const QString& expectedRevision,
+                         const QUuid& sourceOrganizationId,
+                         const QUuid& organizationId,
+                         const QUuid& fromCollection,
+                         const QUuid& toCollection);
     QString folderJournalPath() const;
     QJsonObject createFolder(const QUuid& parentId, const QString& path, bool recoverUncertain = false);
     // The first edit is the renamed or moved folder. Remaining edits preserve the paths below it.
     QList<QJsonObject> editFolders(const QList<FolderEdit>& edits, const QUuid& destinationParentId = {});
+    QJsonObject createCollection(const QUuid& organizationId,
+                                 const QUuid& parentId,
+                                 const QString& path,
+                                 bool recoverUncertain = false);
+    QList<QJsonObject> editCollections(const QUuid& organizationId,
+                                       const QList<FolderEdit>& edits,
+                                       const QUuid& destinationParentId = {});
     void deleteFolder(const QUuid& id, const QString& expectedPath);
 
 private:
@@ -90,6 +103,16 @@ private:
                    const QProcessEnvironment& secrets = {}) const;
     QString cliVersion();
     QJsonObject writeObject(const QStringList& arguments, const QJsonObject& object) const;
+    QJsonObject writeArray(const QStringList& arguments, const QJsonArray& array) const;
+    QJsonObject createFolderOrCollection(const QUuid& organizationId,
+                                         const QUuid& parentId,
+                                         const QString& path,
+                                         bool recoverUncertain);
+    QList<QJsonObject> editFoldersOrCollections(const QUuid& organizationId,
+                                                const QList<FolderEdit>& edits,
+                                                const QUuid& destinationParentId);
+    QJsonArray listCollections(const QUuid& organizationId) const;
+    void ensureOrganizationWrites();
     QJsonObject profileStatus() const;
     void verifyProfile(const QString& server, const QString& email) const;
     void syncVault(bool force) const;

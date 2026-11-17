@@ -2768,6 +2768,50 @@ Das ist definitiv ein Programmfehler, bitte benachrichtigen Sie die Entwickler.<
 <context>
     <name>DatabaseWidget</name>
     <message>
+        <source>New Bitwarden Collection</source>
+        <translation>Neue Bitwarden-Sammlung</translation>
+    </message>
+    <message>
+        <source>Collection name:</source>
+        <translation>Sammlungsname:</translation>
+    </message>
+    <message>
+        <source>Edit Bitwarden Collection</source>
+        <translation>Bitwarden-Sammlung bearbeiten</translation>
+    </message>
+    <message>
+        <source>Parent collection:</source>
+        <translation>Übergeordnete Sammlung:</translation>
+    </message>
+    <message>
+        <source>New Bitwarden Entry</source>
+        <translation>Neuer Bitwarden-Eintrag</translation>
+    </message>
+    <message>
+        <source>Collection:</source>
+        <translation>Sammlung:</translation>
+    </message>
+    <message>
+        <source>Save your pending changes before moving an entry to a collection.</source>
+        <translation>Speichere deine ausstehenden Änderungen, bevor du einen Eintrag in eine Sammlung verschiebst.</translation>
+    </message>
+    <message>
+        <source>Move to Collection</source>
+        <translation>In Sammlung verschieben</translation>
+    </message>
+    <message>
+        <source>Destination collection:</source>
+        <translation>Zielsammlung:</translation>
+    </message>
+    <message>
+        <source>Transfer Entry to Organization?</source>
+        <translation>Eintrag an Organisation übertragen?</translation>
+    </message>
+    <message>
+        <source>Move "%1" to "%2"? The organization will own this entry. People with access to that collection can use it, and this transfer is permanent.</source>
+        <translation>„%1“ nach „%2“ verschieben? Der Eintrag gehört danach der Organisation. Personen mit Zugriff auf die Sammlung können ihn verwenden. Die Übertragung ist endgültig.</translation>
+    </message>
+    <message>
         <source>New Bitwarden Folder</source>
         <translation>Neuer Bitwarden-Ordner</translation>
     </message>
@@ -5921,6 +5965,10 @@ Wollen Sie wirklich mit dieser Datei fortfahren?</translation>
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Move to Collection…</source>
+        <translation>In Sammlung verschieben …</translation>
+    </message>
+    <message>
         <source>Discard Pending Bitwarden Folder Changes...</source>
         <translation>Ausstehende Bitwarden-Ordneränderungen verwerfen …</translation>
     </message>
@@ -7707,6 +7755,14 @@ Möchten Sie diese überschreiben?</translation>
 </context>
 <context>
     <name>QObject</name>
+    <message>
+        <source>You cannot rename all subcollections of this Bitwarden collection.</source>
+        <translation>Dir fehlen die Rechte, um alle Untersammlungen dieser Bitwarden-Sammlung umzubenennen.</translation>
+    </message>
+    <message>
+        <source>You cannot move this entry to the selected Bitwarden collection.</source>
+        <translation>Du kannst diesen Eintrag nicht in die ausgewählte Bitwarden-Sammlung verschieben.</translation>
+    </message>
     <message>
         <source>Organization (%1)</source>
         <translation>Organisation (%1)</translation>

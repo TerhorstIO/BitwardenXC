@@ -330,6 +330,7 @@
     <addaction name="separator"/>
     <addaction name="actionEntryMoveUp"/>
     <addaction name="actionEntryMoveDown"/>
+    <addaction name="actionBitwardenEntryMove"/>
     <addaction name="separator"/>
     <addaction name="actionEntryCopyUsername"/>
     <addaction name="actionEntryCopyPassword"/>
@@ -734,6 +735,14 @@
    </property>
    <property name="shortcut">
     <string notr="true">Alt+Down</string>
+   </property>
+  </action>
+  <action name="actionBitwardenEntryMove">
+   <property name="visible">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Move to Collection…</string>
    </property>
   </action>
   <action name="actionEntryCopyUsername">

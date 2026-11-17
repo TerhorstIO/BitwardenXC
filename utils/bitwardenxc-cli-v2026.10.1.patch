@@ -1,3 +1,86 @@
+diff --git a/apps/cli/src/admin-console/models/response/collection.response.ts b/apps/cli/src/admin-console/models/response/collection.response.ts
+index 4c56fdc..81473a2 100644
+--- a/apps/cli/src/admin-console/models/response/collection.response.ts
++++ b/apps/cli/src/admin-console/models/response/collection.response.ts
+@@ -1,14 +1,28 @@
++import { OrganizationUserStatusType } from "@bitwarden/common/admin-console/enums";
+ import { CollectionView } from "@bitwarden/common/admin-console/models/collections";
++import { Organization } from "@bitwarden/common/admin-console/models/domain/organization";
+ import { CollectionWithIdExport } from "@bitwarden/common/models/export/collection-with-id.export";
+ 
+ import { BaseResponse } from "../../../models/response/base.response";
+ 
+ export class CollectionResponse extends CollectionWithIdExport implements BaseResponse {
+   object: string;
++  canRename?: boolean;
++  canWriteItems?: boolean;
+ 
+-  constructor(o: CollectionView) {
++  constructor(o: CollectionView, org?: Organization) {
+     super();
+     this.object = "collection";
+     this.build(o);
++    if (org?.id === o.organizationId) {
++      const available =
++        org.enabled &&
++        org.isMember &&
++        org.status === OrganizationUserStatusType.Confirmed &&
++        !o.decryptionFailure;
++      this.canRename = available && (o.canEditName(org) ||
++        (!o.isDefaultCollection && !o.defaultUserCollectionEmail && org.canEditAnyCollection));
++      this.canWriteItems = available && !o.hasEnabledAccessRule && o.canEditItems(org);
++    }
+   }
+ }
+diff --git a/apps/cli/src/admin-console/models/response/organization-collection.response.ts b/apps/cli/src/admin-console/models/response/organization-collection.response.ts
+index 4b5c9a0..a145295 100644
+--- a/apps/cli/src/admin-console/models/response/organization-collection.response.ts
++++ b/apps/cli/src/admin-console/models/response/organization-collection.response.ts
+@@ -1,4 +1,5 @@
+ import { CollectionView } from "@bitwarden/common/admin-console/models/collections";
++import { Organization } from "@bitwarden/common/admin-console/models/domain/organization";
+ 
+ import { SelectionReadOnly } from "../selection-read-only";
+ 
+@@ -8,8 +9,13 @@ export class OrganizationCollectionResponse extends CollectionResponse {
+   groups: SelectionReadOnly[];
+   users: SelectionReadOnly[];
+ 
+-  constructor(o: CollectionView, groups: SelectionReadOnly[], users: SelectionReadOnly[]) {
+-    super(o);
++  constructor(
++    o: CollectionView,
++    groups: SelectionReadOnly[],
++    users: SelectionReadOnly[],
++    org?: Organization,
++  ) {
++    super(o, org);
+     this.object = "org-collection";
+     this.groups = groups;
+     this.users = users;
+diff --git a/apps/cli/src/admin-console/models/response/organization.response.ts b/apps/cli/src/admin-console/models/response/organization.response.ts
+index 7b01733..4ce1489 100644
+--- a/apps/cli/src/admin-console/models/response/organization.response.ts
++++ b/apps/cli/src/admin-console/models/response/organization.response.ts
+@@ -13,6 +13,7 @@ export class OrganizationResponse implements BaseResponse {
+   status: OrganizationUserStatusType;
+   type: OrganizationUserType;
+   enabled: boolean;
++  canCreateCollections: boolean;
+ 
+   constructor(o: Organization) {
+     this.object = "organization";
+@@ -21,5 +22,10 @@ export class OrganizationResponse implements BaseResponse {
+     this.status = o.status;
+     this.type = o.type;
+     this.enabled = o.enabled;
++    this.canCreateCollections =
++      o.enabled &&
++      o.isMember &&
++      o.status === OrganizationUserStatusType.Confirmed &&
++      o.canCreateNewCollections;
+   }
+ }
 diff --git a/apps/cli/src/bitwardenxc-open-cache.ts b/apps/cli/src/bitwardenxc-open-cache.ts
 new file mode 100644
 index 0000000..fc85740
@@ -262,28 +345,28 @@ index 0000000..fc85740
 +}
 diff --git a/apps/cli/src/bitwardenxc-version.ts b/apps/cli/src/bitwardenxc-version.ts
 new file mode 100644
-index 0000000..7967024
+index 0000000..7855733
 --- /dev/null
 +++ b/apps/cli/src/bitwardenxc-version.ts
 @@ -0,0 +1,3 @@
 +import packageJson from "../package.json";
 +
-+export const companionVersion = packageJson.version + "-bitwardenxc.3";
++export const companionVersion = packageJson.version + "-bitwardenxc.4";
 diff --git a/apps/cli/src/bw.ts b/apps/cli/src/bw.ts
 index b6a2c9b..f07fa4a 100644
 --- a/apps/cli/src/bw.ts
 +++ b/apps/cli/src/bw.ts
 @@ -2,12 +2,30 @@ import "core-js/proposals/explicit-resource-management";
-
+ 
  import { program } from "commander";
-
+ 
 +import { isCacheOpenInvocation, runCacheOpen } from "./bitwardenxc-open-cache";
 +import { companionVersion } from "./bitwardenxc-version";
  import { OssServeConfigurator } from "./oss-serve-configurator";
  import { registerOssPrograms } from "./register-oss-programs";
  import { ServeProgram } from "./serve.program";
  import { ServiceContainer } from "./service-container/service-container";
-
+ 
  async function main() {
 +  const args = process.argv.slice(2);
 +  if (
@@ -304,14 +387,67 @@ index b6a2c9b..f07fa4a 100644
    const serviceContainer = new ServiceContainer();
    let disposed = false;
    const dispose = () => {
+diff --git a/apps/cli/src/commands/get.command.ts b/apps/cli/src/commands/get.command.ts
+index eb9b156..5fc565a 100644
+--- a/apps/cli/src/commands/get.command.ts
++++ b/apps/cli/src/commands/get.command.ts
+@@ -8,7 +8,10 @@ import { CollectionService } from "@bitwarden/admin-console/common";
+ import { ApiService } from "@bitwarden/common/abstractions/api.service";
+ import { AuditService } from "@bitwarden/common/abstractions/audit.service";
+ import { OrganizationService } from "@bitwarden/common/admin-console/abstractions/organization/organization.service.abstraction";
+-import { CollectionView } from "@bitwarden/common/admin-console/models/collections";
++import {
++  CollectionAdminView,
++  CollectionView,
++} from "@bitwarden/common/admin-console/models/collections";
+ import { Organization } from "@bitwarden/common/admin-console/models/domain/organization";
+ import { AccountService } from "@bitwarden/common/auth/abstractions/account.service";
+ import { getUserId } from "@bitwarden/common/auth/services/account.service";
+@@ -510,8 +513,14 @@ export class GetCommand extends DownloadCommand {
+         throw new Error("No encryption key for this organization.");
+       }
+ 
++      const userId = await firstValueFrom(this.accountService.activeAccount$.pipe(getUserId));
++      const org = await firstValueFrom(
++        this.organizationService
++          .organizations$(userId)
++          .pipe(map((organizations) => organizations.find((o) => o.id === options.organizationId))),
++      );
+       const response = await this.apiService.getCollectionAccessDetails(options.organizationId, id);
+-      const decCollection = await CollectionView.fromCollectionAccessDetails(
++      const decCollection = await CollectionAdminView.fromCollectionAccessDetails(
+         response,
+         this.encryptService,
+         orgKey,
+@@ -522,13 +531,13 @@ export class GetCommand extends DownloadCommand {
+           : response.groups.map(
+               (g) => new SelectionReadOnly(g.id, g.readOnly, g.hidePasswords, g.manage),
+             );
+-      const users =
+-        response.users == null
+-          ? null
+-          : response.users.map(
+-              (g) => new SelectionReadOnly(g.id, g.readOnly, g.hidePasswords, g.manage),
+-            );
+-      const res = new OrganizationCollectionResponse(decCollection, groups, users);
++      // The collection details can include effective rights inherited from the user's role.
++      // The dedicated users endpoint returns the stored per-user grants for exact round-tripping.
++      const storedUsers = await this.apiService.getCollectionUsers(options.organizationId, id);
++      const users = storedUsers.map(
++        (u) => new SelectionReadOnly(u.id, u.readOnly, u.hidePasswords, u.manage),
++      );
++      const res = new OrganizationCollectionResponse(decCollection, groups, users, org);
+       return Response.success(res);
+     } catch (e) {
+       return Response.error(e);
 diff --git a/apps/cli/src/commands/list.command.ts b/apps/cli/src/commands/list.command.ts
-index 0a26669..d68c6d8 100644
+index 0a26669..0b0b645 100644
 --- a/apps/cli/src/commands/list.command.ts
 +++ b/apps/cli/src/commands/list.command.ts
 @@ -47,11 +47,15 @@ export class ListCommand {
      private cipherArchiveService: CipherArchiveService,
    ) {}
-
+ 
 -  async run(object: string, cmdOptions: Record<string, any>): Promise<Response> {
 +  async run(
 +    object: string,
@@ -329,25 +465,52 @@ index 0a26669..d68c6d8 100644
 @@ -67,7 +71,7 @@ export class ListCommand {
      }
    }
-
+ 
 -  private async listCiphers(options: Options) {
 +  private async listCiphers(options: Options, uploadEvents: boolean) {
      let ciphers: CipherView[];
-
+ 
      const activeUserId = await firstValueFrom(this.accountService.activeAccount$.pipe(getUserId));
 @@ -150,7 +154,11 @@ export class ListCommand {
-
+ 
      ciphers = await this.cliRestrictedItemTypesService.filterRestrictedCiphers(ciphers);
-
+ 
 -    await this.eventCollectionService.collectMany(EventType.Cipher_ClientViewed, ciphers, true);
 +    await this.eventCollectionService.collectMany(
 +      EventType.Cipher_ClientViewed,
 +      ciphers,
 +      uploadEvents,
 +    );
-
+ 
      const res = new ListResponse(ciphers.map((o) => new CipherResponse(o)));
      return Response.success(res);
+@@ -188,7 +196,13 @@ export class ListCommand {
+       collections = CliUtils.searchCollections(collections, options.search);
+     }
+ 
+-    const res = new ListResponse(collections.map((o) => new CollectionResponse(o)));
++    const organizations = await firstValueFrom(
++      this.organizationService.organizations$(activeUserId),
++    );
++    const orgById = new Map(organizations.map((org) => [org.id, org]));
++    const res = new ListResponse(
++      collections.map((o) => new CollectionResponse(o, orgById.get(o.organizationId))),
++    );
+     return Response.success(res);
+   }
+ 
+diff --git a/apps/cli/src/models/response/login.response.ts b/apps/cli/src/models/response/login.response.ts
+index d98c9f5..f65e894 100644
+--- a/apps/cli/src/models/response/login.response.ts
++++ b/apps/cli/src/models/response/login.response.ts
+@@ -12,6 +12,7 @@ export class LoginResponse extends LoginExport {
+     if (viewPassword === false) {
+       this.password = null;
+       this.totp = null;
++      this.fido2Credentials = undefined;
+     }
+   }
+ }
 diff --git a/apps/cli/src/platform/services/lowdb-storage.service.ts b/apps/cli/src/platform/services/lowdb-storage.service.ts
 index 61d3920..5a443aa 100644
 --- a/apps/cli/src/platform/services/lowdb-storage.service.ts
@@ -409,7 +572,7 @@ index 60c0701..120ab21 100644
 -        "-v, --version",
 -      );
 +      .version(companionVersion, "-v, --version");
-
+ 
      program.on("option:pretty", () => {
        process.env.BW_PRETTY = "true";
 diff --git a/apps/cli/src/service-container/service-container.ts b/apps/cli/src/service-container/service-container.ts
@@ -427,7 +590,7 @@ index 8b7797f..774956e 100644
 @@ -395,10 +396,13 @@ export class ServiceContainer {
    private accountCryptographicStateService: DefaultAccountCryptographicStateService;
    private v2UpgradeTokenStateService: V2UpgradeTokenStateService;
-
+ 
 -  constructor() {
 +  constructor(cacheOpen = false) {
      let p = null;
@@ -477,7 +640,7 @@ index 8b7797f..774956e 100644
        this.sdkService,
 +      cacheOpen,
      );
-
+ 
      this.availableRegionsService = new DefaultAvailableRegionsService(
 @@ -817,6 +834,7 @@ export class ServiceContainer {
        this.biometricStateService,
@@ -485,12 +648,12 @@ index 8b7797f..774956e 100644
        this.autoUnlockService,
 +      !cacheOpen,
      );
-
+ 
      this.sendTokenService = new DefaultSendTokenService(
 @@ -1243,6 +1261,20 @@ export class ServiceContainer {
      process.env.BW_SESSION = undefined;
    }
-
+ 
 +  async initCacheOpen(): Promise<boolean> {
 +    await this.storageService.init();
 +    if ((await currentVersion(this.storageService, this.logService)) !== CURRENT_VERSION) {
@@ -508,6 +671,63 @@ index 8b7797f..774956e 100644
    async init() {
      if (this.inited) {
        this.logService.warning("ServiceContainer.init called more than once");
+diff --git a/apps/cli/src/vault/models/cipher.response.spec.ts b/apps/cli/src/vault/models/cipher.response.spec.ts
+index 45746bb..d097b43 100644
+--- a/apps/cli/src/vault/models/cipher.response.spec.ts
++++ b/apps/cli/src/vault/models/cipher.response.spec.ts
+@@ -1,5 +1,6 @@
+ import { CipherType, FieldType } from "@bitwarden/common/vault/enums";
+ import { CipherView } from "@bitwarden/common/vault/models/view/cipher.view";
++import { Fido2CredentialView } from "@bitwarden/common/vault/models/view/fido2-credential.view";
+ import { FieldView } from "@bitwarden/common/vault/models/view/field.view";
+ import { LoginView } from "@bitwarden/common/vault/models/view/login.view";
+ import { PasswordHistoryView } from "@bitwarden/common/vault/models/view/password-history.view";
+@@ -52,6 +53,23 @@ describe("CipherResponse", () => {
+     return cipherView;
+   }
+ 
++  it.each([true, false])("respects the passkey visibility flag (%s)", (viewPassword) => {
++    const cipher = createLoginCipherView({ viewPassword, withPasswordHistory: false });
++    cipher.edit = false;
++    const passkey = new Fido2CredentialView();
++    passkey.keyValue = "test-only-passkey-value";
++    cipher.login.fido2Credentials = [passkey];
++
++    const res = new CipherResponse(cipher);
++    expect(res.viewPassword).toBe(viewPassword);
++    expect(res.edit).toBe(false);
++    if (viewPassword) {
++      expect(res.login.fido2Credentials?.[0].keyValue).toBe("test-only-passkey-value");
++    } else {
++      expect(res.login.fido2Credentials).toBeUndefined();
++    }
++  });
++
+   describe("when the user has permission to view the password (viewPassword: true)", () => {
+     it("includes the password and totp", () => {
+       const res = new CipherResponse(
+diff --git a/apps/cli/src/vault/models/cipher.response.ts b/apps/cli/src/vault/models/cipher.response.ts
+index 373139a..2a358de 100644
+--- a/apps/cli/src/vault/models/cipher.response.ts
++++ b/apps/cli/src/vault/models/cipher.response.ts
+@@ -12,6 +12,8 @@ import { PasswordHistoryResponse } from "./password-history.response";
+ 
+ export class CipherResponse extends CipherWithIdExport implements BaseResponse {
+   object: string;
++  viewPassword: boolean;
++  edit: boolean;
+   attachments: AttachmentResponse[];
+   revisionDate: Date;
+   creationDate: Date;
+@@ -22,6 +24,8 @@ export class CipherResponse extends CipherWithIdExport implements BaseResponse {
+     super();
+     this.object = "item";
+     this.build(o);
++    this.viewPassword = o.viewPassword;
++    this.edit = o.edit;
+     // Redact the decrypted item key to prevent logging it to the CLI output.
+     this.key = undefined;
+     if (o.attachments != null) {
 diff --git a/libs/common/src/models/export/cipher.export.spec.ts b/libs/common/src/models/export/cipher.export.spec.ts
 index 6bb3368..9ab6885 100644
 --- a/libs/common/src/models/export/cipher.export.spec.ts
@@ -519,10 +739,10 @@ index 6bb3368..9ab6885 100644
 +import { LoginUriView } from "../../vault/models/view/login-uri.view";
 +import { LoginView } from "../../vault/models/view/login.view";
  import { conditionalEncString } from "../../vault/utils/domain-utils";
-
+ 
  import { CipherExport } from "./cipher.export";
 @@ -10,6 +12,41 @@ import { SshKeyExport } from "./ssh-key.export";
-
+ 
  describe("Cipher Export", () => {
    describe("toView", () => {
 +    it.each([true, false])("retains login autofill and untouched collections (%s)", (autofill) => {
@@ -591,7 +811,7 @@ index 805ea53..5475835 100644
 @@ -115,7 +116,7 @@ export class DefaultConfigService implements ConfigService {
        ),
      );
-
+ 
 -    this.serverConfig$ = this.stateProvider.activeUserId$.pipe(
 +    const configSource$ = this.stateProvider.activeUserId$.pipe(
        distinctUntilChanged(),
@@ -622,7 +842,7 @@ index 805ea53..5475835 100644
 -      mergeWith(this.failedFetchFallbackSubject),
 -      share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: () => timer(1000) }),
      );
-
+ 
 +    this.serverConfig$ = cachedOnly
 +      ? configSource$.pipe(
 +          map(([existingConfig, , , fallbackConfig]) => existingConfig ?? fallbackConfig),
@@ -663,7 +883,7 @@ index fc21b6e..351040d 100644
      private autoUnlockService: AutoUnlockService,
 +    private persistAutoUnlockKey = true,
    ) {}
-
+ 
    registerOnUnlockAction(
 @@ -290,7 +291,9 @@ export class DefaultUnlockService implements UnlockService {
      if (await firstValueFrom(this.biometricStateService.biometricUnlockEnabled$(userId))) {
@@ -674,74 +894,5 @@ index fc21b6e..351040d 100644
 +      await this.autoUnlockService.setAutoUnlockKey(userId, userKey);
 +    }
      await this.stateProvider.setUserState(USER_EVER_HAD_USER_KEY, true, userId);
-
+ 
      await this.runOnUnlockActions(userId, userKey, method);
-diff --git a/apps/cli/src/models/response/login.response.ts b/apps/cli/src/models/response/login.response.ts
-index d98c9f5..f65e894 100644
---- a/apps/cli/src/models/response/login.response.ts
-+++ b/apps/cli/src/models/response/login.response.ts
-@@ -12,6 +12,7 @@ export class LoginResponse extends LoginExport {
-     if (viewPassword === false) {
-       this.password = null;
-       this.totp = null;
-+      this.fido2Credentials = undefined;
-     }
-   }
- }
-diff --git a/apps/cli/src/vault/models/cipher.response.spec.ts b/apps/cli/src/vault/models/cipher.response.spec.ts
-index 45746bb..d097b43 100644
---- a/apps/cli/src/vault/models/cipher.response.spec.ts
-+++ b/apps/cli/src/vault/models/cipher.response.spec.ts
-@@ -1,5 +1,6 @@
- import { CipherType, FieldType } from "@bitwarden/common/vault/enums";
- import { CipherView } from "@bitwarden/common/vault/models/view/cipher.view";
-+import { Fido2CredentialView } from "@bitwarden/common/vault/models/view/fido2-credential.view";
- import { FieldView } from "@bitwarden/common/vault/models/view/field.view";
- import { LoginView } from "@bitwarden/common/vault/models/view/login.view";
- import { PasswordHistoryView } from "@bitwarden/common/vault/models/view/password-history.view";
-@@ -52,6 +53,23 @@ describe("CipherResponse", () => {
-     return cipherView;
-   }
-
-+  it.each([true, false])("respects the passkey visibility flag (%s)", (viewPassword) => {
-+    const cipher = createLoginCipherView({ viewPassword, withPasswordHistory: false });
-+    cipher.edit = false;
-+    const passkey = new Fido2CredentialView();
-+    passkey.keyValue = "test-only-passkey-value";
-+    cipher.login.fido2Credentials = [passkey];
-+
-+    const res = new CipherResponse(cipher);
-+    expect(res.viewPassword).toBe(viewPassword);
-+    expect(res.edit).toBe(false);
-+    if (viewPassword) {
-+      expect(res.login.fido2Credentials?.[0].keyValue).toBe("test-only-passkey-value");
-+    } else {
-+      expect(res.login.fido2Credentials).toBeUndefined();
-+    }
-+  });
-+
-   describe("when the user has permission to view the password (viewPassword: true)", () => {
-     it("includes the password and totp", () => {
-       const res = new CipherResponse(
-diff --git a/apps/cli/src/vault/models/cipher.response.ts b/apps/cli/src/vault/models/cipher.response.ts
-index 373139a..2a358de 100644
---- a/apps/cli/src/vault/models/cipher.response.ts
-+++ b/apps/cli/src/vault/models/cipher.response.ts
-@@ -12,6 +12,8 @@ import { PasswordHistoryResponse } from "./password-history.response";
-
- export class CipherResponse extends CipherWithIdExport implements BaseResponse {
-   object: string;
-+  viewPassword: boolean;
-+  edit: boolean;
-   attachments: AttachmentResponse[];
-   revisionDate: Date;
-   creationDate: Date;
-@@ -22,6 +24,8 @@ export class CipherResponse extends CipherWithIdExport implements BaseResponse {
-     super();
-     this.object = "item";
-     this.build(o);
-+    this.viewPassword = o.viewPassword;
-+    this.edit = o.edit;
-     // Redact the decrypted item key to prevent logging it to the CLI output.
-     this.key = undefined;
-     if (o.attachments != null) {

@@ -196,21 +196,50 @@ Qt::ItemFlags GroupModel::flags(const QModelIndex& modelIndex) const
     const auto* group = groupFromIndex(modelIndex);
     const auto* parent = group->parentGroup();
     if (m_moveRemoteGroup) {
-        if (group->property("bitwardenVaultRoots").toBool() || group->property("bitwardenOrganization").toBool()
-            || group->property("bitwardenCollection").toBool()) {
-            return baseFlags;
+        auto remoteFlags = m_remoteGroupMoveFlags(group);
+        if (m_moveRemoteEntry && group->property("bitwardenCollection").toBool()) {
+            // Item placement and collection management need different permissions.
+            remoteFlags |= Qt::ItemIsDropEnabled;
         }
-        if (parent && parent->property("bitwardenVaultRoots").toBool()) {
-            // The personal vault is a destination. Only its folders can be dragged.
-            return baseFlags | Qt::ItemIsDropEnabled;
-        }
+        return baseFlags | remoteFlags;
     }
     return parent ? baseFlags | Qt::ItemIsDropEnabled | Qt::ItemIsDragEnabled : baseFlags | Qt::ItemIsDropEnabled;
 }
 
-void GroupModel::setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup)
+void GroupModel::setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup,
+                                           std::function<Qt::ItemFlags(const Group*)> moveFlags)
 {
     m_moveRemoteGroup = std::move(moveGroup);
+    m_remoteGroupMoveFlags = std::move(moveFlags);
+}
+
+void GroupModel::setRemoteEntryMoveHandler(std::function<bool(const Entry*, const Group*)> canMoveEntry,
+                                          std::function<void(Entry*, Group*)> moveEntry)
+{
+    m_canMoveRemoteEntry = std::move(canMoveEntry);
+    m_moveRemoteEntry = std::move(moveEntry);
+}
+
+QUuid GroupModel::remoteDraggedId(const QMimeData* data,
+                                 Qt::DropAction action,
+                                 int row,
+                                 const QModelIndex& parent,
+                                 const QString& mimeType) const
+{
+    if (action != Qt::MoveAction || row != -1 || !parent.isValid() || parent.model() != this
+        || !flags(parent).testFlag(Qt::ItemIsDropEnabled) || !data || !data->hasFormat(mimeType)) {
+        return {};
+    }
+
+    auto encoded = data->data(mimeType);
+    QDataStream stream(&encoded, QIODevice::ReadOnly);
+    QUuid databaseId;
+    QUuid id;
+    stream >> databaseId >> id;
+    if (stream.status() != QDataStream::Ok || !stream.atEnd() || databaseId != m_db->uuid()) {
+        return {};
+    }
+    return id;
 }
 
 Group* GroupModel::remoteDraggedGroup(const QMimeData* data,
@@ -218,28 +247,43 @@ Group* GroupModel::remoteDraggedGroup(const QMimeData* data,
                                      int row,
                                      const QModelIndex& parent) const
 {
-    if (!m_moveRemoteGroup || action != Qt::MoveAction || row != -1 || !parent.isValid() || parent.model() != this
-        || !flags(parent).testFlag(Qt::ItemIsDropEnabled) || !data || !data->hasFormat(mimeTypes().first())) {
-        return nullptr;
-    }
-
-    auto encoded = data->data(mimeTypes().first());
-    QDataStream stream(&encoded, QIODevice::ReadOnly);
-    QUuid databaseId;
-    QUuid groupId;
-    stream >> databaseId >> groupId;
-    if (stream.status() != QDataStream::Ok || !stream.atEnd() || databaseId != m_db->uuid() || groupId.isNull()) {
+    const auto id = remoteDraggedId(data, action, row, parent, mimeTypes().first());
+    if (id.isNull()) {
         return nullptr;
     }
 
     const auto* target = groupFromIndex(parent);
-    auto* source = m_db->rootGroup()->findGroupByUuid(groupId);
+    auto* source = m_db->rootGroup()->findGroupByUuid(id);
+    const auto scopeRoot = [this](const Group* folder) {
+        while (folder->parentGroup() && folder->parentGroup() != m_db->rootGroup()) {
+            folder = folder->parentGroup();
+        }
+        return folder;
+    };
     if (!source || !flags(index(source)).testFlag(Qt::ItemIsDragEnabled)
+        || !m_remoteGroupMoveFlags(target).testFlag(Qt::ItemIsDropEnabled)
+        || scopeRoot(source) != scopeRoot(target)
         || (source->parentGroup() == target && !source->name().contains('/'))
         || source->findGroupByUuid(target->uuid())) {
         return nullptr;
     }
     return source;
+}
+
+Entry* GroupModel::remoteDraggedEntry(const QMimeData* data,
+                                     Qt::DropAction action,
+                                     int row,
+                                     const QModelIndex& parent) const
+{
+    if (!m_moveRemoteEntry) {
+        return nullptr;
+    }
+    const auto id = remoteDraggedId(data, action, row, parent, mimeTypes().at(1));
+    if (id.isNull()) {
+        return nullptr;
+    }
+    auto* source = m_db->rootGroup()->findEntryByUuid(id);
+    return source && m_canMoveRemoteEntry(source, groupFromIndex(parent)) ? source : nullptr;
 }
 
 bool GroupModel::canDropMimeData(const QMimeData* data,
@@ -249,7 +293,8 @@ bool GroupModel::canDropMimeData(const QMimeData* data,
                                  const QModelIndex& parent) const
 {
     if (m_moveRemoteGroup) {
-        return (column == -1 || column == 0) && remoteDraggedGroup(data, action, row, parent);
+        return (column == -1 || column == 0)
+            && (remoteDraggedGroup(data, action, row, parent) || remoteDraggedEntry(data, action, row, parent));
     }
     return QAbstractItemModel::canDropMimeData(data, action, row, column, parent);
 }
@@ -268,8 +313,14 @@ bool GroupModel::dropMimeData(const QMimeData* data,
         if (column != -1 && column != 0) {
             return false;
         }
-        auto* source = remoteDraggedGroup(data, action, row, parent);
-        return source && m_moveRemoteGroup(source, groupFromIndex(parent));
+        if (auto* source = remoteDraggedGroup(data, action, row, parent)) {
+            return m_moveRemoteGroup(source, groupFromIndex(parent));
+        }
+        if (auto* source = remoteDraggedEntry(data, action, row, parent)) {
+            m_moveRemoteEntry(source, groupFromIndex(parent));
+            return true;
+        }
+        return false;
     }
 
     if (!data || (action != Qt::MoveAction && action != Qt::CopyAction) || !parent.isValid()) {

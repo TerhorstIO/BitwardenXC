@@ -18,6 +18,7 @@
 
 #include "GroupView.h"
 
+#include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QMimeData>
 #include <QShortcut>
@@ -99,16 +100,41 @@ void GroupView::changeDatabase(const QSharedPointer<Database>& newDb)
     setColumnWidth(0, sizeHintForColumn(0));
 }
 
-void GroupView::setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup)
+void GroupView::setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup,
+                                          std::function<Qt::ItemFlags(const Group*)> moveFlags)
 {
-    m_model->setRemoteGroupMoveHandler(std::move(moveGroup));
+    m_model->setRemoteGroupMoveHandler(std::move(moveGroup), std::move(moveFlags));
+    m_remoteDropMode = true;
     setDragDropMode(QAbstractItemView::InternalMove);
+}
+
+void GroupView::setRemoteEntryMoveHandler(QAbstractItemView* entryView,
+                                          std::function<bool(const Entry*, const Group*)> canMoveEntry,
+                                          std::function<void(Entry*, Group*)> moveEntry)
+{
+    m_model->setRemoteEntryMoveHandler(std::move(canMoveEntry), std::move(moveEntry));
+    m_remoteEntrySource = entryView;
+    setDragDropMode(QAbstractItemView::DragDrop);
+}
+
+bool GroupView::allowsDropSource(const QObject* source) const
+{
+    return !m_remoteDropMode || source == this || (m_remoteEntrySource && source == m_remoteEntrySource.data());
+}
+
+void GroupView::dragEnterEvent(QDragEnterEvent* event)
+{
+    if (!allowsDropSource(event->source())) {
+        event->ignore();
+        return;
+    }
+    QTreeView::dragEnterEvent(event);
 }
 
 void GroupView::dragMoveEvent(QDragMoveEvent* event)
 {
-    if (dragDropMode() == QAbstractItemView::InternalMove) {
-        if (event->keyboardModifiers() & Qt::ControlModifier) {
+    if (m_remoteDropMode) {
+        if (!allowsDropSource(event->source()) || event->keyboardModifiers() & Qt::ControlModifier) {
             event->ignore();
             return;
         }
@@ -134,7 +160,7 @@ void GroupView::dragMoveEvent(QDragMoveEvent* event)
 
 void GroupView::dropEvent(QDropEvent* event)
 {
-    if (dragDropMode() == QAbstractItemView::InternalMove && event->keyboardModifiers() & Qt::ControlModifier) {
+    if (m_remoteDropMode && (!allowsDropSource(event->source()) || event->keyboardModifiers() & Qt::ControlModifier)) {
         event->ignore();
         return;
     }

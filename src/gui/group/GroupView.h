@@ -18,11 +18,13 @@
 #ifndef KEEPASSX_GROUPVIEW_H
 #define KEEPASSX_GROUPVIEW_H
 
+#include <QPointer>
 #include <QTreeView>
 
 #include <functional>
 
 class Database;
+class Entry;
 class Group;
 class GroupModel;
 
@@ -38,7 +40,11 @@ public:
     void setCurrentGroup(Group* group);
     void expandGroup(Group* group, bool expand = true);
     void sortGroups(bool reverse = false);
-    void setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup);
+    void setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup,
+                                   std::function<Qt::ItemFlags(const Group*)> moveFlags);
+    void setRemoteEntryMoveHandler(QAbstractItemView* entryView,
+                                   std::function<bool(const Entry*, const Group*)> canMoveEntry,
+                                   std::function<void(Entry*, Group*)> moveEntry);
 
 signals:
     void groupSelectionChanged();
@@ -53,15 +59,19 @@ private slots:
     void selectNextGroup();
 
 protected:
+    void dragEnterEvent(QDragEnterEvent* event) override;
     void dragMoveEvent(QDragMoveEvent* event) override;
     void dropEvent(QDropEvent* event) override;
     void focusInEvent(QFocusEvent* event) override;
 
 private:
     void recInitExpanded(Group* group);
+    bool allowsDropSource(const QObject* source) const;
 
     GroupModel* const m_model;
+    QPointer<QAbstractItemView> m_remoteEntrySource;
     bool m_updatingExpanded;
+    bool m_remoteDropMode = false;
 };
 
 #endif // KEEPASSX_GROUPVIEW_H

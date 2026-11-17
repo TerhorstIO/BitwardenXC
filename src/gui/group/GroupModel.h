@@ -23,6 +23,7 @@
 #include <functional>
 
 class Database;
+class Entry;
 class Group;
 
 class GroupModel : public QAbstractItemModel
@@ -53,10 +54,19 @@ public:
     QStringList mimeTypes() const override;
     QMimeData* mimeData(const QModelIndexList& indexes) const override;
     void sortChildren(Group* rootGroup, bool reverse = false);
-    void setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup);
+    void setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup,
+                                   std::function<Qt::ItemFlags(const Group*)> moveFlags);
+    void setRemoteEntryMoveHandler(std::function<bool(const Entry*, const Group*)> canMoveEntry,
+                                   std::function<void(Entry*, Group*)> moveEntry);
 
 private:
+    QUuid remoteDraggedId(const QMimeData* data,
+                          Qt::DropAction action,
+                          int row,
+                          const QModelIndex& parent,
+                          const QString& mimeType) const;
     Group* remoteDraggedGroup(const QMimeData* data, Qt::DropAction action, int row, const QModelIndex& parent) const;
+    Entry* remoteDraggedEntry(const QMimeData* data, Qt::DropAction action, int row, const QModelIndex& parent) const;
     QModelIndex parent(Group* group) const;
     void collectIndexesRecursively(QList<QModelIndex>& indexes, QList<Group*> groups);
 
@@ -72,6 +82,9 @@ private slots:
 private:
     Database* m_db;
     std::function<bool(Group*, Group*)> m_moveRemoteGroup;
+    std::function<Qt::ItemFlags(const Group*)> m_remoteGroupMoveFlags;
+    std::function<bool(const Entry*, const Group*)> m_canMoveRemoteEntry;
+    std::function<void(Entry*, Group*)> m_moveRemoteEntry;
 };
 
 #endif // KEEPASSX_GROUPMODEL_H

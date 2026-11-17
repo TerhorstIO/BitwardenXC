@@ -32,6 +32,7 @@ namespace
     const auto fullEditingVersion = QStringLiteral("2026.10.1-bitwardenxc.1");
     const auto cachedOpenVersion = QStringLiteral("2026.10.1-bitwardenxc.2");
     const auto organizationCacheVersion = QStringLiteral("2026.10.1-bitwardenxc.3");
+    const auto organizationWritesVersion = QStringLiteral("2026.10.1-bitwardenxc.4");
     const auto nameKey = QStringLiteral("name");
     const auto notesKey = QStringLiteral("notes");
     const auto idKey = QStringLiteral("id");
@@ -41,6 +42,10 @@ namespace
     const auto matchKey = QStringLiteral("match");
     const auto fieldsKey = QStringLiteral("fields");
     const auto folderIdKey = QStringLiteral("folderId");
+    const auto organizationIdKey = QStringLiteral("organizationId");
+    const auto collectionIdsKey = QStringLiteral("collectionIds");
+    const auto canWriteItemsKey = QStringLiteral("canWriteItems");
+    const auto canRenameKey = QStringLiteral("canRename");
     const QStringList loginTextKeys{QStringLiteral("username"), QStringLiteral("password"), QStringLiteral("totp")};
     constexpr int commandTimeoutMs = 60000;
     constexpr qsizetype outputLimit = 64 * 1024 * 1024;
@@ -53,7 +58,8 @@ namespace
 
     bool supportsFullEditingVersion(const QString& version)
     {
-        return version == fullEditingVersion || version == cachedOpenVersion || version == organizationCacheVersion;
+        return version == fullEditingVersion || version == cachedOpenVersion || version == organizationCacheVersion
+            || version == organizationWritesVersion;
     }
 
     QString executablePath(const QString& path)
@@ -160,12 +166,57 @@ namespace
         return separator == -1 ? QString{} : path.left(separator);
     }
 
+    QString uuidString(const QUuid& id)
+    {
+        return id.toString(QUuid::WithoutBraces);
+    }
+
+    std::optional<QSet<QUuid>> idSet(const QJsonValue& value)
+    {
+        if (!value.isArray()) {
+            return std::nullopt;
+        }
+        QSet<QUuid> ids;
+        for (const auto& entry : value.toArray()) {
+            const auto idString = entry.toString();
+            const QUuid id(idString);
+            if (!validId(idString) || ids.contains(id)) {
+                return std::nullopt;
+            }
+            ids.insert(id);
+        }
+        return ids;
+    }
+
+    bool validAccessList(const QJsonValue& value)
+    {
+        if (!value.isArray()) {
+            return false;
+        }
+        QSet<QUuid> ids;
+        for (const auto& entry : value.toArray()) {
+            const auto access = entry.toObject();
+            const auto idString = access.value(idKey).toString();
+            const QUuid id(idString);
+            if (!validId(idString) || ids.contains(id) || !access.value(QStringLiteral("readOnly")).isBool()
+                || !access.value(QStringLiteral("hidePasswords")).isBool()
+                || !access.value(QStringLiteral("manage")).isBool()) {
+                return false;
+            }
+            ids.insert(id);
+        }
+        return true;
+    }
+
     struct FolderIndex
     {
-        explicit FolderIndex(const QJsonArray& folders)
+        explicit FolderIndex(const QJsonArray& folders, const QUuid& organizationId = {})
         {
             for (const auto& value : folders) {
                 const auto folder = value.toObject();
+                if (!organizationId.isNull() && folder.value(organizationIdKey) != uuidString(organizationId)) {
+                    continue;
+                }
                 const auto idString = folder.value(idKey).toString();
                 if (!validId(idString)) {
                     continue;
@@ -221,9 +272,9 @@ namespace
         return document.array();
     }
 
-    QByteArray encodeObject(const QJsonObject& object)
+    QByteArray encodeJson(const QJsonDocument& document)
     {
-        auto json = QJsonDocument(object).toJson(QJsonDocument::Compact);
+        auto json = document.toJson(QJsonDocument::Compact);
         const auto erase = qScopeGuard([&json] { json.fill('\0'); });
         return json.toBase64();
     }
@@ -411,7 +462,7 @@ std::optional<BitwardenCli::VaultSnapshot> BitwardenCli::openCachedVault(const Q
 {
     const QMutexLocker locker(&m_mutex);
     const auto version = cliVersion();
-    const bool supportsOrganizationCache = version == organizationCacheVersion;
+    const bool supportsOrganizationCache = version == organizationCacheVersion || version == organizationWritesVersion;
     if (version != cachedOpenVersion && !supportsOrganizationCache) {
         return std::nullopt;
     }
@@ -713,15 +764,26 @@ QJsonObject BitwardenCli::createItem(const QJsonObject& item)
     const auto typeKey = QStringLiteral("type");
     const auto favoriteKey = QStringLiteral("favorite");
     const auto repromptKey = QStringLiteral("reprompt");
+    const auto organization = item.value(organizationIdKey);
+    const bool shared = hasValue(organization);
+    const QUuid organizationId(organization.toString());
+    const auto requestedCollections = idSet(item.value(collectionIdsKey));
+    if (shared
+        && (!validId(organization.toString()) || !requestedCollections || requestedCollections->isEmpty()
+            || hasValue(item.value(folderIdKey)))) {
+        throw BitwardenCliError(QStringLiteral("Ein Organisationslogin braucht eine gültige Sammlung."));
+    }
+
     for (auto field = item.constBegin(); field != item.constEnd(); ++field) {
         const auto& key = field.key();
         const auto& value = field.value();
         if ((key == typeKey && value.toInt() == 1) || (key == favoriteKey && value.isBool())
             || (key == repromptKey && (value.toInt(-1) == 0 || value.toInt(-1) == 1))
+            || (shared && (key == organizationIdKey || key == collectionIdsKey))
             || validItemField(key, value, true)) {
             continue;
         }
-        throw BitwardenCliError(QStringLiteral("Der neue persönliche Login enthält ungültige Felder."));
+        throw BitwardenCliError(QStringLiteral("Der neue Login enthält ungültige Felder."));
     }
     if (item.value(nameKey).toString().trimmed().isEmpty() || !item.contains(loginKey)) {
         throw BitwardenCliError(QStringLiteral("Der neue Login benötigt einen Titel und Login-Daten."));
@@ -732,11 +794,91 @@ QJsonObject BitwardenCli::createItem(const QJsonObject& item)
     created.insert(favoriteKey, item.value(favoriteKey).toBool());
     created.insert(repromptKey, item.value(repromptKey).toInt());
     created.insert(loginKey, loginForWrite(item.value(loginKey).toObject()));
+    if (shared) {
+        ensureOrganizationWrites();
+        syncVault(true);
+        const FolderIndex collections(listCollections(organizationId), organizationId);
+        for (const auto& id : *requestedCollections) {
+            if (!collections.byId.value(id).value(canWriteItemsKey).toBool()) {
+                throw BitwardenCliError(QStringLiteral("Dein Konto darf keine Einträge in dieser Sammlung anlegen."));
+            }
+        }
+    }
     const auto saved = writeObject({QStringLiteral("create"), QStringLiteral("item")}, created);
-    if (!validId(saved.value(idKey).toString())) {
+    if (!validId(saved.value(idKey).toString())
+        || (shared && (saved.value(organizationIdKey) != uuidString(organizationId)
+                       || idSet(saved.value(collectionIdsKey)) != requestedCollections))) {
         throw BitwardenCliError(QStringLiteral("Die Bitwarden-CLI hat den neuen Eintrag nicht bestätigt."));
     }
     return saved;
+}
+
+QJsonObject BitwardenCli::moveItem(const QString& id,
+                                   const QString& expectedRevision,
+                                   const QUuid& sourceOrganizationId,
+                                   const QUuid& organizationId,
+                                   const QUuid& fromCollection,
+                                   const QUuid& toCollection)
+{
+    const QMutexLocker locker(&m_mutex);
+    ensureUnlocked();
+    ensureOrganizationWrites();
+    const auto canonicalId = itemId(id);
+    const bool transfer = sourceOrganizationId.isNull();
+    if (organizationId.isNull() || toCollection.isNull() || (transfer && !fromCollection.isNull())
+        || (!transfer && sourceOrganizationId != organizationId)) {
+        throw BitwardenCliError(QStringLiteral("Dieser Eintrag kann nicht in die ausgewählte Sammlung verschoben werden."));
+    }
+
+    const auto current = checkRevision(canonicalId, expectedRevision);
+    const auto owner = current.value(organizationIdKey);
+    if ((transfer ? hasValue(owner) : owner != uuidString(sourceOrganizationId))
+        || !current.value(QStringLiteral("edit")).toBool() || !current.value(QStringLiteral("viewPassword")).toBool()
+        || current.value(QStringLiteral("reprompt")).toInt() != 0
+        || hasValue(current.value(QStringLiteral("deletedDate")))
+        || hasValue(current.value(QStringLiteral("archivedDate")))) {
+        throw BitwardenCliError(QStringLiteral("Dein Konto darf diesen Eintrag nicht verschieben."));
+    }
+
+    const FolderIndex collections(listCollections(organizationId), organizationId);
+    if (!collections.byId.value(toCollection).value(canWriteItemsKey).toBool()
+        || (!fromCollection.isNull() && !collections.byId.value(fromCollection).value(canWriteItemsKey).toBool())) {
+        throw BitwardenCliError(QStringLiteral("Dein Konto darf keine Einträge zwischen diesen Sammlungen verschieben."));
+    }
+
+    QJsonArray selected;
+    QStringList args;
+    if (transfer) {
+        selected.append(uuidString(toCollection));
+        // The official move command re-encrypts the existing cipher (including its key material) for the organization.
+        args = {QStringLiteral("move"), canonicalId, uuidString(organizationId)};
+    } else {
+        const auto currentCollections = idSet(current.value(collectionIdsKey));
+        if (!currentCollections || (!fromCollection.isNull() && !currentCollections->contains(fromCollection))) {
+            throw BitwardenCliError(QStringLiteral("Die Sammlungszuordnung des Eintrags wurde geändert."),
+                                   BitwardenCliError::Reason::Conflict);
+        }
+        if (currentCollections->contains(toCollection) && (fromCollection.isNull() || fromCollection == toCollection)) {
+            return current;
+        }
+        for (const auto& existing : current.value(collectionIdsKey).toArray()) {
+            if (QUuid(existing.toString()) != fromCollection) {
+                selected.append(existing);
+            }
+        }
+        if (!currentCollections->contains(toCollection)) {
+            selected.append(uuidString(toCollection));
+        }
+        args = {QStringLiteral("edit"), QStringLiteral("item-collections"), canonicalId,
+                QStringLiteral("--organizationid"), uuidString(organizationId)};
+    }
+    const auto result = writeArray(args, selected);
+    if (result.value(idKey) != canonicalId || result.value(organizationIdKey) != uuidString(organizationId)
+        || idSet(result.value(collectionIdsKey)) != idSet(selected)) {
+        throw BitwardenCliError(QStringLiteral("Bitwarden hat die Sammlungszuordnung nicht bestätigt. Synchronisiere den Tresor."),
+                               BitwardenCliError::Reason::WriteUncertain);
+    }
+    return result;
 }
 
 QString BitwardenCli::folderJournalPath() const
@@ -746,14 +888,39 @@ QString BitwardenCli::folderJournalPath() const
 
 QJsonObject BitwardenCli::createFolder(const QUuid& parentId, const QString& path, bool recoverUncertain)
 {
+    return createFolderOrCollection({}, parentId, path, recoverUncertain);
+}
+
+QJsonObject BitwardenCli::createCollection(const QUuid& organizationId,
+                                           const QUuid& parentId,
+                                           const QString& path,
+                                           bool recoverUncertain)
+{
+    if (organizationId.isNull()) {
+        throw BitwardenCliError(QStringLiteral("Die Bitwarden-Organisation fehlt."));
+    }
+    return createFolderOrCollection(organizationId, parentId, path, recoverUncertain);
+}
+
+QJsonObject BitwardenCli::createFolderOrCollection(const QUuid& organizationId,
+                                                   const QUuid& parentId,
+                                                   const QString& path,
+                                                   bool recoverUncertain)
+{
     const QMutexLocker locker(&m_mutex);
     ensureUnlocked();
     const auto parentPath = folderParentPath(path, parentId);
+    const bool shared = !organizationId.isNull();
+    if (shared) {
+        ensureOrganizationWrites();
+    }
 
     // Ordinary writes only need a vault update if the account revision changed.
     // Recovery checks the server even if a timed-out create failed to update the CLI cache.
-    syncVault(recoverUncertain);
-    const FolderIndex folders(parseArray(run({QStringLiteral("list"), QStringLiteral("folders")})));
+    syncVault(recoverUncertain || shared);
+    const FolderIndex folders(shared ? listCollections(organizationId)
+                                    : parseArray(run({QStringLiteral("list"), QStringLiteral("folders")})),
+                              organizationId);
     folders.verifyParent(parentId, parentPath);
     const auto existing = folders.byPath.values(path);
     if (!existing.isEmpty()) {
@@ -765,17 +932,42 @@ QJsonObject BitwardenCli::createFolder(const QUuid& parentId, const QString& pat
     }
 
     const auto uncertain = QStringLiteral("Bitwarden hat die Ordnererstellung nicht bestätigt. Synchronisiere den Tresor, bevor du es erneut versuchst.");
+    QStringList arguments{QStringLiteral("create"), shared ? QStringLiteral("org-collection") : QStringLiteral("folder")};
+    QJsonObject request{{nameKey, path}};
+    if (shared) {
+        const auto organization = uuidString(organizationId);
+        const auto organizations = parseArray(run({QStringLiteral("list"), QStringLiteral("organizations")}));
+        const auto canCreate = std::find_if(organizations.cbegin(), organizations.cend(), [&organization](const QJsonValue& row) {
+            return row.toObject().value(idKey) == organization && row.toObject().value(QStringLiteral("canCreateCollections")).toBool();
+        });
+        if (canCreate == organizations.cend()) {
+            throw BitwardenCliError(QStringLiteral("Dein Konto darf in dieser Organisation keine Sammlungen anlegen."));
+        }
+        arguments << QStringLiteral("--organizationid") << organization;
+        request.insert(organizationIdKey, organization);
+    }
     QJsonObject saved;
     try {
-        saved = writeObject({QStringLiteral("create"), QStringLiteral("folder")}, {{nameKey, path}});
+        saved = writeObject(arguments, request);
+        const auto id = saved.value(idKey).toString();
+        if (!validId(id) || folders.byId.contains(QUuid(id)) || saved.value(nameKey) != path
+            || (shared && saved.value(organizationIdKey) != uuidString(organizationId))) {
+            throw BitwardenCliError(uncertain);
+        }
+        if (shared) {
+            // A new collection result includes access policy details instead of the display permissions.
+            // Confirm the server-created row with the same permission flags as the next snapshot.
+            syncVault(true);
+            const FolderIndex refreshed(listCollections(organizationId), organizationId);
+            saved = refreshed.byId.value(QUuid(id));
+            if (saved.value(nameKey) != path) {
+                throw BitwardenCliError(uncertain);
+            }
+        }
     } catch (const BitwardenCliError& error) {
         if (error.reason() != BitwardenCliError::Reason::Failed) {
             throw;
         }
-        throw BitwardenCliError(uncertain, BitwardenCliError::Reason::WriteUncertain);
-    }
-    const auto id = saved.value(idKey).toString();
-    if (!validId(id) || folders.byId.contains(QUuid(id)) || saved.value(nameKey) != path) {
         throw BitwardenCliError(uncertain, BitwardenCliError::Reason::WriteUncertain);
     }
     return saved;
@@ -783,10 +975,31 @@ QJsonObject BitwardenCli::createFolder(const QUuid& parentId, const QString& pat
 
 QList<QJsonObject> BitwardenCli::editFolders(const QList<FolderEdit>& edits, const QUuid& destinationParentId)
 {
+    return editFoldersOrCollections({}, edits, destinationParentId);
+}
+
+QList<QJsonObject> BitwardenCli::editCollections(const QUuid& organizationId,
+                                                 const QList<FolderEdit>& edits,
+                                                 const QUuid& destinationParentId)
+{
+    if (organizationId.isNull()) {
+        throw BitwardenCliError(QStringLiteral("Die Bitwarden-Organisation fehlt."));
+    }
+    return editFoldersOrCollections(organizationId, edits, destinationParentId);
+}
+
+QList<QJsonObject> BitwardenCli::editFoldersOrCollections(const QUuid& organizationId,
+                                                          const QList<FolderEdit>& edits,
+                                                          const QUuid& destinationParentId)
+{
     const QMutexLocker locker(&m_mutex);
     ensureUnlocked();
     if (edits.isEmpty()) {
         return {};
+    }
+    const bool shared = !organizationId.isNull();
+    if (shared) {
+        ensureOrganizationWrites();
     }
 
     const auto& first = edits.first();
@@ -812,7 +1025,9 @@ QList<QJsonObject> BitwardenCli::editFolders(const QList<FolderEdit>& edits, con
 
     // A batch is a sequence of Bitwarden requests. A fresh preflight lets us resume a partially applied batch.
     syncVault(true);
-    const FolderIndex folders(parseArray(run({QStringLiteral("list"), QStringLiteral("folders")})));
+    const FolderIndex folders(shared ? listCollections(organizationId)
+                                    : parseArray(run({QStringLiteral("list"), QStringLiteral("folders")})),
+                              organizationId);
     folders.verifyParent(destinationParentId, parentPath);
     const auto conflict =
         QStringLiteral("Ein Bitwarden-Ordner wurde auf einem anderen Gerät geändert. Synchronisiere den Tresor und prüfe die Ordner.");
@@ -828,7 +1043,8 @@ QList<QJsonObject> BitwardenCli::editFolders(const QList<FolderEdit>& edits, con
         }
     }
     for (const auto& edit : edits) {
-        const auto current = folders.byId.value(edit.id).value(nameKey);
+        const auto row = folders.byId.value(edit.id);
+        const auto current = row.value(nameKey);
         if (!current.isString() || (current != edit.oldPath && current != edit.newPath)
             || (folders.byPath.count(current.toString()) != 1 && !(sourceStillExists && current == edit.oldPath))
             || (!singleEdit && current == edit.newPath && folders.byPath.contains(edit.oldPath))) {
@@ -837,6 +1053,9 @@ QList<QJsonObject> BitwardenCli::editFolders(const QList<FolderEdit>& edits, con
         if (current == edit.oldPath && folders.byPath.contains(edit.newPath)) {
             throw BitwardenCliError(QStringLiteral("Ein Bitwarden-Ordner mit diesem Pfad ist bereits vorhanden."),
                                    BitwardenCliError::Reason::Conflict);
+        }
+        if (shared && current == edit.oldPath && !row.value(canRenameKey).toBool()) {
+            throw BitwardenCliError(QStringLiteral("Dein Konto darf diese Sammlung nicht umbenennen."));
         }
     }
 
@@ -847,14 +1066,44 @@ QList<QJsonObject> BitwardenCli::editFolders(const QList<FolderEdit>& edits, con
     for (const auto& edit : edits) {
         auto folder = folders.byId.value(edit.id);
         if (folder.value(nameKey) != edit.newPath) {
-            const auto id = edit.id.toString(QUuid::WithoutBraces);
+            const auto id = uuidString(edit.id);
+            QStringList arguments{QStringLiteral("edit"), shared ? QStringLiteral("org-collection") : QStringLiteral("folder"), id};
+            QJsonObject payload{{nameKey, edit.newPath}};
+            if (shared) {
+                const auto organization = uuidString(organizationId);
+                const QStringList scope{QStringLiteral("--organizationid"), organization};
+                arguments.append(scope);
+                const auto details = parseObject(run(QStringList{QStringLiteral("get"), QStringLiteral("org-collection"), id} + scope));
+                const auto externalId = details.value(QStringLiteral("externalId"));
+                if (details.value(idKey) != id || details.value(organizationIdKey) != organization
+                    || details.value(nameKey) != edit.oldPath || !details.value(canRenameKey).toBool()
+                    || !validAccessList(details.value(QStringLiteral("users")))
+                    || !validAccessList(details.value(QStringLiteral("groups"))) || !optionalString(externalId)) {
+                    throw BitwardenCliError(
+                        QStringLiteral("Bitwarden hat keine vollständigen Sammlungsrechte geliefert. Die Sammlung wurde nicht geändert."),
+                        BitwardenCliError::Reason::Conflict);
+                }
+                payload.insert(organizationIdKey, organization);
+                payload.insert(QStringLiteral("users"), details.value(QStringLiteral("users")));
+                payload.insert(QStringLiteral("groups"), details.value(QStringLiteral("groups")));
+                if (hasValue(externalId)) {
+                    payload.insert(QStringLiteral("externalId"), externalId);
+                }
+            }
+            QJsonObject saved;
             try {
-                folder = writeObject({QStringLiteral("edit"), QStringLiteral("folder"), id}, {{nameKey, edit.newPath}});
+                saved = writeObject(arguments, payload);
             } catch (const BitwardenCliError& error) {
                 throw BitwardenCliError(uncertain, error.reason());
             }
-            if (folder.value(idKey) != id || folder.value(nameKey) != edit.newPath) {
+            if (saved.value(idKey) != id || saved.value(nameKey) != edit.newPath
+                || (shared && saved.value(organizationIdKey) != uuidString(organizationId))) {
                 throw BitwardenCliError(uncertain);
+            }
+            if (shared) {
+                folder.insert(nameKey, edit.newPath);
+            } else {
+                folder = std::move(saved);
             }
         }
         results.append(std::move(folder));
@@ -896,9 +1145,29 @@ void BitwardenCli::deleteFolder(const QUuid& id, const QString& expectedPath)
 
 QJsonObject BitwardenCli::writeObject(const QStringList& arguments, const QJsonObject& object) const
 {
-    auto input = encodeObject(object);
+    auto input = encodeJson(QJsonDocument(object));
     const auto erase = qScopeGuard([&input] { input.fill('\0'); });
     return parseObject(run(arguments, input));
+}
+
+QJsonObject BitwardenCli::writeArray(const QStringList& arguments, const QJsonArray& array) const
+{
+    auto input = encodeJson(QJsonDocument(array));
+    const auto erase = qScopeGuard([&input] { input.fill('\0'); });
+    return parseObject(run(arguments, input));
+}
+
+QJsonArray BitwardenCli::listCollections(const QUuid& organizationId) const
+{
+    return parseArray(run({QStringLiteral("list"), QStringLiteral("collections"), QStringLiteral("--organizationid"),
+                           uuidString(organizationId)}));
+}
+
+void BitwardenCli::ensureOrganizationWrites()
+{
+    if (cliVersion() != organizationWritesVersion) {
+        throw BitwardenCliError(QStringLiteral("Für Änderungen an Organisationen ist die aktuelle BitwardenXC-CLI erforderlich."));
+    }
 }
 
 QJsonObject BitwardenCli::checkRevision(const QString& id, const QString& expectedRevision) const

@@ -96,6 +96,7 @@ public:
     QSharedPointer<Database> database() const;
     bool isBitwarden() const;
     bool canCreateBitwardenEntry() const;
+    bool canMoveBitwardenEntry() const;
     bool canCreateBitwardenFolder() const;
     bool canEditBitwardenFolder() const;
     bool canEditBitwardenEntry() const;
@@ -215,6 +216,7 @@ public slots:
 
     void replaceDatabase(QSharedPointer<Database> db);
     void createEntry();
+    void moveBitwardenEntry();
     void cloneEntry();
     void expireSelectedEntries();
     void deleteSelectedEntries();
@@ -337,6 +339,10 @@ private:
     bool performSave(QString& errorMessage, const QString& fileName = {});
     bool saveBitwarden();
     Group* personalBitwardenRoot() const;
+    QUuid bitwardenEntrySourceView() const;
+    QList<Group*> bitwardenEntryMoveTargets(const Entry* entry, const QUuid& sourceView) const;
+    Group* chooseBitwardenCollection(const QList<Group*>& collections, const QString& title, const QString& label);
+    void moveBitwardenEntryTo(Entry* entry, Group* collection, const QUuid& sourceView);
     bool canChangeBitwardenFolders() const;
     void displayGroupEntries(Group* group);
     void createBitwardenFolder();

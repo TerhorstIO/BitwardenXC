@@ -34,17 +34,27 @@ public:
     using OpenProgress = std::function<void(OpenStage)>;
     using VaultSnapshot = BitwardenCli::VaultSnapshot;
 
+    struct ItemMove
+    {
+        QUuid sourceOrganization;
+        QUuid destinationOrganization;
+        QUuid sourceCollection;
+        QUuid destinationCollection;
+    };
+
     struct Edit
     {
         qsizetype index;
         QJsonObject item;
         QString revision;
         QUuid draftId;
+        std::optional<ItemMove> move;
     };
 
     struct SaveResult
     {
         QHash<QUuid, QUuid> createdIds;
+        QHash<QUuid, QJsonObject> savedItems;
         QString error;
     };
 
@@ -56,6 +66,7 @@ public:
         QList<BitwardenCli::FolderEdit> edits;
         bool attempted = false;
         QUuid deleteId;
+        QUuid organizationId;
 
         bool isCreate() const
         {
@@ -77,6 +88,11 @@ public:
     QSharedPointer<Database> applySync(VaultSnapshot snapshot);
     void lock();
     SaveResult save(const QList<Edit>& edits);
+    bool canCreateInGroup(const QUuid& group) const;
+    bool canMoveEntry(const QUuid& entry, const QUuid& sourceView, const QUuid& destination) const;
+    void stageEntryMove(const QUuid& entry, const QUuid& sourceView, const QUuid& destination);
+    void clearStagedEntryMove(const QUuid& entry);
+    void applySavedItemPlacements(Database& database, const SaveResult& result);
     QUuid queueFolderCreate(Database& database, const QUuid& parent, const QString& name);
     void queueFolderUpdate(Database& database, const QUuid& id, const QUuid& parent, const QString& name);
     void queueFolderDelete(Database& database, const QUuid& id);
@@ -85,6 +101,9 @@ public:
     bool isPendingFolder(const QUuid& id) const;
     bool canEditFolder(const QUuid& id) const;
     bool canUseFolderAsParent(const QUuid& id) const;
+    bool canCreateFolder(const QUuid& id) const;
+    bool canDeleteFolder(const QUuid& id) const;
+    QUuid folderScopeId(const QUuid& id) const;
     std::optional<FolderWrite> beginFolderWrite();
     QList<QJsonObject> flushFolderWrite(const FolderWrite& write);
     void applyFolderWrite(Database& database, const FolderWrite& write, const QList<QJsonObject>& result);
@@ -109,6 +128,12 @@ private:
     void storeFolderWrites(QList<FolderWrite> writes);
     void projectFolderWrites();
     void reconcileGroups(Database& database, const QSet<QUuid>& restoredFolderIds = {});
+    void reconcileOrganizationCollections(Database& database, const QUuid& organizationId);
+    void rebuildCollectionIndex();
+    QJsonObject collectionForGroup(const QUuid& id) const;
+    QJsonObject organizationForGroup(const QUuid& id) const;
+    bool hasPendingCollectionWrite(const QUuid& organizationId) const;
+    std::optional<ItemMove> entryMove(const QUuid& entry, const QUuid& sourceView, const QUuid& destination) const;
     QString folderPathForWrite(const QUuid& parent, const QString& name) const;
     QSharedPointer<Database> makeDatabase(const VaultSnapshot& snapshot) const;
 
@@ -125,6 +150,8 @@ private:
     QJsonArray m_items;
     QJsonArray m_organizations;
     QJsonArray m_collections;
+    QHash<QUuid, qsizetype> m_collectionIndexes;
+    QHash<QUuid, ItemMove> m_stagedEntryMoves;
     QSet<QUuid> m_uncertainCreates;
     bool m_fullEditing = false;
     bool m_connected = false;

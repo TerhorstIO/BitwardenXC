@@ -153,6 +153,7 @@ MainWindow::MainWindow()
     m_entryContextMenu->addSeparator();
     m_entryContextMenu->addAction(m_ui->actionEntryMoveUp);
     m_entryContextMenu->addAction(m_ui->actionEntryMoveDown);
+    m_entryContextMenu->addAction(m_ui->actionBitwardenEntryMove);
     m_entryContextMenu->addSeparator();
     m_entryContextMenu->addAction(m_ui->actionEntryOpenUrl);
     m_entryContextMenu->addAction(m_ui->actionEntryDownloadIcon);
@@ -518,6 +519,7 @@ MainWindow::MainWindow()
     m_actionMultiplexer.connect(m_ui->actionEntryCopyTitle, SIGNAL(triggered()), SLOT(copyTitle()));
     m_actionMultiplexer.connect(m_ui->actionEntryMoveUp, SIGNAL(triggered()), SLOT(moveEntryUp()));
     m_actionMultiplexer.connect(m_ui->actionEntryMoveDown, SIGNAL(triggered()), SLOT(moveEntryDown()));
+    m_actionMultiplexer.connect(m_ui->actionBitwardenEntryMove, SIGNAL(triggered()), SLOT(moveBitwardenEntry()));
     m_actionMultiplexer.connect(m_ui->actionEntryCopyUsername, SIGNAL(triggered()), SLOT(copyUsername()));
     m_actionMultiplexer.connect(m_ui->actionEntryCopyPassword, SIGNAL(triggered()), SLOT(copyPassword()));
     m_actionMultiplexer.connect(m_ui->actionEntryCopyURL, SIGNAL(triggered()), SLOT(copyURL()));
@@ -997,6 +999,8 @@ void MainWindow::updateMenuActionState()
     m_ui->actionEntryMoveDown->setVisible(inDatabase && !bitwarden && !entryViewSorted);
     m_ui->actionEntryMoveUp->setEnabled(singleEntrySelected && !bitwarden && !entryViewSorted && !entryViewAtTop);
     m_ui->actionEntryMoveDown->setEnabled(singleEntrySelected && !bitwarden && !entryViewSorted && !entryViewAtBottom);
+    m_ui->actionBitwardenEntryMove->setVisible(bitwarden);
+    m_ui->actionBitwardenEntryMove->setEnabled(singleEntrySelected && bitwarden && dbWidget->canMoveBitwardenEntry());
     m_ui->actionEntryCopyTitle->setEnabled(singleEntryOrEditing && dbWidget->currentEntryHasTitle());
     m_ui->actionEntryCopyUsername->setEnabled(singleEntryOrEditing && dbWidget->currentEntryHasUsername());
     // NOTE: Copy password is enabled even if the selected entry's password is blank to prevent Ctrl+C
