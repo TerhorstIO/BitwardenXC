@@ -271,6 +271,8 @@ jobs:
               $process.Dispose()
             }
 
+            ./utils/Test-WindowsPackage.ps1 -Executable $app.FullName
+
             $env:BITWARDENCLI_APPDATA_DIR = Join-Path $directory 'cli-profile'
             New-Item -ItemType Directory -Force -Path $env:BITWARDENCLI_APPDATA_DIR | Out-Null
             $cli = Join-Path $app.DirectoryName 'bw.exe'
