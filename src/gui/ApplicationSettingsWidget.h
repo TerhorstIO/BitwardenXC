@@ -66,7 +66,6 @@ private slots:
     void hideWindowOnCopyCheckBoxToggled(bool checked);
     void systrayToggled(bool checked);
     void rememberDatabasesToggled(bool checked);
-    void checkUpdatesToggled(bool checked);
     void showExpiredEntriesOnDatabaseUnlockToggled(bool checked);
     void autoTypeAskToggled(bool checked);
     void selectBackupDirectory();

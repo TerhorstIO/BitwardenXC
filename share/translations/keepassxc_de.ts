@@ -334,8 +334,8 @@
         <translation>Datenbank-Schlüsseldateien und Sicherheits-Dongles merken</translation>
     </message>
     <message>
-        <source>Check for updates at application startup once per week</source>
-        <translation>Bei Programmstart wöchentlich auf Updates prüfen</translation>
+        <source>Check for updates once per day</source>
+        <translation>Einmal täglich nach Updates suchen</translation>
     </message>
     <message>
         <source>Include beta releases when checking for updates</source>
@@ -6285,8 +6285,8 @@ Wollen Sie wirklich mit dieser Datei fortfahren?</translation>
         <translation>Bei Programmstart nach Updates suchen?</translation>
     </message>
     <message>
-        <source>Would you like KeePassXC to check for updates on startup?</source>
-        <translation>Soll KeePassXC bei Programmstart nach neuen Programmversionen suchen?</translation>
+        <source>Would you like BitwardenXC to check for updates on startup?</source>
+        <translation>Soll BitwardenXC bei Programmstart nach neuen Programmversionen suchen?</translation>
     </message>
     <message>
         <source>You can always check for updates manually from the application menu.</source>
@@ -10787,12 +10787,24 @@ Example: JBSWY3DPEHPK3PXP</source>
         <translation>Beim Abrufen der Update-Informationen ist ein Fehler aufgetreten, bitte versuchen Sie es später noch einmal.</translation>
     </message>
     <message>
-        <source>&lt;strong&gt;A new version is available.&lt;/strong&gt;&lt;br/&gt;KeePassXC %1 can be &lt;a href=&quot;https://keepassxc.org/download/&quot;&gt;downloaded here&lt;/a&gt;.</source>
-        <translation>&lt;strong&gt;Eine neue Version ist verfügbar.&lt;/strong&gt;&lt;br/&gt;KeePassXC %1 kann &lt;a href=&quot;https://keepassxc.org/download/&quot;&gt;hier heruntergeladen werden&lt;/a&gt;.</translation>
+        <source>&lt;strong&gt;BitwardenXC %1 is available.&lt;/strong&gt;</source>
+        <translation>&lt;strong&gt;BitwardenXC %1 ist verfügbar.&lt;/strong&gt;</translation>
     </message>
     <message>
-        <source>You have the latest version of KeePassXC</source>
-        <translation>Sie haben die neueste Version von KeePassXC</translation>
+        <source>Windows installer</source>
+        <translation>Windows-Installer</translation>
+    </message>
+    <message>
+        <source>Portable ZIP</source>
+        <translation>Portables ZIP</translation>
+    </message>
+    <message>
+        <source>Release notes</source>
+        <translation>Versionshinweise</translation>
+    </message>
+    <message>
+        <source>No newer BitwardenXC release is available.</source>
+        <translation>Es ist keine neuere Version von BitwardenXC verfügbar.</translation>
     </message>
 </context>
 <context>

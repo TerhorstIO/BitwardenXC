@@ -112,21 +112,27 @@ endif()
 message(STATUS "Found Git HEAD Revision: ${GIT_HEAD}\n")
 
 # KeePassXC Versioning and Build Type
-set(OVERRIDE_VERSION "" CACHE STRING "Override the KeePassXC Version for Snapshot builds")
+set(OVERRIDE_VERSION "" CACHE STRING "Override the BitwardenXC version")
 set(KEEPASSXC_BUILD_TYPE "Snapshot" CACHE STRING "Set KeePassXC build type to distinguish between stable releases and snapshots")
 set_property(CACHE KEEPASSXC_BUILD_TYPE PROPERTY STRINGS Snapshot Release)
 
-# Check if on a tag or has .version file, if so build as a release
-execute_process(COMMAND git tag --points-at HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE GIT_TAG
-        ERROR_QUIET)
-string(REGEX REPLACE "latest" "" GIT_TAG "${GIT_TAG}")
-if(GIT_TAG MATCHES "[0-9]+\.[0-9]+\.[0-9]+")
-    string(STRIP "${GIT_TAG}" GIT_TAG)
-    set(OVERRIDE_VERSION ${GIT_TAG})
-elseif(EXISTS ${CMAKE_SOURCE_DIR}/.version)
-    file(READ ${CMAKE_SOURCE_DIR}/.version OVERRIDE_VERSION)
+# CI supplies the exact release and installer version. Use tags only when there is no override.
+if(NOT OVERRIDE_VERSION)
+    execute_process(COMMAND git tag --points-at HEAD --sort=-version:refname
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            OUTPUT_VARIABLE GIT_TAGS
+            ERROR_QUIET)
+    string(REPLACE "\n" ";" GIT_TAGS "${GIT_TAGS}")
+    foreach(GIT_TAG IN LISTS GIT_TAGS)
+        string(STRIP "${GIT_TAG}" GIT_TAG)
+        if(GIT_TAG MATCHES "^v?([0-9]+[.][0-9]+[.][0-9]+(-[A-Za-z0-9]+)?)$")
+            set(OVERRIDE_VERSION "${CMAKE_MATCH_1}")
+            break()
+        endif()
+    endforeach()
+    if(NOT OVERRIDE_VERSION AND EXISTS ${CMAKE_SOURCE_DIR}/.version)
+        file(READ ${CMAKE_SOURCE_DIR}/.version OVERRIDE_VERSION)
+    endif()
 endif()
 
 string(REGEX REPLACE "(\r?\n)+" "" OVERRIDE_VERSION "${OVERRIDE_VERSION}")
@@ -137,6 +143,12 @@ if(OVERRIDE_VERSION)
         set(KEEPASSXC_BUILD_TYPE "Snapshot")
     endif()
     set(KEEPASSXC_VERSION ${OVERRIDE_VERSION})
+endif()
+
+if(KEEPASSXC_VERSION MATCHES "^([0-9]+)[.]([0-9]+)[.]([0-9]+)(-|$)")
+    set(KEEPASSXC_VERSION_MAJOR "${CMAKE_MATCH_1}")
+    set(KEEPASSXC_VERSION_MINOR "${CMAKE_MATCH_2}")
+    set(KEEPASSXC_VERSION_PATCH "${CMAKE_MATCH_3}")
 endif()
 
 if(KEEPASSXC_BUILD_TYPE STREQUAL "Release")

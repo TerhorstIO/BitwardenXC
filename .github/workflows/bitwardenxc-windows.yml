@@ -14,16 +14,35 @@ concurrency:
 
 jobs:
   tag:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     permissions:
       contents: write
     steps:
+      - name: Check out release history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Calculate release version
+        id: version
+        run: |
+          count=$(git rev-list --first-parent --count "$GITHUB_SHA")
+          if [[ ! "$count" =~ ^[1-9][0-9]{0,4}$ ]] || (( count > 65535 )); then
+            echo "Commit count $count is outside the MSI version range." >&2
+            exit 1
+          fi
+          printf 'version=2.8.%s\n' "$count" >> "$GITHUB_OUTPUT"
+
       - name: Tag the source commit
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          TAG: build-${{ github.sha }}
+          TAG: ${{ steps.version.outputs.version }}
         run: |
           if target=$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq .object.sha 2>/dev/null); then
             if [[ "$target" != "$GITHUB_SHA" ]]; then
@@ -40,6 +59,7 @@ jobs:
     runs-on: windows-2025
     timeout-minutes: 90
     env:
+      BITWARDENXC_VERSION: ${{ needs.tag.outputs.version }}
       QT_ROOT_DIR: ${{ github.workspace }}/.ci-qt
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}/.ci-vcpkg-cache
     steps:
@@ -128,17 +148,35 @@ jobs:
       - name: Bootstrap vcpkg
         run: .\.ci-vcpkg\bootstrap-vcpkg.bat -disableMetrics
 
+      - name: Set up WiX 4.0.6
+        run: |
+          $wixRoot = Join-Path $env:RUNNER_TEMP 'bitwardenxc-wix'
+          dotnet tool install --tool-path $wixRoot wix --version 4.0.6 --source https://api.nuget.org/v3/index.json
+          if ($LASTEXITCODE -ne 0) { throw 'WiX install failed.' }
+          $env:DOTNET_ROLL_FORWARD = 'Major'
+          $env:WIX_EXTENSIONS = $wixRoot
+          & (Join-Path $wixRoot 'wix.exe') extension add --global WixToolset.UI.wixext/4.0.6
+          if ($LASTEXITCODE -ne 0) { throw 'WiX UI extension install failed.' }
+          "WIX=$wixRoot" >> $env:GITHUB_ENV
+          "WIX_EXTENSIONS=$wixRoot" >> $env:GITHUB_ENV
+          'DOTNET_ROLL_FORWARD=Major' >> $env:GITHUB_ENV
+
       - name: Configure and install Release dependencies
         run: |
           $toolchain = Join-Path $PWD '.ci-vcpkg/scripts/buildsystems/vcpkg.cmake'
           $triplets = Join-Path $PWD '.github/vcpkg-triplets'
+          $cli = Join-Path $PWD 'build/companion/bw.exe'
+          $cliLicense = Join-Path $env:RUNNER_TEMP 'bitwardenxc-cli-build/clients/LICENSE_GPL.txt'
           cmake -S . -B build -G Ninja `
             -DCMAKE_BUILD_TYPE=Release `
             -DKEEPASSXC_BUILD_TYPE=Release `
+            "-DOVERRIDE_VERSION=$env:BITWARDENXC_VERSION" `
             -DWITH_TESTS=OFF `
             -DWITH_BUILD_QT=OFF `
             -DKPXC_FEATURE_DOCS=OFF `
-            -DKPXC_FEATURE_UPDATES=OFF `
+            -DKPXC_FEATURE_UPDATES=ON `
+            "-DBITWARDENXC_COMPANION_CLI=$cli" `
+            "-DBITWARDENXC_COMPANION_LICENSE=$cliLicense" `
             "-DCMAKE_PREFIX_PATH=$env:QT_ROOT_DIR" `
             "-DCMAKE_TOOLCHAIN_FILE=$toolchain" `
             "-DVCPKG_OVERLAY_TRIPLETS=$triplets" `
@@ -162,11 +200,13 @@ jobs:
             -WorkDirectory (Join-Path $env:RUNNER_TEMP 'bitwardenxc-cli-build') `
             -OutputDirectory (Join-Path $PWD 'build/companion')
 
-      - name: Package and verify portable ZIP
+      - name: Package and verify ZIP and MSI
         run: |
           $packageName = 'BitwardenXC-Windows-x64'
-          cpack --config build/CPackConfig.cmake -G ZIP -B dist -D "CPACK_PACKAGE_FILE_NAME=$packageName"
-          if ($LASTEXITCODE -ne 0) { throw 'CPack failed.' }
+          foreach ($generator in @('ZIP', 'WIX')) {
+            cpack --config build/CPackConfig.cmake -G $generator -B dist -D "CPACK_PACKAGE_FILE_NAME=$packageName"
+            if ($LASTEXITCODE -ne 0) { throw "CPack $generator failed." }
+          }
 
           $cliSource = Join-Path $env:RUNNER_TEMP 'bitwardenxc-cli-build/clients'
           git -C $cliSource add -u
@@ -179,83 +219,97 @@ jobs:
           git -C $cliSource archive --format=zip --prefix=BitwardenXC-CLI/ --output=$cliSourceZip $tree
           if ($LASTEXITCODE -ne 0) { throw 'Could not archive the patched CLI source.' }
 
-          $zip = Get-Item "dist/$packageName.zip"
-          $archive = [System.IO.Compression.ZipFile]::Open($zip.FullName, [System.IO.Compression.ZipArchiveMode]::Update)
-          try {
-            $executables = @($archive.Entries | Where-Object Name -CEQ 'BitwardenXC.exe')
-            if ($executables.Count -ne 1) { throw 'Expected exactly one BitwardenXC.exe in the ZIP.' }
-            $executablePath = $executables[0].FullName
-            $prefix = $executablePath.Substring(0, $executablePath.Length - $executables[0].Name.Length)
-            if (-not $archive.GetEntry("${prefix}.portable")) {
-              $null = $archive.CreateEntry("${prefix}.portable")
-            }
-            $required = @('keepassxc-cli.exe', 'Qt6Core.dll', 'Qt6Widgets.dll', 'botan-3.dll',
+          function Test-Package($directory, [bool]$portable) {
+            $executables = @(Get-ChildItem -LiteralPath $directory -Filter 'BitwardenXC.exe' -File -Recurse)
+            if ($executables.Count -ne 1) { throw "Expected exactly one BitwardenXC.exe in $directory." }
+            $app = $executables[0]
+            $required = @('bw.exe', 'LICENSE-BITWARDEN-CLI.txt', 'keepassxc-cli.exe',
+                          'Qt6Core.dll', 'Qt6Widgets.dll', 'botan-3.dll',
                           'platforms/qwindows.dll', 'tls/qschannelbackend.dll')
             foreach ($file in $required) {
-              if (-not $archive.GetEntry("$prefix$file")) { throw "Missing package file: $file" }
-            }
-            foreach ($notice in Get-ChildItem COPYING, LICENSE.*, README.md -File) {
-              $entry = "$prefix$($notice.Name)"
-              if (-not $archive.GetEntry($entry)) {
-                $null = [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $notice.FullName, $entry)
+              if (-not (Test-Path -LiteralPath (Join-Path $app.DirectoryName $file) -PathType Leaf)) {
+                throw "Missing package file: $file"
               }
             }
-            $null = [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-              $archive, (Join-Path $PWD 'build/companion/bw.exe'), "${prefix}bw.exe")
-            $null = [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-              $archive, (Join-Path $cliSource 'LICENSE_GPL.txt'), "${prefix}LICENSE-BITWARDEN-CLI.txt")
-          } finally {
-            $archive.Dispose()
+            if ((Test-Path -LiteralPath (Join-Path $app.DirectoryName '.portable')) -ne $portable) {
+              throw 'Unexpected portable marker in packaged files.'
+            }
+            if ($app.VersionInfo.ProductVersion -cne $env:BITWARDENXC_VERSION) {
+              throw "Unexpected Windows product version: $($app.VersionInfo.ProductVersion)"
+            }
+
+            $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
+            $startInfo.FileName = $app.FullName
+            $startInfo.WorkingDirectory = $app.DirectoryName
+            $startInfo.UseShellExecute = $false
+            $startInfo.CreateNoWindow = $true
+            $startInfo.RedirectStandardOutput = $true
+            $startInfo.RedirectStandardError = $true
+            $startInfo.ArgumentList.Add('--version')
+            $startInfo.Environment['PATH'] = "$env:SystemRoot\System32;$env:SystemRoot"
+            $startInfo.Environment['QT_COMMAND_LINE_PARSER_NO_GUI_MESSAGE_BOXES'] = '1'
+            foreach ($name in @('QT_PLUGIN_PATH', 'QT_QPA_PLATFORM_PLUGIN_PATH', 'QML_IMPORT_PATH', 'QML2_IMPORT_PATH')) {
+              $null = $startInfo.Environment.Remove($name)
+            }
+            $process = [System.Diagnostics.Process]::Start($startInfo)
+            try {
+              $stdout = $process.StandardOutput.ReadToEndAsync()
+              $stderr = $process.StandardError.ReadToEndAsync()
+              if (-not $process.WaitForExit(30000)) {
+                $process.Kill()
+                throw 'Packaged BitwardenXC did not exit after --version.'
+              }
+              if ($process.ExitCode -ne 0) {
+                throw "Packaged BitwardenXC failed to start: $($process.ExitCode) $($stderr.GetAwaiter().GetResult())"
+              }
+              $version = $stdout.GetAwaiter().GetResult().Trim()
+              if ($version -cne "BitwardenXC $env:BITWARDENXC_VERSION") {
+                throw "Unexpected packaged executable version: $version"
+              }
+              Write-Output $version
+            } finally {
+              $process.Dispose()
+            }
+
+            $env:BITWARDENCLI_APPDATA_DIR = Join-Path $directory 'cli-profile'
+            New-Item -ItemType Directory -Force -Path $env:BITWARDENCLI_APPDATA_DIR | Out-Null
+            $cli = Join-Path $app.DirectoryName 'bw.exe'
+            $cliVersion = & $cli --version
+            if ($LASTEXITCODE -ne 0 -or $cliVersion -cne '2026.10.1-bitwardenxc.3') {
+              throw 'The packaged Bitwarden CLI could not be verified.'
+            }
+            $cacheProbe = '{"serverUrl":"https://example.invalid","email":"cache-smoke@example.invalid","password":"synthetic-only"}'
+            $cacheResult = $cacheProbe | & $cli --nointeraction --raw bitwardenxc-open-cache
+            if ($LASTEXITCODE -ne 0 -or ($cacheResult | ConvertFrom-Json).kind -cne 'unavailable') {
+              throw 'The packaged Bitwarden CLI could not check an empty encrypted cache.'
+            }
           }
 
-          $smokeDirectory = Join-Path $env:RUNNER_TEMP 'bitwardenxc-portable-smoke'
-          Expand-Archive -LiteralPath $zip.FullName -DestinationPath $smokeDirectory
-          $startInfo = [System.Diagnostics.ProcessStartInfo]::new()
-          $startInfo.FileName = Join-Path $smokeDirectory $executablePath
-          $startInfo.WorkingDirectory = Split-Path -Parent $startInfo.FileName
-          $startInfo.UseShellExecute = $false
-          $startInfo.CreateNoWindow = $true
-          $startInfo.RedirectStandardOutput = $true
-          $startInfo.RedirectStandardError = $true
-          $startInfo.ArgumentList.Add('--version')
-          $startInfo.Environment['PATH'] = "$env:SystemRoot\System32;$env:SystemRoot"
-          $startInfo.Environment['QT_COMMAND_LINE_PARSER_NO_GUI_MESSAGE_BOXES'] = '1'
-          foreach ($name in @('QT_PLUGIN_PATH', 'QT_QPA_PLATFORM_PLUGIN_PATH', 'QML_IMPORT_PATH', 'QML2_IMPORT_PATH')) {
-            $null = $startInfo.Environment.Remove($name)
+          $zip = Get-Item "dist/$packageName.zip"
+          $msi = Get-Item "dist/$packageName.msi"
+          $zipSmoke = Join-Path $env:RUNNER_TEMP 'bitwardenxc-portable-smoke'
+          $msiSmoke = Join-Path $env:RUNNER_TEMP 'bitwardenxc-msi-smoke'
+          Expand-Archive -LiteralPath $zip.FullName -DestinationPath $zipSmoke
+          $extract = [System.Diagnostics.ProcessStartInfo]::new()
+          $extract.FileName = Join-Path $env:SystemRoot 'System32/msiexec.exe'
+          $extract.UseShellExecute = $false
+          foreach ($arg in @('/a', $msi.FullName, '/qn', "TARGETDIR=$msiSmoke")) {
+            $extract.ArgumentList.Add($arg)
           }
-          $process = [System.Diagnostics.Process]::Start($startInfo)
+          $process = [System.Diagnostics.Process]::Start($extract)
           try {
-            $stdout = $process.StandardOutput.ReadToEndAsync()
-            $stderr = $process.StandardError.ReadToEndAsync()
-            if (-not $process.WaitForExit(30000)) {
+            if (-not $process.WaitForExit(90000)) {
               $process.Kill()
-              throw 'Packaged BitwardenXC did not exit after --version.'
+              throw 'MSI administrative extraction did not finish.'
             }
-            if ($process.ExitCode -ne 0) {
-              throw "Packaged BitwardenXC failed to start: $($process.ExitCode) $($stderr.GetAwaiter().GetResult())"
-            }
-            $version = $stdout.GetAwaiter().GetResult().Trim()
-            if ($version -notmatch '^BitwardenXC \d+\.\d+\.\d+') {
-              throw "Unexpected packaged executable version: $version"
-            }
-            Write-Output $version
+            if ($process.ExitCode -ne 0) { throw "MSI extraction failed: $($process.ExitCode)" }
           } finally {
             $process.Dispose()
           }
+          Test-Package $zipSmoke $true
+          Test-Package $msiSmoke $false
 
-          $env:BITWARDENCLI_APPDATA_DIR = Join-Path $env:RUNNER_TEMP 'bitwardenxc-packaged-cli-smoke'
-          New-Item -ItemType Directory -Force -Path $env:BITWARDENCLI_APPDATA_DIR | Out-Null
-          $cliVersion = & (Join-Path $startInfo.WorkingDirectory 'bw.exe') --version
-          if ($LASTEXITCODE -ne 0 -or $cliVersion -cne '2026.10.1-bitwardenxc.3') {
-            throw 'The packaged Bitwarden CLI could not be verified.'
-          }
-          $cacheProbe = '{"serverUrl":"https://example.invalid","email":"cache-smoke@example.invalid","password":"synthetic-only"}'
-          $cacheResult = $cacheProbe | & (Join-Path $startInfo.WorkingDirectory 'bw.exe') --nointeraction --raw bitwardenxc-open-cache
-          if ($LASTEXITCODE -ne 0 -or ($cacheResult | ConvertFrom-Json).kind -cne 'unavailable') {
-            throw 'The packaged Bitwarden CLI could not check an empty encrypted cache.'
-          }
-
-          Get-Item $zip.FullName, $cliSourceZip | ForEach-Object {
+          Get-Item $zip.FullName, $msi.FullName, $cliSourceZip | ForEach-Object {
             $hash = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash  $($_.Name)"
           } | Set-Content -Encoding ascii dist/SHA256SUMS
@@ -266,6 +320,7 @@ jobs:
           name: bitwardenxc-windows-x64
           path: |
             dist/BitwardenXC-Windows-x64.zip
+            dist/BitwardenXC-Windows-x64.msi
             dist/BitwardenXC-CLI-Source.zip
             dist/SHA256SUMS
           if-no-files-found: error
@@ -273,7 +328,7 @@ jobs:
           overwrite: true
 
   publish:
-    needs: build
+    needs: [tag, build]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -284,11 +339,11 @@ jobs:
         with:
           name: bitwardenxc-windows-x64
 
-      - name: Publish commit release
+      - name: Publish versioned release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          TAG: build-${{ github.sha }}
+          TAG: ${{ needs.tag.outputs.version }}
         run: |
           sha256sum --check SHA256SUMS
           tag_commit=$(gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq .object.sha)
@@ -296,12 +351,13 @@ jobs:
             echo "Release tag $TAG points to $tag_commit instead of $GITHUB_SHA." >&2
             exit 1
           fi
+          assets=(BitwardenXC-Windows-x64.msi BitwardenXC-Windows-x64.zip BitwardenXC-CLI-Source.zip SHA256SUMS)
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" BitwardenXC-Windows-x64.zip BitwardenXC-CLI-Source.zip SHA256SUMS --clobber
+            gh release upload "$TAG" "${assets[@]}" --clobber
           else
-            gh release create "$TAG" BitwardenXC-Windows-x64.zip BitwardenXC-CLI-Source.zip SHA256SUMS \
-              --verify-tag --title "BitwardenXC Windows x64 (${GITHUB_SHA:0:7})" \
-              --notes "Portable Windows x64 build from commit $GITHUB_SHA. Extract the Windows ZIP and run BitwardenXC.exe. The package includes the patched Bitwarden CLI. Its source is available in BitwardenXC-CLI-Source.zip." \
+            gh release create "$TAG" "${assets[@]}" \
+              --verify-tag --title "BitwardenXC $TAG for Windows x64" \
+              --notes "Use the MSI for installation or to update an existing MSI install. For portable use, extract the Windows ZIP and run BitwardenXC.exe. Both packages include the patched Bitwarden CLI, with source in BitwardenXC-CLI-Source.zip. Built from $GITHUB_SHA." \
               --prerelease --latest=false
           fi
           # Older builds can finish later. Only the current main build can replace Latest.

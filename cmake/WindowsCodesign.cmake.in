@@ -28,6 +28,11 @@ if(CPACK_PACKAGE_FILES)
         endif()
     endforeach()
 else()
+    if(CPACK_GENERATOR STREQUAL "WIX"
+            AND (NOT EXISTS "${INSTALL_DIR}/bw.exe" OR NOT EXISTS "${INSTALL_DIR}/LICENSE-BITWARDEN-CLI.txt"))
+        message(FATAL_ERROR "Set BITWARDENXC_COMPANION_CLI and BITWARDENXC_COMPANION_LICENSE to build the installer.")
+    endif()
+
     # Setup portable zip file if building one
     if(INSTALL_DIR MATCHES "/ZIP/")
         file(TOUCH "${INSTALL_DIR}/.portable")

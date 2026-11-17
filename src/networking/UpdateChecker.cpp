@@ -27,6 +27,23 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QRegularExpression>
+#include <QVersionNumber>
+
+namespace
+{
+    constexpr qsizetype MaximumReleaseResponseSize = 256 * 1024;
+    const auto RepoReleases = QStringLiteral("https://github.com/TerhorstIO/BitwardenXC/releases/");
+
+    QVersionNumber numericVersion(const QString& version)
+    {
+        qsizetype suffixIndex = 0;
+        const auto parsed = QVersionNumber::fromString(version, &suffixIndex);
+        if (parsed.segmentCount() != 3 || suffixIndex != version.size() || parsed.toString() != version) {
+            return {};
+        }
+        return parsed;
+    }
+}
 
 const QString UpdateChecker::ErrorVersion("error");
 UpdateChecker* UpdateChecker::m_instance(nullptr);
@@ -44,68 +61,71 @@ UpdateChecker::~UpdateChecker()
 
 void UpdateChecker::checkForUpdates(bool manuallyRequested)
 {
-    // Skip update if we are already performing one
+    // An explicit check can use a request started by the background checker.
     if (m_reply) {
+        m_isManuallyRequested |= manuallyRequested;
         return;
     }
 
-    auto nextCheck = config()->get(Config::GUI_CheckForUpdatesNextCheck).toULongLong();
-    m_isManuallyRequested = manuallyRequested;
-
-    if (m_isManuallyRequested || Clock::currentSecondsSinceEpoch() >= nextCheck) {
-        m_bytesReceived.clear();
-
-        QString apiUrlStr = QString("https://api.github.com/repos/keepassxreboot/keepassxc/releases");
-
-        if (!config()->get(Config::GUI_CheckForUpdatesIncludeBetas).toBool()) {
-            apiUrlStr += "/latest";
-        }
-
-        QUrl apiUrl = QUrl(apiUrlStr);
-
-        QNetworkRequest request(apiUrl);
-        request.setRawHeader("Accept", "application/json");
-
-        m_reply = getNetMgr()->get(request);
-
-        connect(m_reply, &QNetworkReply::finished, this, &UpdateChecker::fetchFinished);
-        connect(m_reply, &QIODevice::readyRead, this, &UpdateChecker::fetchReadyRead);
+    const auto nextCheck = config()->get(Config::GUI_CheckForUpdatesNextCheck).toULongLong();
+    if (!manuallyRequested && Clock::currentSecondsSinceEpoch() < nextCheck) {
+        return;
     }
+
+    m_isManuallyRequested = manuallyRequested;
+    m_bytesReceived.clear();
+
+    QNetworkRequest request(QUrl(QStringLiteral("https://api.github.com/repos/TerhorstIO/BitwardenXC/releases/latest")));
+    request.setRawHeader("Accept", "application/vnd.github+json");
+    request.setRawHeader("User-Agent", "BitwardenXC");
+    request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::SameOriginRedirectPolicy);
+    request.setTransferTimeout(15000);
+
+    m_reply = getNetMgr()->get(request);
+
+    connect(m_reply, &QNetworkReply::finished, this, &UpdateChecker::fetchFinished);
+    connect(m_reply, &QIODevice::readyRead, this, &UpdateChecker::fetchReadyRead);
 }
 
 void UpdateChecker::fetchReadyRead()
 {
-    m_bytesReceived += m_reply->readAll();
+    m_bytesReceived += m_reply->read(MaximumReleaseResponseSize + 1 - m_bytesReceived.size());
+    if (m_bytesReceived.size() > MaximumReleaseResponseSize) {
+        m_reply->abort();
+    }
 }
 
 void UpdateChecker::fetchFinished()
 {
-    bool error = (m_reply->error() != QNetworkReply::NoError);
+    const auto success = m_reply->error() == QNetworkReply::NoError
+        && m_reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 200;
+    if (success && m_bytesReceived.size() <= MaximumReleaseResponseSize) {
+        m_bytesReceived += m_reply->read(MaximumReleaseResponseSize + 1 - m_bytesReceived.size());
+    }
     bool hasNewVersion = false;
-    QUrl url = m_reply->url();
-    QString version = "";
+    auto version = ErrorVersion;
 
     m_reply->deleteLater();
     m_reply = nullptr;
+    m_release = {};
 
-    if (!error) {
-        QJsonDocument jsonResponse = QJsonDocument::fromJson(m_bytesReceived);
-        QJsonObject jsonObject = jsonResponse.object();
-
-        if (config()->get(Config::GUI_CheckForUpdatesIncludeBetas).toBool()) {
-            QJsonArray jsonArray = jsonResponse.array();
-            jsonObject = jsonArray.at(0).toObject();
+    if (success && m_bytesReceived.size() <= MaximumReleaseResponseSize) {
+        const auto response = QJsonDocument::fromJson(m_bytesReceived).object();
+        if (const auto release = parseRelease(response)) {
+            m_release = *release;
+            version = release->version;
+            hasNewVersion = compareVersions(QStringLiteral(KEEPASSXC_VERSION), version);
+        } else {
+            // Older BitwardenXC releases use a commit SHA as their tag.
+            static const QRegularExpression legacyTag(R"(\Abuild-[0-9a-f]{40}\z)");
+            if (legacyTag.match(response.value("tag_name").toString()).hasMatch()) {
+                version.clear();
+            }
         }
+    }
 
-        if (!jsonObject.value("tag_name").isUndefined()) {
-            version = jsonObject.value("tag_name").toString();
-            hasNewVersion = compareVersions(QString(KEEPASSXC_VERSION), version);
-        }
-
-        // Check again in 7 days
-        config()->set(Config::GUI_CheckForUpdatesNextCheck, Clock::currentDateTime().addDays(7).toSecsSinceEpoch());
-    } else {
-        version = ErrorVersion;
+    if (version != ErrorVersion) {
+        config()->set(Config::GUI_CheckForUpdatesNextCheck, Clock::currentDateTime().addDays(1).toSecsSinceEpoch());
     }
 
     emit updateCheckFinished(hasNewVersion, version, m_isManuallyRequested);
@@ -113,56 +133,44 @@ void UpdateChecker::fetchFinished()
 
 bool UpdateChecker::compareVersions(const QString& localVersion, const QString& remoteVersion)
 {
-    // Quick full-string equivalence check
-    if (localVersion == remoteVersion) {
-        return false;
+    const auto local = numericVersion(localVersion);
+    const auto remote = numericVersion(remoteVersion);
+    return !local.isNull() && !remote.isNull() && local < remote;
+}
+
+std::optional<UpdateChecker::Release> UpdateChecker::parseRelease(const QJsonObject& response)
+{
+    const auto version = response.value("tag_name").toString();
+    if (numericVersion(version).isNull() || response.value("draft") != QJsonValue(false)
+        || response.value("prerelease") != QJsonValue(false)) {
+        return std::nullopt;
     }
 
-    QRegularExpression verRegex(R"(^((?:\d+\.){2}\d+)(?:-(\w+?)(\d+)?)?$)");
-
-    auto lmatch = verRegex.match(localVersion);
-    auto rmatch = verRegex.match(remoteVersion);
-
-    auto lVersion = lmatch.captured(1).split(".");
-    auto lSuffix = lmatch.captured(2);
-    auto lBetaNum = lmatch.captured(3);
-
-    auto rVersion = rmatch.captured(1).split(".");
-    auto rSuffix = rmatch.captured(2);
-    auto rBetaNum = rmatch.captured(3);
-
-    if (!lVersion.isEmpty() && !rVersion.isEmpty()) {
-        if (lSuffix.compare("snapshot", Qt::CaseInsensitive) == 0) {
-            // Snapshots are not checked for version updates
-            return false;
+    Release release{version, QUrl(RepoReleases + "tag/" + version), {}, {}};
+    const QString downloads = RepoReleases + "download/" + version + '/';
+    for (const auto& value : response.value("assets").toArray()) {
+        const auto asset = value.toObject();
+        if (asset.value("state").toString() != "uploaded" || asset.value("size").toDouble() <= 0) {
+            continue;
         }
-
-        // Check "-beta[X]" versions
-        if (lVersion == rVersion && !lSuffix.isEmpty()) {
-            // Check if stable version has been released or new beta is available
-            // otherwise the version numbers are equal
-            return rSuffix.isEmpty() || lBetaNum.toInt() < rBetaNum.toInt();
+        const auto name = asset.value("name").toString();
+        // Construct links to known assets on this repository using the validated tag.
+        if (name == "BitwardenXC-Windows-x64.msi") {
+            release.installer = QUrl(downloads + name);
+        } else if (name == "BitwardenXC-Windows-x64.zip") {
+            release.portableZip = QUrl(downloads + name);
         }
-
-        for (int i = 0; i < 3; i++) {
-            int l = lVersion[i].toInt();
-            int r = rVersion[i].toInt();
-
-            if (l == r) {
-                continue;
-            }
-
-            if (l > r) {
-                return false; // Installed version is newer than release
-            } else {
-                return true; // Installed version is outdated
-            }
-        }
-
-        return false; // Installed version is the same
     }
 
-    return false; // Invalid version string
+    if (release.installer.isEmpty() && release.portableZip.isEmpty()) {
+        return std::nullopt;
+    }
+    return release;
+}
+
+const UpdateChecker::Release& UpdateChecker::release() const
+{
+    return m_release;
 }
 
 UpdateChecker* UpdateChecker::instance()

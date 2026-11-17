@@ -1164,7 +1164,7 @@ void MainWindow::performUpdateCheck()
         auto result =
             MessageBox::question(this,
                                  tr("Check for updates on startup?"),
-                                 tr("Would you like KeePassXC to check for updates on startup?") + "\n\n"
+                                 tr("Would you like BitwardenXC to check for updates on startup?") + "\n\n"
                                      + tr("You can always check for updates manually from the application menu."),
                                  MessageBox::Yes | MessageBox::No,
                                  MessageBox::Yes);
@@ -1198,9 +1198,9 @@ void MainWindow::hasUpdateAvailable(bool hasUpdate, const QString& version, bool
 void MainWindow::showUpdateCheckDialog()
 {
 #ifdef KPXC_FEATURE_UPDATES
-    updateCheck()->checkForUpdates(true);
     auto* updateCheckDialog = new UpdateCheckDialog(this);
     updateCheckDialog->show();
+    updateCheck()->checkForUpdates(true);
 #endif
 }
 

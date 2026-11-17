@@ -18,18 +18,32 @@
 #ifndef KEEPASSXC_UPDATECHECK_H
 #define KEEPASSXC_UPDATECHECK_H
 #include <QObject>
+#include <QUrl>
 
+#include <optional>
+
+class QJsonObject;
 class QNetworkReply;
 
 class UpdateChecker : public QObject
 {
     Q_OBJECT
 public:
+    struct Release
+    {
+        QString version;
+        QUrl page;
+        QUrl installer;
+        QUrl portableZip;
+    };
+
     UpdateChecker(QObject* parent = nullptr);
     ~UpdateChecker() override;
 
     void checkForUpdates(bool manuallyRequested);
+    const Release& release() const;
     static bool compareVersions(const QString& localVersion, const QString& remoteVersion);
+    static std::optional<Release> parseRelease(const QJsonObject& response);
     static UpdateChecker* instance();
 
     static const QString ErrorVersion;
@@ -44,6 +58,7 @@ private slots:
 private:
     QNetworkReply* m_reply;
     QByteArray m_bytesReceived;
+    Release m_release;
     bool m_isManuallyRequested;
 
     static UpdateChecker* m_instance;

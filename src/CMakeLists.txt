@@ -492,6 +492,41 @@ if(WIN32)
             $<IF:$<CONFIG:Debug>,--debug,--release>
             $<TARGET_FILE:${PROGNAME}>)
 
+    set(BITWARDENXC_COMPANION_CLI "" CACHE FILEPATH "Path to the built Bitwarden CLI companion executable")
+    set(BITWARDENXC_COMPANION_LICENSE "" CACHE FILEPATH "Path to the Bitwarden CLI companion license")
+    if(BITWARDENXC_COMPANION_CLI OR BITWARDENXC_COMPANION_LICENSE)
+        if(NOT BITWARDENXC_COMPANION_CLI OR NOT BITWARDENXC_COMPANION_LICENSE)
+            message(FATAL_ERROR "Set both BITWARDENXC_COMPANION_CLI and BITWARDENXC_COMPANION_LICENSE when packaging the companion.")
+        endif()
+        install(FILES "${BITWARDENXC_COMPANION_CLI}" DESTINATION "${BIN_INSTALL_DIR}" RENAME bw.exe COMPONENT Runtime)
+        install(FILES "${BITWARDENXC_COMPANION_LICENSE}"
+                DESTINATION "${BIN_INSTALL_DIR}" RENAME LICENSE-BITWARDEN-CLI.txt COMPONENT Runtime)
+    endif()
+
+    install(FILES "${CMAKE_SOURCE_DIR}/COPYING"
+                  "${CMAKE_SOURCE_DIR}/LICENSE.BSD"
+                  "${CMAKE_SOURCE_DIR}/LICENSE.CC0"
+                  "${CMAKE_SOURCE_DIR}/LICENSE.GPL-2"
+                  "${CMAKE_SOURCE_DIR}/LICENSE.GPL-3"
+                  "${CMAKE_SOURCE_DIR}/LICENSE.LGPL-2.1"
+                  "${CMAKE_SOURCE_DIR}/LICENSE.LGPL-3"
+                  "${CMAKE_SOURCE_DIR}/LICENSE.MIT"
+                  "${CMAKE_SOURCE_DIR}/LICENSE.NOKIA-LGPL-EXCEPTION"
+                  "${CMAKE_SOURCE_DIR}/LICENSE.OFL"
+                  "${CMAKE_SOURCE_DIR}/README.md"
+            DESTINATION "${BIN_INSTALL_DIR}"
+            COMPONENT Runtime)
+
+    if(MSVC)
+        # Place the redistributable runtime DLLs next to the executable for clean Windows installs.
+        set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${BIN_INSTALL_DIR}")
+        set(CMAKE_INSTALL_SYSTEM_RUNTIME_COMPONENT Runtime)
+        include(InstallRequiredSystemLibraries)
+        if(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS)
+            set(_WDQT_COMPILER_RUNTIME "--no-compiler-runtime")
+        endif()
+    endif()
+
     # We have to copy the license file in the configuration phase.
     # CMake checks that CPACK_RESOURCE_FILE_LICENSE actually exists and
     # we have to copy it because WiX needs it to have a .txt extension.
@@ -509,40 +544,18 @@ if(WIN32)
     set(CPACK_GENERATOR "ZIP;WIX")
     set(CPACK_COMPONENTS_ALL "")
     set(CPACK_STRIP_FILES OFF)
+    set(CPACK_PACKAGE_NAME "${PROGNAME}")
     set(CPACK_PACKAGE_FILE_NAME "${PROGNAME}-${KEEPASSXC_VERSION}-${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}")
     set(CPACK_PACKAGE_INSTALL_DIRECTORY ${PROGNAME})
     set(CPACK_PACKAGE_VERSION ${KEEPASSXC_VERSION_CLEAN})
-    set(CPACK_PACKAGE_VENDOR "${PROGNAME} Team")
+    set(CPACK_PACKAGE_VENDOR "TerhorstIO")
+    set(CPACK_PACKAGE_EXECUTABLES "${PROGNAME}" "${PROGNAME}")
     set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_BINARY_DIR}/INSTALLER_LICENSE.txt")
-    set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
-    set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/share/windows/keepassxc.ico")
-    set(CPACK_NSIS_MUI_UNIICON "${CPACK_NSIS_MUI_ICON}")
-    set(CPACK_NSIS_INSTALLED_ICON_NAME "\\\\${PROGNAME}.exe")
-    set(CPACK_NSIS_MUI_WELCOMEFINISHPAGE_BITMAP "${CMAKE_SOURCE_DIR}/share/windows/installer-wizard.png")
-    set(CPACK_NSIS_MUI_UNWELCOMEFINISHPAGE_BITMAP "${CMAKE_SOURCE_DIR}/share/windows/installer-wizard.png")
-    set(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${PROGNAME}.lnk' '$INSTDIR\\\\${PROGNAME}.exe'")
-    set(CPACK_NSIS_DELETE_ICONS_EXTRA "Delete '$SMPROGRAMS\\\\$START_MENU\\\\${PROGNAME}.lnk'")
-    set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "ExecWait 'Taskkill /IM ${PROGNAME}.exe'")
-    set(CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS "${CPACK_NSIS_EXTRA_PREINSTALL_COMMANDS}\nExecWait 'Taskkill /IM keepassxc-proxy.exe /F'")
-    set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "ExecWait 'Taskkill /IM ${PROGNAME}.exe'")
-    set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "${CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS}\nExecWait 'Taskkill /IM keepassxc-proxy.exe /F'")
-    set(CPACK_NSIS_URL_INFO_ABOUT "https://keepassxc.org")
-    set(CPACK_NSIS_DISPLAY_NAME ${PROGNAME})
-    set(CPACK_NSIS_PACKAGE_NAME "${PROGNAME} v${KEEPASSXC_VERSION}")
-    set(CPACK_NSIS_MUI_FINISHPAGE_RUN "../${PROGNAME}.exe")
-    set(CPACK_WIX_UPGRADE_GUID 88785A72-3EAE-4F29-89E3-BC6B19BA9A5B)
+    set(CPACK_WIX_VERSION 4)
+    set(CPACK_WIX_INSTALL_SCOPE perMachine)
+    set(CPACK_WIX_UPGRADE_GUID 41DE9CBC-841C-4558-BD8C-67E11CB673B7)
     set(CPACK_WIX_PRODUCT_ICON "${CMAKE_SOURCE_DIR}/share/windows/keepassxc.ico")
-    set(CPACK_WIX_UI_BANNER "${CMAKE_SOURCE_DIR}/share/windows/installer-banner.png")
-    set(CPACK_WIX_UI_DIALOG "${CMAKE_SOURCE_DIR}/share/windows/installer-wizard.png")
-    set(CPACK_WIX_UI_REF "KPXC_InstallDir")
-    set(CPACK_WIX_TEMPLATE "${CMAKE_SOURCE_DIR}/share/windows/wix-template.xml")
-    set(CPACK_WIX_PATCH_FILE "${CMAKE_SOURCE_DIR}/share/windows/wix-patch.xml")
-    set(CPACK_WIX_EXTRA_SOURCES
-            "${CMAKE_SOURCE_DIR}/share/windows/KPXC_InstallDir.wxs"
-            "${CMAKE_SOURCE_DIR}/share/windows/KPXC_InstallDirDlg.wxs"
-            "${CMAKE_SOURCE_DIR}/share/windows/KPXC_ExitDlg.wxs")
-    set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT  "https://keepassxc.org")
-    set(CPACK_WIX_EXTENSIONS "WixUtilExtension.dll")
+    set(CPACK_WIX_PROPERTY_ARPURLINFOABOUT "https://github.com/TerhorstIO/BitwardenXC")
     string(TOLOWER "${CMAKE_CXX_COMPILER_ARCHITECTURE_ID}" _windows_package_arch)
     if(NOT _windows_package_arch)
         string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" _windows_package_arch)
@@ -573,7 +586,7 @@ if(WIN32)
             set(_wdqt_mode --release)
         endif()
         execute_process(
-            COMMAND ${DEPLOYQT_EXE} \${_wdqt_mode} ${_QTPATHS} ${PROGNAME}.exe
+            COMMAND ${DEPLOYQT_EXE} \${_wdqt_mode} ${_WDQT_COMPILER_RUNTIME} ${_QTPATHS} ${PROGNAME}.exe
             WORKING_DIRECTORY \${CMAKE_INSTALL_PREFIX}
             OUTPUT_QUIET
             RESULT_VARIABLE _wdqt_result

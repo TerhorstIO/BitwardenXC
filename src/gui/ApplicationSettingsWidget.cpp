@@ -123,7 +123,6 @@ ApplicationSettingsWidget::ApplicationSettingsWidget(QWidget* parent)
         {Config::GUI_MinimizeOnClose, m_generalUi->minimizeOnCloseCheckBox},
         {Config::GUI_MinimizeOnStartup, m_generalUi->systrayMinimizeOnStartup},
         {Config::GUI_CheckForUpdates, m_generalUi->checkForUpdatesOnStartupCheckBox},
-        {Config::GUI_CheckForUpdatesIncludeBetas, m_generalUi->checkForUpdatesIncludeBetasCheckBox},
         {Config::GUI_ShowExpiredEntriesOnDatabaseUnlock, m_generalUi->showExpiredEntriesOnDatabaseUnlockCheckBox},
         {Config::GUI_ShowExpiredEntriesOnDatabaseUnlockOffsetDays, m_generalUi->showExpiredEntriesOnDatabaseUnlockOffsetSpinBox},
         {Config::GUI_HideMenubar, m_generalUi->menubarShowCheckBox},
@@ -300,12 +299,8 @@ ApplicationSettingsWidget::ApplicationSettingsWidget(QWidget* parent)
     m_secUi->lockDatabasesOnUserSwitchCheckBox->setVisible(false);
 #endif
 
-#ifdef KPXC_FEATURE_UPDATES
-    connect(m_generalUi->checkForUpdatesOnStartupCheckBox, SIGNAL(toggled(bool)), SLOT(checkUpdatesToggled(bool)));
-#else
+#ifndef KPXC_FEATURE_UPDATES
     m_generalUi->checkForUpdatesOnStartupCheckBox->setVisible(false);
-    m_generalUi->checkForUpdatesIncludeBetasCheckBox->setVisible(false);
-    m_generalUi->checkUpdatesSpacer->changeSize(0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
 #endif
 
 #ifndef KPXC_FEATURE_NETWORK
@@ -723,12 +718,6 @@ void ApplicationSettingsWidget::rememberDatabasesToggled(bool checked)
                                                           && !config()->isManaged(Config::RememberLastKeyFiles));
     m_generalUi->openPreviousDatabasesOnStartupCheckBox->setEnabled(
         checked && !config()->isManaged(Config::OpenPreviousDatabasesOnStartup));
-}
-
-void ApplicationSettingsWidget::checkUpdatesToggled(bool checked)
-{
-    m_generalUi->checkForUpdatesIncludeBetasCheckBox->setEnabled(
-        checked && !config()->isManaged(Config::GUI_CheckForUpdatesIncludeBetas));
 }
 
 void ApplicationSettingsWidget::showExpiredEntriesOnDatabaseUnlockToggled(bool checked)

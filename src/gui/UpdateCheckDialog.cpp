@@ -20,7 +20,7 @@
 
 #include <QPushButton>
 
-#include "config-keepassx.h"
+#include "core/Config.h"
 #include "gui/Icons.h"
 #include "networking/UpdateChecker.h"
 
@@ -51,12 +51,28 @@ void UpdateCheckDialog::showUpdateCheckResponse(bool hasUpdate, const QString& v
         m_ui->statusLabel->setText(
             tr("An error occurred when trying to retrieve update information, please try again later."));
     } else if (hasUpdate) {
-        m_ui->statusLabel->setText(
-            tr("<strong>A new version is available.</strong><br/>"
-               "KeePassXC %1 can be <a href=\"https://keepassxc.org/download/\">downloaded here</a>.")
-                .arg(version, KEEPASSXC_VERSION));
+        const auto& release = updateCheck()->release();
+        const auto link = [](const QUrl& url, const QString& text) {
+            return QStringLiteral("<a href=\"%1\">%2</a>")
+                .arg(QString::fromUtf8(url.toEncoded()).toHtmlEscaped(), text.toHtmlEscaped());
+        };
+        QStringList links;
+        if (!release.installer.isEmpty()) {
+            links.append(link(release.installer, tr("Windows installer")));
+        }
+        if (!release.portableZip.isEmpty()) {
+            const auto portableLink = link(release.portableZip, tr("Portable ZIP"));
+            if (Config::isPortable()) {
+                links.prepend(portableLink);
+            } else {
+                links.append(portableLink);
+            }
+        }
+        links.append(link(release.page, tr("Release notes")));
+        m_ui->statusLabel->setText(tr("<strong>BitwardenXC %1 is available.</strong>").arg(version.toHtmlEscaped())
+                                   + "<br/>" + links.join("<br/>"));
     } else {
-        m_ui->statusLabel->setText(tr("You have the latest version of KeePassXC"));
+        m_ui->statusLabel->setText(tr("No newer BitwardenXC release is available."));
     }
 }
 

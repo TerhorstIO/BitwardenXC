@@ -230,42 +230,9 @@
               <item>
                <widget class="QCheckBox" name="checkForUpdatesOnStartupCheckBox">
                 <property name="text">
-                 <string>Check for updates at application startup once per week</string>
+                 <string>Check for updates once per day</string>
                 </property>
                </widget>
-              </item>
-              <item>
-               <layout class="QHBoxLayout" name="checkUpdatesSubLayout">
-                <property name="spacing">
-                 <number>0</number>
-                </property>
-                <item>
-                 <spacer name="checkUpdatesSpacer">
-                  <property name="orientation">
-                   <enum>Qt::Orientation::Horizontal</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Policy::Fixed</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>30</width>
-                    <height>20</height>
-                   </size>
-                  </property>
-                 </spacer>
-                </item>
-                <item>
-                 <widget class="QCheckBox" name="checkForUpdatesIncludeBetasCheckBox">
-                  <property name="enabled">
-                   <bool>false</bool>
-                  </property>
-                  <property name="text">
-                   <string>Include beta releases when checking for updates</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
               </item>
               <item>
                <layout class="QHBoxLayout" name="horizontalLayout_5">
@@ -1603,7 +1570,6 @@
   <tabstop>openPreviousDatabasesOnStartupCheckBox</tabstop>
   <tabstop>rememberLastKeyFilesCheckBox</tabstop>
   <tabstop>checkForUpdatesOnStartupCheckBox</tabstop>
-  <tabstop>checkForUpdatesIncludeBetasCheckBox</tabstop>
   <tabstop>showExpiredEntriesOnDatabaseUnlockCheckBox</tabstop>
   <tabstop>showExpiredEntriesOnDatabaseUnlockOffsetSpinBox</tabstop>
   <tabstop>autoSaveAfterEveryChangeCheckBox</tabstop>

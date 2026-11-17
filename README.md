@@ -2,10 +2,12 @@
 
 BitwardenXC is a Windows fork of KeePassXC 2.8.0. Bitwarden and Vaultwarden vaults open in the KeePassXC folder tree, entry table and detail view. The native clipboard shortcuts, including `Ctrl+B` for username and `Ctrl+C` for password, and the KeePassXC Auto-Type engine work on entries in the connected vault.
 
-1. Download `BitwardenXC-Windows-x64.zip` from the [latest release](https://github.com/TerhorstIO/BitwardenXC/releases/latest), extract it, and start `BitwardenXC.exe`. Keep the bundled `bw.exe` next to it.
+1. Download `BitwardenXC-Windows-x64.msi` from the [latest release](https://github.com/TerhorstIO/BitwardenXC/releases/latest) and run the installer. For portable use, download `BitwardenXC-Windows-x64.zip`, extract it, and start `BitwardenXC.exe` from that folder. Both packages include `bw.exe`.
 2. Choose **Database → Open Bitwarden / Vaultwarden**, then enter your server's HTTPS address, email and master password. For Bitwarden Cloud use `https://vault.bitwarden.com` or `https://vault.bitwarden.eu`.
 3. For two-step login, enter an authenticator code if required. The personal API key option signs in via the [Bitwarden CLI API-key flow](https://bitwarden.com/help/personal-api-key/) and still needs your master password to unlock the vault.
 4. Create a personal login with **New Entry** or open one in the entry editor. The editor supports title, username, password, primary URL, notes, and text or hidden custom fields. **Advanced** shows TOTP setup and saved passkey details. Passkey details are read-only. Use `Ctrl+S` to write changes to the server and **Database → Sync Bitwarden** to pull changes made on another device.
+
+Enable update checks at startup or choose **Help → Check for Updates** to check the BitwardenXC releases on GitHub. The update dialog links to the installer, portable ZIP, and release notes. Close BitwardenXC before updating. Run the new MSI to update an MSI installation and keep its settings. To update a portable copy, extract the new ZIP over the existing application files and keep the `config` directory. Each release includes `SHA256SUMS` for checking the downloads.
 
 With **Remember previously used databases** enabled, the server address and email appear in **Database → Recent Databases** and on the welcome screen. Select the vault to reuse those details. **Clear history** removes the saved connection details alongside the local database history.
 
