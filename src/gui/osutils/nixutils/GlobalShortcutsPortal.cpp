@@ -90,7 +90,7 @@ void GlobalShortcutsPortal::configureShortcuts()
 {
     if (!isAvailable() || !hasSession()) {
         MessageBox::warning(getMainWindow(),
-                            tr("KeePassXC - Global Shortcuts"),
+                            tr("BitwardenXC - Global Shortcuts"),
                             tr("The XDG Desktop Portal for global shortcuts is not available on this system."));
         return;
     }
@@ -123,7 +123,7 @@ void GlobalShortcutsPortal::configureShortcuts()
 
         // Portal v1 (e.g. GNOME): no reconfiguration API, direct the user to system settings
         MessageBox::information(getMainWindow(),
-                                tr("KeePassXC - Global Shortcuts"),
+                                tr("BitwardenXC - Global Shortcuts"),
                                 tr("Global Auto-Type shortcut is already configured. "
                                    "To change it, open your system settings and navigate to the "
                                    "keyboard or application shortcuts section."));

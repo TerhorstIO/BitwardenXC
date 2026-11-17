@@ -10,8 +10,8 @@
         <translation>Apie</translation>
     </message>
     <message>
-        <source>Report bugs at: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
-        <translation>Apie klaidas praneškite adresu: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</translation>
+        <source>Report bugs at: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
+        <translation>Apie klaidas praneškite adresu: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</translation>
     </message>
     <message>
         <source>KeePassXC is distributed under the terms of the GNU General Public License (GPL) version 2 or (at your option) version 3.</source>
@@ -49,8 +49,8 @@
 <context>
     <name>AccessControlDialog</name>
     <message>
-        <source>KeePassXC -  Access Request</source>
-        <translation>KeePassXC - Prieigos Užklausa</translation>
+        <source>BitwardenXC -  Access Request</source>
+        <translation>BitwardenXC - Prieigos Užklausa</translation>
     </message>
     <message>
         <source>Non-existing/inaccessible executable path. Please double-check the client is legit.</source>
@@ -81,8 +81,8 @@
         <translation>Išsamiau</translation>
     </message>
     <message>
-        <source>Your decision will be remembered for the duration while both the requesting client AND KeePassXC are running.</source>
-        <translation>Jūsų sprendimas bus įsimintas tol, kol užklausą pateikęs klientas IR KeePassXC yra paleisti.</translation>
+        <source>Your decision will be remembered for the duration while both the requesting client AND BitwardenXC are running.</source>
+        <translation>Jūsų sprendimas bus įsimintas tol, kol užklausą pateikęs klientas IR BitwardenXC yra paleisti.</translation>
     </message>
     <message>
         <source>Remember</source>
@@ -249,16 +249,16 @@
         <translation>Ar norite atstatyti visus nustatymus į numatytąsias reikšmes?</translation>
     </message>
     <message>
-        <source>Import KeePassXC Settings</source>
-        <translation>Importuoti KeePassXC nustatymus</translation>
+        <source>Import BitwardenXC Settings</source>
+        <translation>Importuoti BitwardenXC nustatymus</translation>
     </message>
     <message>
         <source>Failed to import settings from %1, not a valid settings file.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Export KeePassXC Settings</source>
-        <translation>Eksportuoti KeePassXC nustatymus</translation>
+        <source>Export BitwardenXC Settings</source>
+        <translation>Eksportuoti BitwardenXC nustatymus</translation>
     </message>
     <message>
         <source>Small</source>
@@ -285,7 +285,7 @@
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Restart KeePassXC to apply the Auto-Type desktop portals preference.</source>
+        <source>Restart BitwardenXC to apply the Auto-Type desktop portals preference.</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -300,12 +300,12 @@
         <translation>Įjungimo</translation>
     </message>
     <message>
-        <source>Start only a single instance of KeePassXC</source>
-        <translation>Paleisti tik vieną KeePassXC egzempliorių</translation>
+        <source>Start only a single instance of BitwardenXC</source>
+        <translation>Paleisti tik vieną BitwardenXC egzempliorių</translation>
     </message>
     <message>
-        <source>Automatically launch KeePassXC at system startup</source>
-        <translation>Automatiškai paleisti KeePassXC paleidžiant sistemą</translation>
+        <source>Automatically launch BitwardenXC at system startup</source>
+        <translation>Automatiškai paleisti BitwardenXC paleidžiant sistemą</translation>
     </message>
     <message>
         <source>Minimize window at application startup</source>
@@ -778,12 +778,12 @@
         <translation>Būtinas leidimas</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>Kad KeePassXC galėtų atlikti pradinio lygio automatinį rinkimą, reikia prieigos leidimo. Jei leidimas jau suteiktas, gali tekti iš naujo paleisti KeePassXC.</translation>
+        <source>BitwardenXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>Kad BitwardenXC galėtų atlikti pradinio lygio automatinį rinkimą, reikia prieigos leidimo. Jei leidimas jau suteiktas, gali tekti iš naujo paleisti BitwardenXC.</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>Kad KeePassXC galėtų atlikti visuotinį automatinį rinkimą, reikia prieigos ir ekrano įrašymo leidimo. Ekrano įrašymas būtinas, kad būtų galima naudoti lango pavadinimą įrašams rasti. Jei leidimas jau suteiktas, gali tekti iš naujo paleisti KeePassXC.</translation>
+        <source>BitwardenXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>Kad BitwardenXC galėtų atlikti visuotinį automatinį rinkimą, reikia prieigos ir ekrano įrašymo leidimo. Ekrano įrašymas būtinas, kad būtų galima naudoti lango pavadinimą įrašams rasti. Jei leidimas jau suteiktas, gali tekti iš naujo paleisti BitwardenXC.</translation>
     </message>
     <message>
         <source>Invalid entry provided</source>
@@ -889,8 +889,8 @@
 <context>
     <name>AutoTypeSelectDialog</name>
     <message>
-        <source>Auto-Type - KeePassXC</source>
-        <translation>Automatinis rinkimas - KeePassXC</translation>
+        <source>Auto-Type - BitwardenXC</source>
+        <translation>Automatinis rinkimas - BitwardenXC</translation>
     </message>
     <message>
         <source>Double click a row to perform Auto-Type or find an entry using the search:</source>
@@ -982,8 +982,8 @@ Ctrl+Shift+4 - Copy URL&lt;br/&gt;
 <context>
     <name>BrowserAccessControlDialog</name>
     <message>
-        <source>KeePassXC - Browser Access Request</source>
-        <translation>KeePassXC - Naršyklės Prieigos Užklausa</translation>
+        <source>BitwardenXC - Browser Access Request</source>
+        <translation>BitwardenXC - Naršyklės Prieigos Užklausa</translation>
     </message>
     <message>
         <source>%1 is requesting access to the following entries:</source>
@@ -1035,7 +1035,7 @@ Please select the correct database for saving credentials.</source>
 Prisijungimo duomenų įrašymui, pasirinkite teisingą duomenų bazę.</translation>
     </message>
     <message>
-        <source>KeePassXC - Select Database</source>
+        <source>BitwardenXC - Select Database</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -1074,7 +1074,7 @@ Prisijungimo duomenų įrašymui, pasirinkite teisingą duomenų bazę.</transla
         <translation>Naudotojo vardas: %1</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
+        <source>BitwardenXC - Passkey credentials</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1148,7 +1148,7 @@ Ar norite ištrinti įrašą?
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Create a new group</source>
+        <source>BitwardenXC - Create a new group</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1156,19 +1156,19 @@ Ar norite ištrinti įrašą?
         <translation>Išjungti</translation>
     </message>
     <message>
-        <source>KeePassXC - Overwrite existing key?</source>
+        <source>BitwardenXC - Overwrite existing key?</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Update Entry</source>
+        <source>BitwardenXC - Update Entry</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Delete entry</source>
+        <source>BitwardenXC - Delete entry</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - New key association request</source>
+        <source>BitwardenXC - New key association request</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1176,7 +1176,7 @@ Ar norite ištrinti įrašą?
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
+        <source>BitwardenXC - Passkey credentials</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1184,7 +1184,7 @@ Ar norite ištrinti įrašą?
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Update passkey</source>
+        <source>BitwardenXC - Update passkey</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1325,8 +1325,8 @@ Do you want to overwrite the passkey in %1 - %2?</source>
         <translation>Neraginkite perkelti KeePassHTTP parametrų.</translation>
     </message>
     <message>
-        <source>Updates KeePassXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
-        <translation>Paleidžiant automatiškai atnaujina KeePassXC arba keepassxc-proxy dvejetainį kelią į vietinius pranešimų scenarijus.</translation>
+        <source>Updates BitwardenXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
+        <translation>Paleidžiant automatiškai atnaujina BitwardenXC arba keepassxc-proxy dvejetainį kelią į vietinius pranešimų scenarijus.</translation>
     </message>
     <message>
         <source>Update native messaging manifest files at startup</source>
@@ -1672,15 +1672,15 @@ Atsarginė duomenų bazė, esanti %2</translation>
 <context>
     <name>DatabaseOpenDialog</name>
     <message>
-        <source>Unlock Database - KeePassXC</source>
-        <translation>Atrakinti duomenų bazę - KeePassXC</translation>
+        <source>Unlock Database - BitwardenXC</source>
+        <translation>Atrakinti duomenų bazę - BitwardenXC</translation>
     </message>
 </context>
 <context>
     <name>DatabaseOpenWidget</name>
     <message>
-        <source>Unlock KeePassXC Database</source>
-        <translation>Atrakinti KeePassXC duomenų bazę</translation>
+        <source>Unlock BitwardenXC Database</source>
+        <translation>Atrakinti BitwardenXC duomenų bazę</translation>
     </message>
     <message>
         <source>Enter Password:</source>
@@ -1728,19 +1728,19 @@ Atsarginė duomenų bazė, esanti %2</translation>
     </message>
     <message>
         <source>The database you are trying to open was most likely
-created by a newer version of KeePassXC.
+created by a newer version of BitwardenXC.
 
 You can try to open it anyway, but it may be incomplete
 and saving any changes may incur data loss.
 
-We recommend you update your KeePassXC installation.</source>
+We recommend you update your BitwardenXC installation.</source>
         <translation>Duomenų bazė, kurią bandote atidaryti, greičiausiai buvo
-sukurta su naujesne KeePassXC versija.
+sukurta su naujesne BitwardenXC versija.
 
 Vis tiek galite pabandyti ją atidaryti, tačiau ji gali būti neišbaigta
 ir išsaugant bet kokius pakeitimus gali būti prarasti duomenys.
 
-Rekomenduojame atnaujinti KeePassXC diegimą.</translation>
+Rekomenduojame atnaujinti BitwardenXC diegimą.</translation>
     </message>
     <message>
         <source>Open database anyway</source>
@@ -1777,8 +1777,8 @@ Kad ši klaida nepasirodytų, turite eiti į &quot;Duomenų bazės nustatymai / 
         <translation>Senas rakto failo formatas</translation>
     </message>
     <message>
-        <source>You are using an old key file format which KeePassXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
-        <translation>Jūs naudojate seną rakto failo formatą, kurį keePassXC gali&lt;br&gt;nustokite remti ateityje.&lt;br&gt;&lt;br&gt;Apsvarstykite galimybę sugeneruoti naują rakto failą apsilankę:&lt;br&gt;&lt;strong&gt;Duomenų bazės &amp;gt; duomenų bazės saugos &amp;gt; keisti rakto failą.&lt;/strong&gt;&lt;br&gt;</translation>
+        <source>You are using an old key file format which BitwardenXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
+        <translation>Jūs naudojate seną rakto failo formatą, kurį BitwardenXC gali&lt;br&gt;nustokite remti ateityje.&lt;br&gt;&lt;br&gt;Apsvarstykite galimybę sugeneruoti naują rakto failą apsilankę:&lt;br&gt;&lt;strong&gt;Duomenų bazės &amp;gt; duomenų bazės saugos &amp;gt; keisti rakto failą.&lt;/strong&gt;&lt;br&gt;</translation>
     </message>
     <message>
         <source>Don&apos;t show this warning again</source>
@@ -1830,7 +1830,7 @@ If you don&apos;t have a key file or don&apos;t know what that is, you don&apos;
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC database file selected</source>
+        <source>KeePass database file selected</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1982,12 +1982,12 @@ This may prevent connection to the browser plugin.</source>
 Tai gali nebeleisti prisijungti prie naršyklės plėtinio.</translation>
     </message>
     <message>
-        <source>No shared encryption keys found in KeePassXC settings.</source>
-        <translation>KeePassXC nustatymuose nerasta bendrų šifravimo raktų.</translation>
+        <source>No shared encryption keys found in BitwardenXC settings.</source>
+        <translation>BitwardenXC nustatymuose nerasta bendrų šifravimo raktų.</translation>
     </message>
     <message numerus="yes">
-        <source>Successfully removed %n encryption key(s) from KeePassXC settings.</source>
-        <translation><numerusform>Iš &quot;KeePassXC&quot; nustatymų sėkmingai pašalintas %n šifravimo raktas.</numerusform><numerusform>Iš &quot;KeePassXC&quot; nustatymų sėkmingai pašalinta %n šifravimo raktų.</numerusform><numerusform>Iš &quot;KeePassXC&quot; nustatymų sėkmingai pašalinta %n šifravimo raktų.</numerusform><numerusform>Iš &quot;KeePassXC&quot; nustatymų sėkmingai pašalinta %n šifravimo raktų.</numerusform></translation>
+        <source>Successfully removed %n encryption key(s) from BitwardenXC settings.</source>
+        <translation><numerusform>Iš &quot;BitwardenXC&quot; nustatymų sėkmingai pašalintas %n šifravimo raktas.</numerusform><numerusform>Iš &quot;BitwardenXC&quot; nustatymų sėkmingai pašalinta %n šifravimo raktų.</numerusform><numerusform>Iš &quot;BitwardenXC&quot; nustatymų sėkmingai pašalinta %n šifravimo raktų.</numerusform><numerusform>Iš &quot;BitwardenXC&quot; nustatymų sėkmingai pašalinta %n šifravimo raktų.</numerusform></translation>
     </message>
     <message>
         <source>Do you really want forget all site-specific settings on every entry?
@@ -2828,9 +2828,9 @@ Išsaugoti pakeitimus?</translation>
         <translation>Išjungti saugų išsaugojimą?</translation>
     </message>
     <message>
-        <source>KeePassXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
+        <source>BitwardenXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
 Disable safe saves and try again?</source>
-        <translation>KeePassXC nepavyko išsaugoti duomenų bazės kelis kartus. Tikėtina, kad taip atsitiko dėl to, kad failų sinchronizavimo paslaugos užrakino išsaugojimo failą.
+        <translation>BitwardenXC nepavyko išsaugoti duomenų bazės kelis kartus. Tikėtina, kad taip atsitiko dėl to, kad failų sinchronizavimo paslaugos užrakino išsaugojimo failą.
 Išjunkite saugų išsaugojimą ir bandykite dar kartą?</translation>
     </message>
     <message>
@@ -3741,9 +3741,9 @@ Ar norėtumėte ją ištaisyti?</translation>
         <translation>Sinchronizuoti</translation>
     </message>
     <message>
-        <source>Your KeePassXC version does not support sharing this container type.
+        <source>Your BitwardenXC version does not support sharing this container type.
 Supported extensions are: %1.</source>
-        <translation>Jūsų &quot;KeePassXC&quot; versija nepalaiko šio konteinerio tipo bendrinimo.
+        <translation>Jūsų &quot;BitwardenXC&quot; versija nepalaiko šio konteinerio tipo bendrinimo.
 Palaikomi pratęsimai yra: %1.</translation>
     </message>
     <message>
@@ -4708,7 +4708,7 @@ Dėl to jūsų slaptažodžiai ir slapta informacija bus pažeidžiami!
 <context>
     <name>GlobalShortcutsPortal</name>
     <message>
-        <source>KeePassXC - Global Shortcuts</source>
+        <source>BitwardenXC - Global Shortcuts</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -5683,8 +5683,8 @@ Jei tai kartojasi, jūsų duomenų bazės failas gali būti sugadintas.</transla
         <translation>Senas rakto failo formatas</translation>
     </message>
     <message>
-        <source>You selected a key file in an old format which KeePassXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
-        <translation>Pasirinkote seno formato rakto failą, kurio KeePassXC&lt;br&gt;ateityje gali nebepalaikyti.&lt;br&gt;&lt;br&gt;Apsvarstykite galimybę vietoj jo sukurti naują rakto failą.</translation>
+        <source>You selected a key file in an old format which BitwardenXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
+        <translation>Pasirinkote seno formato rakto failą, kurio BitwardenXC&lt;br&gt;ateityje gali nebepalaikyti.&lt;br&gt;&lt;br&gt;Apsvarstykite galimybę vietoj jo sukurti naują rakto failą.</translation>
     </message>
     <message>
         <source>Error loading the key file '%1'
@@ -6453,7 +6453,7 @@ Ar tikrai norite tęsti darbą su šiuo failu?</translation>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>WARNING: You are using a development snapshot build of KeePassXC.
+        <source>WARNING: You are using a development snapshot build of BitwardenXC.
 Maintain a backup of your databases in the event of unknown bugs.
 This version is not meant for production use.</source>
         <translation type="unfinished"/>
@@ -6658,8 +6658,8 @@ This version is not meant for production use.</source>
 <context>
     <name>NewDatabaseWizard</name>
     <message>
-        <source>Create a new KeePassXC database…</source>
-        <translation>Sukurti naują KeePassXC duomenų bazę...</translation>
+        <source>Create a new KeePass database…</source>
+        <translation>Sukurti naują KeePass duomenų bazę...</translation>
     </message>
     <message>
         <source>Root</source>
@@ -6933,7 +6933,7 @@ This version is not meant for production use.</source>
 <context>
     <name>PasskeyExportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Export</source>
+        <source>BitwardenXC - Passkey Export</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -6989,7 +6989,7 @@ Do you want to overwrite it?
 <context>
     <name>PasskeyImportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Import</source>
+        <source>BitwardenXC - Passkey Import</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -7121,8 +7121,8 @@ The following data is missing:
         <translation>Slaptažodis nustatytas, spustelėkite, jei norite pakeisti arba pašalinti</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. KeePassXC can generate one for you.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Slaptažodis yra pagrindinis būdas apsaugoti jūsų duomenų bazę.&lt;/p&gt;&lt;p&gt;Geri slaptažodžiai yra ilgi ir unikalūs. KeePassXC gali jį sugeneruoti už jus.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. BitwardenXC can generate one for you.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Slaptažodis yra pagrindinis būdas apsaugoti jūsų duomenų bazę.&lt;/p&gt;&lt;p&gt;Geri slaptažodžiai yra ilgi ir unikalūs. BitwardenXC gali jį sugeneruoti už jus.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Passwords do not match.</source>
@@ -7477,8 +7477,8 @@ Ar norite jį perrašyti?</translation>
 <context>
     <name>PickcharsDialog</name>
     <message>
-        <source>KeePassXC - Pick Characters</source>
-        <translation>KeePassXC - Rinkitės simbolius</translation>
+        <source>BitwardenXC - Pick Characters</source>
+        <translation>BitwardenXC - Rinkitės simbolius</translation>
     </message>
     <message>
         <source>Select characters to type, navigate with arrow keys, Ctrl + S submits.</source>
@@ -7574,8 +7574,8 @@ Ar norite jį perrašyti?</translation>
         <translation>Nepavyko užšifruoti žinutės.</translation>
     </message>
     <message>
-        <source>KeePassXC association failed, try again</source>
-        <translation>KeePassXC asociacija nepavyko, bandykite dar kartą</translation>
+        <source>BitwardenXC association failed, try again</source>
+        <translation>BitwardenXC asociacija nepavyko, bandykite dar kartą</translation>
     </message>
     <message>
         <source>Encryption key is not recognized</source>
@@ -8663,11 +8663,11 @@ Prieinamos komandos:
         <translation>Nepavyko įkelti rakto failo %1: %2</translation>
     </message>
     <message>
-        <source>WARNING: You are using an old key file format which KeePassXC may
+        <source>WARNING: You are using an old key file format which BitwardenXC may
 stop supporting in the future.
 
 Please consider generating a new key file.</source>
-        <translation>ĮSPĖJIMAS: Jūs naudojate seną rakto failo formatą, kurio KeePassXC gali
+        <translation>ĮSPĖJIMAS: Jūs naudojate seną rakto failo formatą, kurio BitwardenXC gali
 ateityje nebepalaikyti.
 
 Apsvarstykite galimybę sukurti naują rakto failą.</translation>
@@ -9044,8 +9044,8 @@ Branduolys: %3 %4</translation>
         <translation>Netikėti rakto failo duomenys! Rakto failas gali būti sugadintas.</translation>
     </message>
     <message>
-        <source>KeePassXC - cross-platform password manager</source>
-        <translation>KeePassXC - daugiaplatformė slaptažodžių tvarkytuvė</translation>
+        <source>BitwardenXC - cross-platform password manager</source>
+        <translation>BitwardenXC - daugiaplatformė slaptažodžių tvarkytuvė</translation>
     </message>
     <message>
         <source>filenames of the password databases to open (*.kdbx)</source>
@@ -9076,20 +9076,20 @@ Branduolys: %3 %4</translation>
         <translation>Duomenų bazės nepavyko užrakinti.</translation>
     </message>
     <message>
-        <source>Another instance of KeePassXC is already running.</source>
-        <translation>Jau yra paleistas kitas KeePassXC egzempliorius.</translation>
+        <source>Another instance of BitwardenXC is already running.</source>
+        <translation>Jau yra paleistas kitas BitwardenXC egzempliorius.</translation>
     </message>
     <message>
-        <source>KeePassXC is not running. No open database to lock</source>
-        <translation>KeePassXC nėra įjungtas. Nėra atviros duomenų bazės, kurią būtų galima užrakinti</translation>
+        <source>BitwardenXC is not running. No open database to lock</source>
+        <translation>BitwardenXC nėra įjungtas. Nėra atviros duomenų bazės, kurią būtų galima užrakinti</translation>
     </message>
     <message>
         <source>Fatal error while testing the cryptographic functions.</source>
         <translation>Lemtingoji klaida, testuojant šifravimo funkcijas.</translation>
     </message>
     <message>
-        <source>KeePassXC - Error</source>
-        <translation>KeePassXC - Klaida</translation>
+        <source>BitwardenXC - Error</source>
+        <translation>BitwardenXC - Klaida</translation>
     </message>
     <message>
         <source>Database password: </source>
@@ -9211,7 +9211,7 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Failed to init KeePassXC crypto.</source>
+        <source>Failed to init BitwardenXC crypto.</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -9732,8 +9732,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation>Taip pat rodyti įrašus, kurie nebuvo įtraukti į ataskaitas</translation>
     </message>
     <message>
-        <source>This build of KeePassXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
-        <translation>Ši &quot;KeePassXC&quot; versija neturi tinklo funkcijų. Norint patikrinti savo slaptažodžius pagal &quot;Have I Been Pwned&quot; duomenų bazes, reikalingas tinklas.</translation>
+        <source>This build of BitwardenXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
+        <translation>Ši &quot;BitwardenXC&quot; versija neturi tinklo funkcijų. Norint patikrinti savo slaptažodžius pagal &quot;Have I Been Pwned&quot; duomenų bazes, reikalingas tinklas.</translation>
     </message>
     <message>
         <source>Congratulations, no exposed passwords!</source>
@@ -10201,8 +10201,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation>Parinktys</translation>
     </message>
     <message>
-        <source>Enable KeepassXC Freedesktop.org Secret Service integration</source>
-        <translation>Įgalinti &quot;KeepassXC&quot; Freedesktop.org slaptosios tarnybos integraciją</translation>
+        <source>Enable BitwardenXC Freedesktop.org Secret Service integration</source>
+        <translation>Įgalinti &quot;BitwardenXC&quot; Freedesktop.org slaptosios tarnybos integraciją</translation>
     </message>
     <message>
         <source>General</source>
@@ -10579,8 +10579,8 @@ Pavyzdys: JBSWY3DPEHPK3PXP</translation>
 <context>
     <name>WelcomeWidget</name>
     <message>
-        <source>Start storing your passwords securely in a KeePassXC database</source>
-        <translation>Pradėkite saugiai laikyti savo slaptažodžius KeePassXC duomenų bazėje</translation>
+        <source>Start storing your passwords securely in a BitwardenXC database</source>
+        <translation>Pradėkite saugiai laikyti savo slaptažodžius BitwardenXC duomenų bazėje</translation>
     </message>
     <message>
         <source>Recent databases</source>
@@ -10591,8 +10591,8 @@ Pavyzdys: JBSWY3DPEHPK3PXP</translation>
         <translation>Atidaryti neseniai naudotą duomenų bazę</translation>
     </message>
     <message>
-        <source>Welcome to KeePassXC %1</source>
-        <translation>Sveiki atvykę į KeePassXC %1</translation>
+        <source>Welcome to BitwardenXC %1</source>
+        <translation>Sveiki atvykę į BitwardenXC %1</translation>
     </message>
     <message>
         <source>Create Database</source>

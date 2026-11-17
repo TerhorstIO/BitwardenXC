@@ -102,7 +102,7 @@ void PasswordEditWidget::initComponent()
 
     m_ui->componentDescription->setText(
         tr("<p>A password is the primary method for securing your database.</p>"
-           "<p>Good passwords are long and unique. KeePassXC can generate one for you.</p>"));
+           "<p>Good passwords are long and unique. BitwardenXC can generate one for you.</p>"));
 }
 
 bool PasswordEditWidget::validate(QString& errorMessage) const

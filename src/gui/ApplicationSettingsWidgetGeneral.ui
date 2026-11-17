@@ -84,7 +84,7 @@
               <item>
                <widget class="QCheckBox" name="singleInstanceCheckBox">
                 <property name="text">
-                 <string>Start only a single instance of KeePassXC</string>
+                 <string>Start only a single instance of BitwardenXC</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>
@@ -94,7 +94,7 @@
               <item>
                <widget class="QCheckBox" name="launchAtStartup">
                 <property name="text">
-                 <string>Automatically launch KeePassXC at system startup</string>
+                 <string>Automatically launch BitwardenXC at system startup</string>
                 </property>
                </widget>
               </item>

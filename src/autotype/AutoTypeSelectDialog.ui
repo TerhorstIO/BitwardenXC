@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Auto-Type - KeePassXC</string>
+   <string>Auto-Type - BitwardenXC</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="topMargin">

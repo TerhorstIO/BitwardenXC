@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>KeePassXC - Select Database</string>
+   <string>BitwardenXC - Select Database</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

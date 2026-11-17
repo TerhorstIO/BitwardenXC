@@ -46,7 +46,7 @@ bool KeyFileEditWidget::addToCompositeKey(QSharedPointer<CompositeKey> key)
     if (fileKey->type() != FileKey::KeePass2XMLv2 && fileKey->type() != FileKey::Hashed) {
         QMessageBox::warning(getMainWindow(),
                              tr("Old key file format"),
-                             tr("You selected a key file in an old format which KeePassXC<br>"
+                             tr("You selected a key file in an old format which BitwardenXC<br>"
                                 "may stop supporting in the future.<br><br>"
                                 "Please consider generating a new key file instead."),
                              QMessageBox::Ok);

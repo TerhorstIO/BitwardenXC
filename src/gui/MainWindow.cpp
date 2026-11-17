@@ -658,7 +658,7 @@ MainWindow::MainWindow()
     });
 
     if (config()->get(Config::Messages_HidePreReleaseWarning) != KEEPASSXC_VERSION) {
-        m_ui->globalMessageWidget->showMessage(tr("WARNING: You are using a development snapshot build of KeePassXC.\n"
+        m_ui->globalMessageWidget->showMessage(tr("WARNING: You are using a development snapshot build of BitwardenXC.\n"
                                                   "Maintain a backup of your databases in the event of unknown bugs.\n"
                                                   "This version is not meant for production use."),
                                                MessageWidget::Warning,
@@ -1220,7 +1220,7 @@ void MainWindow::openDonateUrl()
 
 void MainWindow::openBugReportUrl()
 {
-    customOpenUrl("https://github.com/keepassxreboot/keepassxc/issues");
+    customOpenUrl("https://github.com/TerhorstIO/BitwardenXC/issues");
 }
 
 void MainWindow::openGettingStartedGuide()

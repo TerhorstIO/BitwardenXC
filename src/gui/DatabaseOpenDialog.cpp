@@ -31,7 +31,7 @@ DatabaseOpenDialog::DatabaseOpenDialog(QWidget* parent)
     , m_view(new DatabaseOpenWidget(this))
     , m_tabBar(new QTabBar(this))
 {
-    setWindowTitle(tr("Unlock Database - KeePassXC"));
+    setWindowTitle(tr("Unlock Database - BitwardenXC"));
     setWindowFlags(Qt::Dialog);
     setWindowFlag(Qt::WindowContextHelpButtonHint, false);
 #ifdef Q_OS_LINUX

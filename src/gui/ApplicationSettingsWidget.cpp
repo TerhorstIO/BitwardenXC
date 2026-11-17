@@ -543,7 +543,7 @@ void ApplicationSettingsWidget::saveSettings()
             config()->get(Config::AutoTypePreferDesktopPortals).toBool() != preferDesktopPortals;
         if (preferDesktopPortalsChanged) {
             getMainWindow()->displayGlobalMessage(
-                tr("Restart KeePassXC to apply the Auto-Type desktop portals preference."), MessageWidget::Information);
+                tr("Restart BitwardenXC to apply the Auto-Type desktop portals preference."), MessageWidget::Information);
         }
         config()->set(Config::AutoTypePreferDesktopPortals, preferDesktopPortals);
     }
@@ -611,7 +611,7 @@ void ApplicationSettingsWidget::resetSettings()
 
 void ApplicationSettingsWidget::importSettings()
 {
-    auto file = fileDialog()->getOpenFileName(this, tr("Import KeePassXC Settings"), {}, "*.ini");
+    auto file = fileDialog()->getOpenFileName(this, tr("Import BitwardenXC Settings"), {}, "*.ini");
     if (file.isEmpty()) {
         return;
     }
@@ -628,7 +628,7 @@ void ApplicationSettingsWidget::importSettings()
 
 void ApplicationSettingsWidget::exportSettings()
 {
-    auto file = fileDialog()->getSaveFileName(this, tr("Export KeePassXC Settings"), {}, "*.ini");
+    auto file = fileDialog()->getSaveFileName(this, tr("Export BitwardenXC Settings"), {}, "*.ini");
     if (file.isEmpty()) {
         return;
     }

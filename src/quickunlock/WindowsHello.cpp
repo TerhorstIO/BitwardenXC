@@ -133,7 +133,7 @@ bool WindowsHello::setKey(const QUuid& dbUuid, const QByteArray& data)
     // Encrypt the data using AES-256-GCM.
     SymmetricCipher cipher;
     if (!cipher.init(SymmetricCipher::Aes256_GCM, SymmetricCipher::Encrypt, key, challenge)) {
-        m_error = QObject::tr("Failed to init KeePassXC crypto.");
+        m_error = QObject::tr("Failed to init BitwardenXC crypto.");
         return false;
     }
     QByteArray encrypted = data;
@@ -177,7 +177,7 @@ bool WindowsHello::getKey(const QUuid& dbUuid, QByteArray& data)
     // Decrypt the data using the generated key and IV from above
     SymmetricCipher cipher;
     if (!cipher.init(SymmetricCipher::Aes256_GCM, SymmetricCipher::Decrypt, key, challenge)) {
-        m_error = QObject::tr("Failed to init KeePassXC crypto.");
+        m_error = QObject::tr("Failed to init BitwardenXC crypto.");
         return false;
     }
 

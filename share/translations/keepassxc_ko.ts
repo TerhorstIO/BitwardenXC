@@ -10,8 +10,8 @@
         <translation>정보</translation>
     </message>
     <message>
-        <source>Report bugs at: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
-        <translation>&lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt; 사이트에 버그를 보고해 주십시오</translation>
+        <source>Report bugs at: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
+        <translation>&lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt; 사이트에 버그를 보고해 주십시오</translation>
     </message>
     <message>
         <source>KeePassXC is distributed under the terms of the GNU General Public License (GPL) version 2 or (at your option) version 3.</source>
@@ -49,8 +49,8 @@
 <context>
     <name>AccessControlDialog</name>
     <message>
-        <source>KeePassXC -  Access Request</source>
-        <translation>KeePassXC - 접근 확인</translation>
+        <source>BitwardenXC -  Access Request</source>
+        <translation>BitwardenXC - 접근 확인</translation>
     </message>
     <message>
         <source>Non-existing/inaccessible executable path. Please double-check the client is legit.</source>
@@ -81,8 +81,8 @@
         <translation>자세한 정보</translation>
     </message>
     <message>
-        <source>Your decision will be remembered for the duration while both the requesting client AND KeePassXC are running.</source>
-        <translation>선택 사항은 요청하는 클라이언트와 KeePassXC 둘 다가 실행 중인 동안만 기억합니다.</translation>
+        <source>Your decision will be remembered for the duration while both the requesting client AND BitwardenXC are running.</source>
+        <translation>선택 사항은 요청하는 클라이언트와 BitwardenXC 둘 다가 실행 중인 동안만 기억합니다.</translation>
     </message>
     <message>
         <source>Remember</source>
@@ -249,16 +249,16 @@
         <translation>모든 설정을 기본값으로 재설정하시겠습니까?</translation>
     </message>
     <message>
-        <source>Import KeePassXC Settings</source>
-        <translation>KeePassXC 설정 가져오기</translation>
+        <source>Import BitwardenXC Settings</source>
+        <translation>BitwardenXC 설정 가져오기</translation>
     </message>
     <message>
         <source>Failed to import settings from %1, not a valid settings file.</source>
         <translation>유효한 설정 파일이 아닌 %1에서 설정을 가져오지 못했습니다.</translation>
     </message>
     <message>
-        <source>Export KeePassXC Settings</source>
-        <translation>KeePassXC 설정 내보내기</translation>
+        <source>Export BitwardenXC Settings</source>
+        <translation>BitwardenXC 설정 내보내기</translation>
     </message>
     <message>
         <source>Small</source>
@@ -285,8 +285,8 @@
         <translation>없음</translation>
     </message>
     <message>
-        <source>Restart KeePassXC to apply the Auto-Type desktop portals preference.</source>
-        <translation>자동-입력 데스크톱 포털 기본 설정을 적용하려면 KeePassXC를 다시 시작하세요.</translation>
+        <source>Restart BitwardenXC to apply the Auto-Type desktop portals preference.</source>
+        <translation>자동-입력 데스크톱 포털 기본 설정을 적용하려면 BitwardenXC를 다시 시작하세요.</translation>
     </message>
 </context>
 <context>
@@ -300,12 +300,12 @@
         <translation>시작</translation>
     </message>
     <message>
-        <source>Start only a single instance of KeePassXC</source>
-        <translation>KeePassXC 단일 인스턴스만 사용</translation>
+        <source>Start only a single instance of BitwardenXC</source>
+        <translation>BitwardenXC 단일 인스턴스만 사용</translation>
     </message>
     <message>
-        <source>Automatically launch KeePassXC at system startup</source>
-        <translation>시스템 시작 시 KeePassXC 자동 시작</translation>
+        <source>Automatically launch BitwardenXC at system startup</source>
+        <translation>시스템 시작 시 BitwardenXC 자동 시작</translation>
     </message>
     <message>
         <source>Minimize window at application startup</source>
@@ -778,12 +778,12 @@
         <translation>권한이 필요함</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>항목별 자동 입력을 사용하려면 KeePassXC에 접근성 권한을 허용해야 합니다. 권한을 이미 허용했다면 KeePassXC를 다시 시작해 보십시오.</translation>
+        <source>BitwardenXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>항목별 자동 입력을 사용하려면 BitwardenXC에 접근성 권한을 허용해야 합니다. 권한을 이미 허용했다면 BitwardenXC를 다시 시작해 보십시오.</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>항목별 자동 입력을 사용하려면 KeePassXC에 접근성 및 화면 녹화 권한을 허용해야 합니다. 화면 녹화 권한은 창 제목과 항목을 찾기 위해서 필요합니다. 권한을 이미 허용했다면 KeePassXC를 다시 시작해 보십시오.</translation>
+        <source>BitwardenXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>항목별 자동 입력을 사용하려면 BitwardenXC에 접근성 및 화면 녹화 권한을 허용해야 합니다. 화면 녹화 권한은 창 제목과 항목을 찾기 위해서 필요합니다. 권한을 이미 허용했다면 BitwardenXC를 다시 시작해 보십시오.</translation>
     </message>
     <message>
         <source>Invalid entry provided</source>
@@ -889,8 +889,8 @@
 <context>
     <name>AutoTypeSelectDialog</name>
     <message>
-        <source>Auto-Type - KeePassXC</source>
-        <translation>자동 입력 - KeePassXC</translation>
+        <source>Auto-Type - BitwardenXC</source>
+        <translation>자동 입력 - BitwardenXC</translation>
     </message>
     <message>
         <source>Double click a row to perform Auto-Type or find an entry using the search:</source>
@@ -993,8 +993,8 @@ Ctrl+Shift+4 - URL 복사&lt;br/&gt;
 <context>
     <name>BrowserAccessControlDialog</name>
     <message>
-        <source>KeePassXC - Browser Access Request</source>
-        <translation>KeePassXC - 브라우저 접근 확인</translation>
+        <source>BitwardenXC - Browser Access Request</source>
+        <translation>BitwardenXC - 브라우저 접근 확인</translation>
     </message>
     <message>
         <source>%1 is requesting access to the following entries:</source>
@@ -1046,8 +1046,8 @@ Please select the correct database for saving credentials.</source>
 자격 증명을 저장할 올바른 데이터베이스를 선택해 주세요.</translation>
     </message>
     <message>
-        <source>KeePassXC - Select Database</source>
-        <translation>KeePassXC - 데이터베이스 선택</translation>
+        <source>BitwardenXC - Select Database</source>
+        <translation>BitwardenXC - 데이터베이스 선택</translation>
     </message>
 </context>
 <context>
@@ -1085,8 +1085,8 @@ Please select the correct database for saving credentials.</source>
         <translation>사용자 이름: %1</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
-        <translation>KeePassXC - 패스키 자격 증명</translation>
+        <source>BitwardenXC - Passkey credentials</source>
+        <translation>BitwardenXC - 패스키 자격 증명</translation>
     </message>
     <message>
         <source>Add to existing entry</source>
@@ -1160,44 +1160,44 @@ Do you want to delete the entry?
         <translation>%1(패스키)</translation>
     </message>
     <message>
-        <source>KeePassXC - Create a new group</source>
-        <translation>KeePassXC - 새 그룹 만들기</translation>
+        <source>BitwardenXC - Create a new group</source>
+        <translation>BitwardenXC - 새 그룹 만들기</translation>
     </message>
     <message>
         <source>Disable</source>
         <translation>비활성화</translation>
     </message>
     <message>
-        <source>KeePassXC - Overwrite existing key?</source>
-        <translation>KeePassXC - 기존 키 덮어쓰기?</translation>
+        <source>BitwardenXC - Overwrite existing key?</source>
+        <translation>BitwardenXC - 기존 키 덮어쓰기?</translation>
     </message>
     <message>
-        <source>KeePassXC - Update Entry</source>
-        <translation>KeePassXC - 항목 업데이트</translation>
+        <source>BitwardenXC - Update Entry</source>
+        <translation>BitwardenXC - 항목 업데이트</translation>
     </message>
     <message>
-        <source>KeePassXC - Delete entry</source>
-        <translation>KeePassXC - 항목 삭제</translation>
+        <source>BitwardenXC - Delete entry</source>
+        <translation>BitwardenXC - 항목 삭제</translation>
     </message>
     <message>
-        <source>KeePassXC - New key association request</source>
-        <translation>KeePassXC - 새 키 연결 요청</translation>
+        <source>BitwardenXC - New key association request</source>
+        <translation>BitwardenXC - 새 키 연결 요청</translation>
     </message>
     <message>
         <source>Passkey</source>
         <translation>패스키</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
-        <translation>KeePassXC - 패스키 자격 증명</translation>
+        <source>BitwardenXC - Passkey credentials</source>
+        <translation>BitwardenXC - 패스키 자격 증명</translation>
     </message>
     <message>
         <source>Register a new passkey to this entry:</source>
         <translation>이 항목에 새 패스키 등록:</translation>
     </message>
     <message>
-        <source>KeePassXC - Update passkey</source>
-        <translation>KeePassXC - 패스키 업데이트</translation>
+        <source>BitwardenXC - Update passkey</source>
+        <translation>BitwardenXC - 패스키 업데이트</translation>
     </message>
     <message>
         <source>Entry already has a passkey.
@@ -1338,8 +1338,8 @@ Do you want to overwrite the passkey in %1 - %2?</source>
         <translation>KeePassHTTP 설정 이전 묻지 않기</translation>
     </message>
     <message>
-        <source>Updates KeePassXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
-        <translation>네이티브 메시징 스크립트에서 사용하는 KeePassXC 및 keepassxc-proxy 실행 파일 경로를 시작할 때 자동으로 업데이트합니다.</translation>
+        <source>Updates BitwardenXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
+        <translation>네이티브 메시징 스크립트에서 사용하는 BitwardenXC 및 keepassxc-proxy 실행 파일 경로를 시작할 때 자동으로 업데이트합니다.</translation>
     </message>
     <message>
         <source>Update native messaging manifest files at startup</source>
@@ -1686,15 +1686,15 @@ Backup database located at %2</source>
 <context>
     <name>DatabaseOpenDialog</name>
     <message>
-        <source>Unlock Database - KeePassXC</source>
-        <translation>데이터베이스 잠금 해제 - KeePassXC</translation>
+        <source>Unlock Database - BitwardenXC</source>
+        <translation>데이터베이스 잠금 해제 - BitwardenXC</translation>
     </message>
 </context>
 <context>
     <name>DatabaseOpenWidget</name>
     <message>
-        <source>Unlock KeePassXC Database</source>
-        <translation>KeePassXC 데이터베이스 잠금 해제</translation>
+        <source>Unlock BitwardenXC Database</source>
+        <translation>BitwardenXC 데이터베이스 잠금 해제</translation>
     </message>
     <message>
         <source>Enter Password:</source>
@@ -1742,19 +1742,19 @@ Backup database located at %2</source>
     </message>
     <message>
         <source>The database you are trying to open was most likely
-created by a newer version of KeePassXC.
+created by a newer version of BitwardenXC.
 
 You can try to open it anyway, but it may be incomplete
 and saving any changes may incur data loss.
 
-We recommend you update your KeePassXC installation.</source>
-        <translation>열려고 하는 데이터베이스가 새로운 KeePassXC
+We recommend you update your BitwardenXC installation.</source>
+        <translation>열려고 하는 데이터베이스가 새로운 BitwardenXC
 버전에서 생성되었을 수도 있습니다.
 
 그래도 이 데이터베이스를 열 수 있지만, 데이터가
 불완전할 수 있으며 다시 저장했을 때 손실될 수 있습니다.
 
-KeePassXC 설치본을 업데이트하기를 추천합니다.</translation>
+BitwardenXC 설치본을 업데이트하기를 추천합니다.</translation>
     </message>
     <message>
         <source>Open database anyway</source>
@@ -1791,8 +1791,8 @@ To prevent this error from appearing, you must go to &quot;Database Settings / S
         <translation>이전 키 파일 형식</translation>
     </message>
     <message>
-        <source>You are using an old key file format which KeePassXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
-        <translation>KeePassXC에서 차후에 지원을 중단할 수도 있는&lt;br&gt;이전 키 파일 형식을 사용하고 있습니다.&lt;br&gt;&lt;br&gt;다음 메뉴 항목을 사용하여 새 키 파일을 생성하기를 추천합니다:&lt;br&gt;&lt;strong&gt;데이터베이스 &amp;gt; 데이터베이스 보안 &amp;gt; 키 파일 변경&lt;/strong&gt;&lt;br&gt;</translation>
+        <source>You are using an old key file format which BitwardenXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
+        <translation>BitwardenXC에서 차후에 지원을 중단할 수도 있는&lt;br&gt;이전 키 파일 형식을 사용하고 있습니다.&lt;br&gt;&lt;br&gt;다음 메뉴 항목을 사용하여 새 키 파일을 생성하기를 추천합니다:&lt;br&gt;&lt;strong&gt;데이터베이스 &amp;gt; 데이터베이스 보안 &amp;gt; 키 파일 변경&lt;/strong&gt;&lt;br&gt;</translation>
     </message>
     <message>
         <source>Don&apos;t show this warning again</source>
@@ -1845,8 +1845,8 @@ If you don&apos;t have a key file or don&apos;t know what that is, you don&apos;
 키 파일이 없거나 키 파일이 무엇인지 모르겠다면 선택하지 마십시오.</translation>
     </message>
     <message>
-        <source>KeePassXC database file selected</source>
-        <translation>KeePassXC 데이터베이스 파일 선택됨</translation>
+        <source>KeePass database file selected</source>
+        <translation>KeePass 데이터베이스 파일 선택됨</translation>
     </message>
     <message>
         <source>The file you selected looks like a database file.
@@ -2000,12 +2000,12 @@ This may prevent connection to the browser plugin.</source>
 브라우저 플러그인에 연결하지 못할 수도 있습니다.</translation>
     </message>
     <message>
-        <source>No shared encryption keys found in KeePassXC settings.</source>
-        <translation>KeePassXC 설정에서 공유된 암호화 키를 찾을 수 없습니다.</translation>
+        <source>No shared encryption keys found in BitwardenXC settings.</source>
+        <translation>BitwardenXC 설정에서 공유된 암호화 키를 찾을 수 없습니다.</translation>
     </message>
     <message numerus="yes">
-        <source>Successfully removed %n encryption key(s) from KeePassXC settings.</source>
-        <translation><numerusform>KeePassXC 설정에서 암호화 키 %n개를 삭제했습니다.</numerusform></translation>
+        <source>Successfully removed %n encryption key(s) from BitwardenXC settings.</source>
+        <translation><numerusform>BitwardenXC 설정에서 암호화 키 %n개를 삭제했습니다.</numerusform></translation>
     </message>
     <message>
         <source>Do you really want forget all site-specific settings on every entry?
@@ -2866,9 +2866,9 @@ Save changes?</source>
         <translation>안전 저장을 비활성화 하시겠습니까?</translation>
     </message>
     <message>
-        <source>KeePassXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
+        <source>BitwardenXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
 Disable safe saves and try again?</source>
-        <translation>KeePassXC에서 데이터베이스를 여러 번 저장하려고 시도했으나 실패했습니다. 파일 동기화 서비스에서 데이터베이스 파일을 잠근 것 같습니다.
+        <translation>BitwardenXC에서 데이터베이스를 여러 번 저장하려고 시도했으나 실패했습니다. 파일 동기화 서비스에서 데이터베이스 파일을 잠근 것 같습니다.
 안전 저장을 비활성화 한 다음 다시 시도하시겠습니까?</translation>
     </message>
     <message>
@@ -3779,9 +3779,9 @@ Would you like to correct it?</source>
         <translation>동기화</translation>
     </message>
     <message>
-        <source>Your KeePassXC version does not support sharing this container type.
+        <source>Your BitwardenXC version does not support sharing this container type.
 Supported extensions are: %1.</source>
-        <translation>KeePassXC 현재 버전에서 현재 컨테이너 형식을 공유할 수 없습니다.
+        <translation>BitwardenXC 현재 버전에서 현재 컨테이너 형식을 공유할 수 없습니다.
 지원하는 확장 형식: %1.</translation>
     </message>
     <message>
@@ -4743,8 +4743,8 @@ This will leave your passwords and sensitive information vulnerable!
 <context>
     <name>GlobalShortcutsPortal</name>
     <message>
-        <source>KeePassXC - Global Shortcuts</source>
-        <translation>KeePassXC - 전역 단축키</translation>
+        <source>BitwardenXC - Global Shortcuts</source>
+        <translation>BitwardenXC - 전역 단축키</translation>
     </message>
     <message>
         <source>The XDG Desktop Portal for global shortcuts is not available on this system.</source>
@@ -5723,8 +5723,8 @@ If this reoccurs, then your database file may be corrupt.</source>
         <translation>이전 키 파일 형식</translation>
     </message>
     <message>
-        <source>You selected a key file in an old format which KeePassXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
-        <translation>KeePassXC에서 차후에 지원을 중단할 수도 있는&lt;br&gt;이전 키 파일 형식을 사용하고 있습니다.&lt;br&gt;&lt;br&gt;새 키 파일을 생성하기를 추천합니다:</translation>
+        <source>You selected a key file in an old format which BitwardenXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
+        <translation>BitwardenXC에서 차후에 지원을 중단할 수도 있는&lt;br&gt;이전 키 파일 형식을 사용하고 있습니다.&lt;br&gt;&lt;br&gt;새 키 파일을 생성하기를 추천합니다:</translation>
     </message>
     <message>
         <source>Error loading the key file '%1'
@@ -6493,10 +6493,10 @@ Are you sure you want to continue with this file?</source>
         <translation>원격 동기화 설정…</translation>
     </message>
     <message>
-        <source>WARNING: You are using a development snapshot build of KeePassXC.
+        <source>WARNING: You are using a development snapshot build of BitwardenXC.
 Maintain a backup of your databases in the event of unknown bugs.
 This version is not meant for production use.</source>
-        <translation>경고: 현재 KeePassXC의 개발 스냅샷 빌드를 사용하고 있습니다.
+        <translation>경고: 현재 BitwardenXC의 개발 스냅샷 빌드를 사용하고 있습니다.
 알 수 없는 버그가 발생할 경우를 대비해 데이터베이스 백업을 유지하세요.
 이 버전은 운영 환경에서 사용하도록 설계된 것이 아닙니다.</translation>
     </message>
@@ -6700,8 +6700,8 @@ This version is not meant for production use.</source>
 <context>
     <name>NewDatabaseWizard</name>
     <message>
-        <source>Create a new KeePassXC database…</source>
-        <translation>새 KeePassXC 데이터베이스 만들기…</translation>
+        <source>Create a new KeePass database…</source>
+        <translation>새 KeePass 데이터베이스 만들기…</translation>
     </message>
     <message>
         <source>Root</source>
@@ -6975,8 +6975,8 @@ This version is not meant for production use.</source>
 <context>
     <name>PasskeyExportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Export</source>
-        <translation>KeePassXC - 패스키 내보내기</translation>
+        <source>BitwardenXC - Passkey Export</source>
+        <translation>BitwardenXC - 패스키 내보내기</translation>
     </message>
     <message>
         <source>Filenames will be generated with title and .passkey file extension.</source>
@@ -7033,8 +7033,8 @@ Do you want to overwrite it?
 <context>
     <name>PasskeyImportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Import</source>
-        <translation>KeePassXC - 패스키 가져오기</translation>
+        <source>BitwardenXC - Passkey Import</source>
+        <translation>BitwardenXC - 패스키 가져오기</translation>
     </message>
     <message>
         <source>Username: %1</source>
@@ -7167,8 +7167,8 @@ The following data is missing:
         <translation>비밀번호 설정됨, 클릭해서 변경하거나 삭제</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. KeePassXC can generate one for you.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;비밀번호는 데이터베이스를 보호하는 주요 수단입니다.&lt;/p&gt;&lt;p&gt;좋은 비밀번호는 길고 예측할 수 없어야 합니다. KeePassXC에서 비밀번호를 생성할 수 있습니다.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. BitwardenXC can generate one for you.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;비밀번호는 데이터베이스를 보호하는 주요 수단입니다.&lt;/p&gt;&lt;p&gt;좋은 비밀번호는 길고 예측할 수 없어야 합니다. BitwardenXC에서 비밀번호를 생성할 수 있습니다.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Passwords do not match.</source>
@@ -7523,8 +7523,8 @@ Do you want to overwrite it?</source>
 <context>
     <name>PickcharsDialog</name>
     <message>
-        <source>KeePassXC - Pick Characters</source>
-        <translation>KeePassXC - 글자 선택</translation>
+        <source>BitwardenXC - Pick Characters</source>
+        <translation>BitwardenXC - 글자 선택</translation>
     </message>
     <message>
         <source>Select characters to type, navigate with arrow keys, Ctrl + S submits.</source>
@@ -7620,8 +7620,8 @@ Do you want to overwrite it?</source>
         <translation>메시지를 암호화할 수 없습니다.</translation>
     </message>
     <message>
-        <source>KeePassXC association failed, try again</source>
-        <translation>KeePassXC 연결에 실패했습니다. 다시 시도하세요</translation>
+        <source>BitwardenXC association failed, try again</source>
+        <translation>BitwardenXC 연결에 실패했습니다. 다시 시도하세요</translation>
     </message>
     <message>
         <source>Encryption key is not recognized</source>
@@ -8709,11 +8709,11 @@ Available commands:
         <translation>키 파일 %1을(를) 불러올 수 없음: %2</translation>
     </message>
     <message>
-        <source>WARNING: You are using an old key file format which KeePassXC may
+        <source>WARNING: You are using an old key file format which BitwardenXC may
 stop supporting in the future.
 
 Please consider generating a new key file.</source>
-        <translation>경고: KeePassXC에서 차후에 지원을 중단할 수도 있는
+        <translation>경고: BitwardenXC에서 차후에 지원을 중단할 수도 있는
 이전 키 파일 형식을 사용하고 있습니다.
 
 새 키 파일을 생성하기를 추천합니다.</translation>
@@ -9091,8 +9091,8 @@ CPU 아키텍처: %2
         <translation>예상하지 못한 키 파일 데이터입니다! 키 파일이 손상되었을 수도 있습니다.</translation>
     </message>
     <message>
-        <source>KeePassXC - cross-platform password manager</source>
-        <translation>KeePassXC - 크로스 플랫폼 비밀번호 관리자</translation>
+        <source>BitwardenXC - cross-platform password manager</source>
+        <translation>BitwardenXC - 크로스 플랫폼 비밀번호 관리자</translation>
     </message>
     <message>
         <source>filenames of the password databases to open (*.kdbx)</source>
@@ -9123,20 +9123,20 @@ CPU 아키텍처: %2
         <translation>데이터베이스를 잠글 수 없습니다.</translation>
     </message>
     <message>
-        <source>Another instance of KeePassXC is already running.</source>
-        <translation>다른 KeePassXC 인스턴스가 이미 실행 중입니다.</translation>
+        <source>Another instance of BitwardenXC is already running.</source>
+        <translation>다른 BitwardenXC 인스턴스가 이미 실행 중입니다.</translation>
     </message>
     <message>
-        <source>KeePassXC is not running. No open database to lock</source>
-        <translation>KeePassXC가 실행 중이 아닙니다. 잠글 데이터베이스가 열리지 않았음</translation>
+        <source>BitwardenXC is not running. No open database to lock</source>
+        <translation>BitwardenXC가 실행 중이 아닙니다. 잠글 데이터베이스가 열리지 않았음</translation>
     </message>
     <message>
         <source>Fatal error while testing the cryptographic functions.</source>
         <translation>암호화 함수를 시험하는 중 오류가 발생하였습니다.</translation>
     </message>
     <message>
-        <source>KeePassXC - Error</source>
-        <translation>KeePassXC - 오류</translation>
+        <source>BitwardenXC - Error</source>
+        <translation>BitwardenXC - 오류</translation>
     </message>
     <message>
         <source>Database password: </source>
@@ -9259,8 +9259,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation>빠른 잠금 해제 공급자를 사용할 수 없음</translation>
     </message>
     <message>
-        <source>Failed to init KeePassXC crypto.</source>
-        <translation>KeePassXC 암호화를 초기화할 수 없습니다.</translation>
+        <source>Failed to init BitwardenXC crypto.</source>
+        <translation>BitwardenXC 암호화를 초기화할 수 없습니다.</translation>
     </message>
     <message>
         <source>Failed to encrypt key data.</source>
@@ -9780,8 +9780,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation>보고서에서 제외된 항목도 표시</translation>
     </message>
     <message>
-        <source>This build of KeePassXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
-        <translation>현재 KeePassXC 빌드에서 네트워크 기능을 지원하지 않습니다. Have I Been Pwned 데이터베이스에 비밀번호를 조회하려면 네트워크 기능이 필요합니다.</translation>
+        <source>This build of BitwardenXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
+        <translation>현재 BitwardenXC 빌드에서 네트워크 기능을 지원하지 않습니다. Have I Been Pwned 데이터베이스에 비밀번호를 조회하려면 네트워크 기능이 필요합니다.</translation>
     </message>
     <message>
         <source>Congratulations, no exposed passwords!</source>
@@ -10249,8 +10249,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation>옵션</translation>
     </message>
     <message>
-        <source>Enable KeepassXC Freedesktop.org Secret Service integration</source>
-        <translation>KeePassXC Freedesktop.org 비밀 서비스 통합 사용</translation>
+        <source>Enable BitwardenXC Freedesktop.org Secret Service integration</source>
+        <translation>BitwardenXC Freedesktop.org 비밀 서비스 통합 사용</translation>
     </message>
     <message>
         <source>General</source>
@@ -10627,8 +10627,8 @@ Example: JBSWY3DPEHPK3PXP</source>
 <context>
     <name>WelcomeWidget</name>
     <message>
-        <source>Start storing your passwords securely in a KeePassXC database</source>
-        <translation>KeePassXC 데이터베이스에 비밀번호를 안전하게 저장하십시오</translation>
+        <source>Start storing your passwords securely in a BitwardenXC database</source>
+        <translation>BitwardenXC 데이터베이스에 비밀번호를 안전하게 저장하십시오</translation>
     </message>
     <message>
         <source>Recent databases</source>
@@ -10639,8 +10639,8 @@ Example: JBSWY3DPEHPK3PXP</source>
         <translation>최근 데이터베이스 열기</translation>
     </message>
     <message>
-        <source>Welcome to KeePassXC %1</source>
-        <translation>KeePassXC %1에 오신 것을 환영합니다</translation>
+        <source>Welcome to BitwardenXC %1</source>
+        <translation>BitwardenXC %1에 오신 것을 환영합니다</translation>
     </message>
     <message>
         <source>Create Database</source>

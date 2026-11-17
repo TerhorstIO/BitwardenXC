@@ -10,8 +10,8 @@
         <translation>Névjegy</translation>
     </message>
     <message>
-        <source>Report bugs at: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
-        <translation>Hibajelentés: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</translation>
+        <source>Report bugs at: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
+        <translation>Hibajelentés: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</translation>
     </message>
     <message>
         <source>KeePassXC is distributed under the terms of the GNU General Public License (GPL) version 2 or (at your option) version 3.</source>
@@ -49,8 +49,8 @@
 <context>
     <name>AccessControlDialog</name>
     <message>
-        <source>KeePassXC -  Access Request</source>
-        <translation>KeePassXC-hozzáférési kérés</translation>
+        <source>BitwardenXC -  Access Request</source>
+        <translation>BitwardenXC-hozzáférési kérés</translation>
     </message>
     <message>
         <source>Non-existing/inaccessible executable path. Please double-check the client is legit.</source>
@@ -81,8 +81,8 @@
         <translation>Részletek</translation>
     </message>
     <message>
-        <source>Your decision will be remembered for the duration while both the requesting client AND KeePassXC are running.</source>
-        <translation>A döntését megjegyezzük addig, amíg az igénylő kliens ÉS a KeePassXC is fut.</translation>
+        <source>Your decision will be remembered for the duration while both the requesting client AND BitwardenXC are running.</source>
+        <translation>A döntését megjegyezzük addig, amíg az igénylő kliens ÉS a BitwardenXC is fut.</translation>
     </message>
     <message>
         <source>Remember</source>
@@ -249,16 +249,16 @@
         <translation>Valóban visszaállítja az összes beállítást az alapértelmezésre?</translation>
     </message>
     <message>
-        <source>Import KeePassXC Settings</source>
-        <translation>KeePassXC-beállítások importálása</translation>
+        <source>Import BitwardenXC Settings</source>
+        <translation>BitwardenXC-beállítások importálása</translation>
     </message>
     <message>
         <source>Failed to import settings from %1, not a valid settings file.</source>
         <translation>A beállítások importálása sikertelen, mivel a beállításfájl nem érvényes: %1.</translation>
     </message>
     <message>
-        <source>Export KeePassXC Settings</source>
-        <translation>KeePassXC-beállítások exportálása</translation>
+        <source>Export BitwardenXC Settings</source>
+        <translation>BitwardenXC-beállítások exportálása</translation>
     </message>
     <message>
         <source>Small</source>
@@ -285,8 +285,8 @@
         <translation>Egyik sem</translation>
     </message>
     <message>
-        <source>Restart KeePassXC to apply the Auto-Type desktop portals preference.</source>
-        <translation>Indítsa újra a KeePassXC-t, hogy alkalmazza a automatikus beírás asztali portáljának beállításait.</translation>
+        <source>Restart BitwardenXC to apply the Auto-Type desktop portals preference.</source>
+        <translation>Indítsa újra a BitwardenXC-t, hogy alkalmazza a automatikus beírás asztali portáljának beállításait.</translation>
     </message>
 </context>
 <context>
@@ -300,12 +300,12 @@
         <translation>Indítás</translation>
     </message>
     <message>
-        <source>Start only a single instance of KeePassXC</source>
-        <translation>A KeePassXC többszörös indításának tiltása</translation>
+        <source>Start only a single instance of BitwardenXC</source>
+        <translation>A BitwardenXC többszörös indításának tiltása</translation>
     </message>
     <message>
-        <source>Automatically launch KeePassXC at system startup</source>
-        <translation>KeePassXC automatikus indítása a rendszer indulásakor</translation>
+        <source>Automatically launch BitwardenXC at system startup</source>
+        <translation>BitwardenXC automatikus indítása a rendszer indulásakor</translation>
     </message>
     <message>
         <source>Minimize window at application startup</source>
@@ -778,12 +778,12 @@
         <translation>Engedély szükséges</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>A KeePassXC számára szükséges az elérhetőségi jogosultság biztosítása a bejegyzésszintű automatikus beírás végrehajtásához. Ha ez a jogosultság már meg van adva, újra kell indtani a KeePassXC-t.</translation>
+        <source>BitwardenXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>A BitwardenXC számára szükséges az elérhetőségi jogosultság biztosítása a bejegyzésszintű automatikus beírás végrehajtásához. Ha ez a jogosultság már meg van adva, újra kell indtani a BitwardenXC-t.</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>A KeePassXC számára szükséges az elérhetőségi és a képernyőolvasási jogosultság biztosítása a globális szintű automatikus beírás végrehajtásához. A képernyőolvasás az ablakok címének megtalálásához szükséges a bejegyzések között. Ha ezek a jogosultságok már meg van adva, újra kell indtani a KeePassXC-t.</translation>
+        <source>BitwardenXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>A BitwardenXC számára szükséges az elérhetőségi és a képernyőolvasási jogosultság biztosítása a globális szintű automatikus beírás végrehajtásához. A képernyőolvasás az ablakok címének megtalálásához szükséges a bejegyzések között. Ha ezek a jogosultságok már meg van adva, újra kell indtani a BitwardenXC-t.</translation>
     </message>
     <message>
         <source>Invalid entry provided</source>
@@ -889,8 +889,8 @@
 <context>
     <name>AutoTypeSelectDialog</name>
     <message>
-        <source>Auto-Type - KeePassXC</source>
-        <translation>Automatikus beírás – KeePassXC</translation>
+        <source>Auto-Type - BitwardenXC</source>
+        <translation>Automatikus beírás – BitwardenXC</translation>
     </message>
     <message>
         <source>Double click a row to perform Auto-Type or find an entry using the search:</source>
@@ -993,8 +993,8 @@ Ctrl+Shift+4 – Webcím másolása&lt;br/&gt;
 <context>
     <name>BrowserAccessControlDialog</name>
     <message>
-        <source>KeePassXC - Browser Access Request</source>
-        <translation>KeePassXC-böngésző hozzáférési kérés</translation>
+        <source>BitwardenXC - Browser Access Request</source>
+        <translation>BitwardenXC-böngésző hozzáférési kérés</translation>
     </message>
     <message>
         <source>%1 is requesting access to the following entries:</source>
@@ -1046,8 +1046,8 @@ Please select the correct database for saving credentials.</source>
 Válassza ki a helyes adatbázist a hitelesítő adatok mentéséhez.</translation>
     </message>
     <message>
-        <source>KeePassXC - Select Database</source>
-        <translation>KeePassXC – Adatbázis kiválasztása</translation>
+        <source>BitwardenXC - Select Database</source>
+        <translation>BitwardenXC – Adatbázis kiválasztása</translation>
     </message>
 </context>
 <context>
@@ -1085,8 +1085,8 @@ Válassza ki a helyes adatbázist a hitelesítő adatok mentéséhez.</translati
         <translation>Felhasználónév: %1</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
-        <translation>KeePassXC – Jelkulcs hitelesítési adatai</translation>
+        <source>BitwardenXC - Passkey credentials</source>
+        <translation>BitwardenXC – Jelkulcs hitelesítési adatai</translation>
     </message>
     <message>
         <source>Add to existing entry</source>
@@ -1158,44 +1158,44 @@ Valóban törli a bejegyzést?</translation>
         <translation>%1 (jelkulcs)</translation>
     </message>
     <message>
-        <source>KeePassXC - Create a new group</source>
-        <translation>KeePassXC – Új csoport létrehozása</translation>
+        <source>BitwardenXC - Create a new group</source>
+        <translation>BitwardenXC – Új csoport létrehozása</translation>
     </message>
     <message>
         <source>Disable</source>
         <translation>Letiltás</translation>
     </message>
     <message>
-        <source>KeePassXC - Overwrite existing key?</source>
-        <translation>KeePassXC – Felülírja a meglévő kulcsot?</translation>
+        <source>BitwardenXC - Overwrite existing key?</source>
+        <translation>BitwardenXC – Felülírja a meglévő kulcsot?</translation>
     </message>
     <message>
-        <source>KeePassXC - Update Entry</source>
-        <translation>KeePassXC – Bejegyzés frissítése</translation>
+        <source>BitwardenXC - Update Entry</source>
+        <translation>BitwardenXC – Bejegyzés frissítése</translation>
     </message>
     <message>
-        <source>KeePassXC - Delete entry</source>
-        <translation>KeePassXC – Bejegyzés törlése</translation>
+        <source>BitwardenXC - Delete entry</source>
+        <translation>BitwardenXC – Bejegyzés törlése</translation>
     </message>
     <message>
-        <source>KeePassXC - New key association request</source>
-        <translation>KeePassXC – Új kulcshozzárendelési kérés</translation>
+        <source>BitwardenXC - New key association request</source>
+        <translation>BitwardenXC – Új kulcshozzárendelési kérés</translation>
     </message>
     <message>
         <source>Passkey</source>
         <translation>Jelkulcso</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
-        <translation>KeePassXC – Jelkulcs hitelesítési adatai</translation>
+        <source>BitwardenXC - Passkey credentials</source>
+        <translation>BitwardenXC – Jelkulcs hitelesítési adatai</translation>
     </message>
     <message>
         <source>Register a new passkey to this entry:</source>
         <translation>Új jelkulcs regisztrálása ehhez a bejegyzéshez:</translation>
     </message>
     <message>
-        <source>KeePassXC - Update passkey</source>
-        <translation>KeePassXC – Jelkulcs frissítése</translation>
+        <source>BitwardenXC - Update passkey</source>
+        <translation>BitwardenXC – Jelkulcs frissítése</translation>
     </message>
     <message>
         <source>Entry already has a passkey.
@@ -1336,8 +1336,8 @@ Felülírja az itt található jelkulcsot: %1 – %2?</translation>
         <translation>Ne kérdezzen a KeePassHTTP beállításokból való költözésről</translation>
     </message>
     <message>
-        <source>Updates KeePassXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
-        <translation>Indításkor automatikusan frissíti a KeePassXC vagy a keepassxc-proxy bináris útvonalát a natív üzenetküldő parancsfájlok felé.</translation>
+        <source>Updates BitwardenXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
+        <translation>Indításkor automatikusan frissíti a BitwardenXC vagy a keepassxc-proxy bináris útvonalát a natív üzenetküldő parancsfájlok felé.</translation>
     </message>
     <message>
         <source>Update native messaging manifest files at startup</source>
@@ -1684,15 +1684,15 @@ Az adatbázis biztonsági másolata:  %2</translation>
 <context>
     <name>DatabaseOpenDialog</name>
     <message>
-        <source>Unlock Database - KeePassXC</source>
-        <translation>Adatbázis feloldása – KeePassXC</translation>
+        <source>Unlock Database - BitwardenXC</source>
+        <translation>Adatbázis feloldása – BitwardenXC</translation>
     </message>
 </context>
 <context>
     <name>DatabaseOpenWidget</name>
     <message>
-        <source>Unlock KeePassXC Database</source>
-        <translation>KeePassXC adatbázis feloldása</translation>
+        <source>Unlock BitwardenXC Database</source>
+        <translation>BitwardenXC adatbázis feloldása</translation>
     </message>
     <message>
         <source>Enter Password:</source>
@@ -1740,19 +1740,19 @@ Az adatbázis biztonsági másolata:  %2</translation>
     </message>
     <message>
         <source>The database you are trying to open was most likely
-created by a newer version of KeePassXC.
+created by a newer version of BitwardenXC.
 
 You can try to open it anyway, but it may be incomplete
 and saving any changes may incur data loss.
 
-We recommend you update your KeePassXC installation.</source>
-        <translation>A megnyitandó adatbázis valószínűleg a KeePassXC
+We recommend you update your BitwardenXC installation.</source>
+        <translation>A megnyitandó adatbázis valószínűleg a BitwardenXC
 újabb változatával készült.
 
 Megpróbálhatja megnyitni, de lehet hogy hiányos
 lesz, és a változások mentése adatvesztést okozhat.
 
-A KeePassXC telepítése frissítését javasoljuk.</translation>
+A BitwardenXC telepítése frissítését javasoljuk.</translation>
     </message>
     <message>
         <source>Open database anyway</source>
@@ -1789,8 +1789,8 @@ Ezen hiba megjelenése megelőzhető az Adatbázis-beállítások → Biztonság
         <translation>Régi kulcsfájl formátum</translation>
     </message>
     <message>
-        <source>You are using an old key file format which KeePassXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
-        <translation>Egy régi kulcsfájl formátumot használ, amit a KeePassXC lehet&lt;br&gt;hogy nem fog támogatni a jövőben.&lt;br&gt;&lt;br&gt;Fontolja meg, hogy új kulcsfájl készít a következő menüben:&lt;br&gt;&lt;strong&gt;Adatbázis &amp;gt; Adatbázis-biztonság &amp;gt; Kulcsfájl módosítása.&lt;/strong&gt;&lt;br&gt;</translation>
+        <source>You are using an old key file format which BitwardenXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
+        <translation>Egy régi kulcsfájl formátumot használ, amit a BitwardenXC lehet&lt;br&gt;hogy nem fog támogatni a jövőben.&lt;br&gt;&lt;br&gt;Fontolja meg, hogy új kulcsfájl készít a következő menüben:&lt;br&gt;&lt;strong&gt;Adatbázis &amp;gt; Adatbázis-biztonság &amp;gt; Kulcsfájl módosítása.&lt;/strong&gt;&lt;br&gt;</translation>
     </message>
     <message>
         <source>Don&apos;t show this warning again</source>
@@ -1843,8 +1843,8 @@ If you don&apos;t have a key file or don&apos;t know what that is, you don&apos;
 Ha nincs kulcsfájlja, vagy nem tudja mi az, akkor nem kell kiválasztania.</translation>
     </message>
     <message>
-        <source>KeePassXC database file selected</source>
-        <translation>KeePassXC adatbázisfájl kiválasztva</translation>
+        <source>KeePass database file selected</source>
+        <translation>KeePass adatbázisfájl kiválasztva</translation>
     </message>
     <message>
         <source>The file you selected looks like a database file.
@@ -1998,12 +1998,12 @@ This may prevent connection to the browser plugin.</source>
 Ez megakadályozhatja a böngésző bővítményhez történő kapcsolódást.</translation>
     </message>
     <message>
-        <source>No shared encryption keys found in KeePassXC settings.</source>
-        <translation>Nem található megosztott titkosítási kulcs a KeePassXC beállításaiban.</translation>
+        <source>No shared encryption keys found in BitwardenXC settings.</source>
+        <translation>Nem található megosztott titkosítási kulcs a BitwardenXC beállításaiban.</translation>
     </message>
     <message numerus="yes">
-        <source>Successfully removed %n encryption key(s) from KeePassXC settings.</source>
-        <translation><numerusform>Sikeresen eltávolításra került %n titkosítási kulcs a KeePassXC beállításokból.</numerusform><numerusform>Sikeresen eltávolításra került %n titkosítási kulcs a KeePassXC beállításokból.</numerusform></translation>
+        <source>Successfully removed %n encryption key(s) from BitwardenXC settings.</source>
+        <translation><numerusform>Sikeresen eltávolításra került %n titkosítási kulcs a BitwardenXC beállításokból.</numerusform><numerusform>Sikeresen eltávolításra került %n titkosítási kulcs a BitwardenXC beállításokból.</numerusform></translation>
     </message>
     <message>
         <source>Do you really want forget all site-specific settings on every entry?
@@ -2865,9 +2865,9 @@ Menti a változásokat?</translation>
         <translation>Letiltható a biztonságos mentés?</translation>
     </message>
     <message>
-        <source>KeePassXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
+        <source>BitwardenXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
 Disable safe saves and try again?</source>
-        <translation>A KeePassXC többször is hiába próbálta meg elmenteni az adatbázist. Ez jellemzően azért szokott előfordulni, mert egy szinkronizáló szolgáltatás zárolja a mentendő fájl.
+        <translation>A BitwardenXC többször is hiába próbálta meg elmenteni az adatbázist. Ez jellemzően azért szokott előfordulni, mert egy szinkronizáló szolgáltatás zárolja a mentendő fájl.
 Letiltható a biztonságos mentés és úgy megkísérelhető a mentés?</translation>
     </message>
     <message>
@@ -3778,9 +3778,9 @@ Szeretné kijavítani?</translation>
         <translation>Szinkronizálás</translation>
     </message>
     <message>
-        <source>Your KeePassXC version does not support sharing this container type.
+        <source>Your BitwardenXC version does not support sharing this container type.
 Supported extensions are: %1.</source>
-        <translation>A KeePassXC jelen verziója nem támogatja ennek a tárolótípusnak a megosztását. 
+        <translation>A BitwardenXC jelen verziója nem támogatja ennek a tárolótípusnak a megosztását.
 Támogatott kiterjesztések: %1.</translation>
     </message>
     <message>
@@ -4742,8 +4742,8 @@ This will leave your passwords and sensitive information vulnerable!
 <context>
     <name>GlobalShortcutsPortal</name>
     <message>
-        <source>KeePassXC - Global Shortcuts</source>
-        <translation>KeePassXC – Globális gyorsbillentyűk</translation>
+        <source>BitwardenXC - Global Shortcuts</source>
+        <translation>BitwardenXC – Globális gyorsbillentyűk</translation>
     </message>
     <message>
         <source>The XDG Desktop Portal for global shortcuts is not available on this system.</source>
@@ -5723,8 +5723,8 @@ Ha ez újból előfordul, lehet hogy az adatbázisfájl sérült.</translation>
         <translation>Régi kulcsfájl formátum</translation>
     </message>
     <message>
-        <source>You selected a key file in an old format which KeePassXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
-        <translation>Egy régi kulcsfájl formátumot használ, amit a KeePassXC lehet&lt;br&gt;hogy nem fog támogatni a jövőben.&lt;br&gt;&lt;br&gt;Fontolja meg, hogy új kulcsfájlt állítson elő.</translation>
+        <source>You selected a key file in an old format which BitwardenXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
+        <translation>Egy régi kulcsfájl formátumot használ, amit a BitwardenXC lehet&lt;br&gt;hogy nem fog támogatni a jövőben.&lt;br&gt;&lt;br&gt;Fontolja meg, hogy új kulcsfájlt állítson elő.</translation>
     </message>
     <message>
         <source>Error loading the key file '%1'
@@ -6493,10 +6493,10 @@ Valóban folytatható a művelet ezzel a fájllal?</translation>
         <translation>Távoli szinkronizálás beállításai</translation>
     </message>
     <message>
-        <source>WARNING: You are using a development snapshot build of KeePassXC.
+        <source>WARNING: You are using a development snapshot build of BitwardenXC.
 Maintain a backup of your databases in the event of unknown bugs.
 This version is not meant for production use.</source>
-        <translation>FIGYELEM: A KeePassXC egy fejlesztői összeállítását használja. Tartson biztonsági mentést az adatbázisairól arra az esetre, ha ismeretlen hibákba fut. Ez a verzió nem éles használatra készült.</translation>
+        <translation>FIGYELEM: A BitwardenXC egy fejlesztői összeállítását használja. Tartson biztonsági mentést az adatbázisairól arra az esetre, ha ismeretlen hibákba fut. Ez a verzió nem éles használatra készült.</translation>
     </message>
     <message>
         <source>Clear SSH Agent</source>
@@ -6698,8 +6698,8 @@ This version is not meant for production use.</source>
 <context>
     <name>NewDatabaseWizard</name>
     <message>
-        <source>Create a new KeePassXC database…</source>
-        <translation>Új KeePassXC adatbázis létrehozása…</translation>
+        <source>Create a new KeePass database…</source>
+        <translation>Új KeePass adatbázis létrehozása…</translation>
     </message>
     <message>
         <source>Root</source>
@@ -6973,8 +6973,8 @@ This version is not meant for production use.</source>
 <context>
     <name>PasskeyExportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Export</source>
-        <translation>KeePassXC – Jelkulcs exportálása</translation>
+        <source>BitwardenXC - Passkey Export</source>
+        <translation>BitwardenXC – Jelkulcs exportálása</translation>
     </message>
     <message>
         <source>Filenames will be generated with title and .passkey file extension.</source>
@@ -7031,8 +7031,8 @@ Felülírja?
 <context>
     <name>PasskeyImportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Import</source>
-        <translation>KeePassXC – Jelkulcs importálása</translation>
+        <source>BitwardenXC - Passkey Import</source>
+        <translation>BitwardenXC – Jelkulcs importálása</translation>
     </message>
     <message>
         <source>Username: %1</source>
@@ -7165,8 +7165,8 @@ A következő adatok hiányoznak:
         <translation>Jelszó beállítva, kattintson a módosításhoz vagy eltávolításhoz</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. KeePassXC can generate one for you.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;A jelszó az adatbázis biztonságban tartásának elsődleges módja.&lt;/p&gt;&lt;p&gt;A jó jelszavak hosszúak és egyediek. A KeePassXC elő tud állítani egyet Önnek.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. BitwardenXC can generate one for you.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;A jelszó az adatbázis biztonságban tartásának elsődleges módja.&lt;/p&gt;&lt;p&gt;A jó jelszavak hosszúak és egyediek. A BitwardenXC elő tud állítani egyet Önnek.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Passwords do not match.</source>
@@ -7521,8 +7521,8 @@ Valóban felülírja?</translation>
 <context>
     <name>PickcharsDialog</name>
     <message>
-        <source>KeePassXC - Pick Characters</source>
-        <translation>KeePassXC – Karakterek kiválasztása</translation>
+        <source>BitwardenXC - Pick Characters</source>
+        <translation>BitwardenXC – Karakterek kiválasztása</translation>
     </message>
     <message>
         <source>Select characters to type, navigate with arrow keys, Ctrl + S submits.</source>
@@ -7618,8 +7618,8 @@ Valóban felülírja?</translation>
         <translation>Az üzenet titkosítása sikertelen.</translation>
     </message>
     <message>
-        <source>KeePassXC association failed, try again</source>
-        <translation>A KeePassXC társítása sikertelen, próbálja újra</translation>
+        <source>BitwardenXC association failed, try again</source>
+        <translation>A BitwardenXC társítása sikertelen, próbálja újra</translation>
     </message>
     <message>
         <source>Encryption key is not recognized</source>
@@ -8707,11 +8707,11 @@ Elérhető parancsok:
         <translation>A(z) %1 kulcsfájl betöltése sikertelen: %2</translation>
     </message>
     <message>
-        <source>WARNING: You are using an old key file format which KeePassXC may
+        <source>WARNING: You are using an old key file format which BitwardenXC may
 stop supporting in the future.
 
 Please consider generating a new key file.</source>
-        <translation>FIGYELEM: Egy régi kulcsfájl formátumot használ, amit a KeePassXC lehet
+        <translation>FIGYELEM: Egy régi kulcsfájl formátumot használ, amit a BitwardenXC lehet
 hogy nem fog támogatni a jövőben.
 
 Fontolja meg, hogy új kulcsfájlt állítson elő.</translation>
@@ -9089,8 +9089,8 @@ Kernel: %3 %4</translation>
         <translation>Váratlan kulcsfájladatok. A kulcsfájl megsérülhetett.</translation>
     </message>
     <message>
-        <source>KeePassXC - cross-platform password manager</source>
-        <translation>KeePassXC – keresztplatformos jelszókezelő</translation>
+        <source>BitwardenXC - cross-platform password manager</source>
+        <translation>BitwardenXC – keresztplatformos jelszókezelő</translation>
     </message>
     <message>
         <source>filenames of the password databases to open (*.kdbx)</source>
@@ -9121,20 +9121,20 @@ Kernel: %3 %4</translation>
         <translation>Adatbázis-zárolás sikertelen.</translation>
     </message>
     <message>
-        <source>Another instance of KeePassXC is already running.</source>
-        <translation>A KeePassXC egy másik példánya is fut.</translation>
+        <source>Another instance of BitwardenXC is already running.</source>
+        <translation>A BitwardenXC egy másik példánya is fut.</translation>
     </message>
     <message>
-        <source>KeePassXC is not running. No open database to lock</source>
-        <translation>A KeePassXC nem fut. Nincs megnyitott adatbázis, amit zárolni lehetne</translation>
+        <source>BitwardenXC is not running. No open database to lock</source>
+        <translation>A BitwardenXC nem fut. Nincs megnyitott adatbázis, amit zárolni lehetne</translation>
     </message>
     <message>
         <source>Fatal error while testing the cryptographic functions.</source>
         <translation>Végzetes hiba a kriptográfiai funkciók tesztelése közben.</translation>
     </message>
     <message>
-        <source>KeePassXC - Error</source>
-        <translation>KeePassXC – Hiba</translation>
+        <source>BitwardenXC - Error</source>
+        <translation>BitwardenXC – Hiba</translation>
     </message>
     <message>
         <source>Database password: </source>
@@ -9257,8 +9257,8 @@ Ez a kapcsoló elavult, használja helyette a --set-key-file kapcsolót.</transl
         <translation>Nem érhető el gyors feloldási szolgáltató</translation>
     </message>
     <message>
-        <source>Failed to init KeePassXC crypto.</source>
-        <translation>KeePassXC crypto indítása sikertelen.</translation>
+        <source>Failed to init BitwardenXC crypto.</source>
+        <translation>BitwardenXC crypto indítása sikertelen.</translation>
     </message>
     <message>
         <source>Failed to encrypt key data.</source>
@@ -9778,8 +9778,8 @@ Ez a kapcsoló elavult, használja helyette a --set-key-file kapcsolót.</transl
         <translation>A jelentésekből kizárt bejegyzések megjelenítése.</translation>
     </message>
     <message>
-        <source>This build of KeePassXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
-        <translation>Ez a KeePassXC build nem tartalmaz hálózati funkciókat. A jelszavak  „Have I Been Pwned” szolgáltatással való ellenőrzéshez hálózati funkciókra van szükség.</translation>
+        <source>This build of BitwardenXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
+        <translation>Ez a BitwardenXC build nem tartalmaz hálózati funkciókat. A jelszavak  „Have I Been Pwned” szolgáltatással való ellenőrzéshez hálózati funkciókra van szükség.</translation>
     </message>
     <message>
         <source>Congratulations, no exposed passwords!</source>
@@ -10247,8 +10247,8 @@ Ez a kapcsoló elavult, használja helyette a --set-key-file kapcsolót.</transl
         <translation>Beállítások</translation>
     </message>
     <message>
-        <source>Enable KeepassXC Freedesktop.org Secret Service integration</source>
-        <translation>KeepassXC Freedesktop.org titkosító szolgáltatás integrációjának engedélyezése</translation>
+        <source>Enable BitwardenXC Freedesktop.org Secret Service integration</source>
+        <translation>BitwardenXC Freedesktop.org titkosító szolgáltatás integrációjának engedélyezése</translation>
     </message>
     <message>
         <source>General</source>
@@ -10626,8 +10626,8 @@ Példa: JBSWY3DPEHPK3PXP</translation>
 <context>
     <name>WelcomeWidget</name>
     <message>
-        <source>Start storing your passwords securely in a KeePassXC database</source>
-        <translation>Máris elkezdhető a jelszavak titkosított tárolása a KeePassXC adatbázisban</translation>
+        <source>Start storing your passwords securely in a BitwardenXC database</source>
+        <translation>Máris elkezdhető a jelszavak titkosított tárolása a BitwardenXC adatbázisban</translation>
     </message>
     <message>
         <source>Recent databases</source>
@@ -10638,8 +10638,8 @@ Példa: JBSWY3DPEHPK3PXP</translation>
         <translation>Legutóbbi adatbázis megnyitása</translation>
     </message>
     <message>
-        <source>Welcome to KeePassXC %1</source>
-        <translation>Üdvözöljük a KeePassXC %1 verzióban!</translation>
+        <source>Welcome to BitwardenXC %1</source>
+        <translation>Üdvözöljük a BitwardenXC %1 verzióban!</translation>
     </message>
     <message>
         <source>Create Database</source>

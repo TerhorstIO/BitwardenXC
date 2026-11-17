@@ -191,7 +191,7 @@ void NixUtils::setLaunchAtStartup(bool enable)
 
     QMap<QString, QVariant> options;
     options["autostart"] = QVariant(enable);
-    options["reason"] = QVariant("Launch KeePassXC at startup");
+    options["reason"] = QVariant("Launch BitwardenXC at startup");
     int token = QRandomGenerator::global()->bounded(1000, 9999);
     options["handle_token"] = QVariant(QString("org/keepassxc/KeePassXC/%1").arg(token));
 

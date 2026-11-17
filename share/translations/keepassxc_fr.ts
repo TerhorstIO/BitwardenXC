@@ -10,8 +10,8 @@
         <translation>À propos</translation>
     </message>
     <message>
-        <source>Report bugs at: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
-        <translation>Signaler les bogues sur : &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</translation>
+        <source>Report bugs at: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
+        <translation>Signaler les bogues sur : &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</translation>
     </message>
     <message>
         <source>KeePassXC is distributed under the terms of the GNU General Public License (GPL) version 2 or (at your option) version 3.</source>
@@ -49,8 +49,8 @@
 <context>
     <name>AccessControlDialog</name>
     <message>
-        <source>KeePassXC -  Access Request</source>
-        <translation>KeePassXC – Demande d’accès</translation>
+        <source>BitwardenXC -  Access Request</source>
+        <translation>BitwardenXC – Demande d’accès</translation>
     </message>
     <message>
         <source>Non-existing/inaccessible executable path. Please double-check the client is legit.</source>
@@ -81,8 +81,8 @@
         <translation>Détails</translation>
     </message>
     <message>
-        <source>Your decision will be remembered for the duration while both the requesting client AND KeePassXC are running.</source>
-        <translation>Votre décision sera mémorisée pour la durée tant que le client qui effectue la demande et KeePassXC fonctionnent tous deux.</translation>
+        <source>Your decision will be remembered for the duration while both the requesting client AND BitwardenXC are running.</source>
+        <translation>Votre décision sera mémorisée pour la durée tant que le client qui effectue la demande et BitwardenXC fonctionnent tous deux.</translation>
     </message>
     <message>
         <source>Remember</source>
@@ -249,16 +249,16 @@
         <translation>Voulez-vous rétablir les valeurs par défaut de tous les paramètres?</translation>
     </message>
     <message>
-        <source>Import KeePassXC Settings</source>
-        <translation>Importer les paramètres de KeePassXC</translation>
+        <source>Import BitwardenXC Settings</source>
+        <translation>Importer les paramètres de BitwardenXC</translation>
     </message>
     <message>
         <source>Failed to import settings from %1, not a valid settings file.</source>
         <translation>Échec d’importation des paramètres, car %1 n’est pas fichier de paramètre valide.</translation>
     </message>
     <message>
-        <source>Export KeePassXC Settings</source>
-        <translation>Exporter les paramètres de KeePassXC</translation>
+        <source>Export BitwardenXC Settings</source>
+        <translation>Exporter les paramètres de BitwardenXC</translation>
     </message>
     <message>
         <source>Small</source>
@@ -285,8 +285,8 @@
         <translation>Aucun</translation>
     </message>
     <message>
-        <source>Restart KeePassXC to apply the Auto-Type desktop portals preference.</source>
-        <translation>Redémarrez KeePassXC pour que la préférence de saisie automatique des portails des bureau soit prise en compte.</translation>
+        <source>Restart BitwardenXC to apply the Auto-Type desktop portals preference.</source>
+        <translation>Redémarrez BitwardenXC pour que la préférence de saisie automatique des portails des bureau soit prise en compte.</translation>
     </message>
     <message>
         <source>This setting is managed by your organization.</source>
@@ -304,12 +304,12 @@
         <translation>Démarrage</translation>
     </message>
     <message>
-        <source>Start only a single instance of KeePassXC</source>
-        <translation>Ne démarrer qu’une seule instance de KeePassXC</translation>
+        <source>Start only a single instance of BitwardenXC</source>
+        <translation>Ne démarrer qu’une seule instance de BitwardenXC</translation>
     </message>
     <message>
-        <source>Automatically launch KeePassXC at system startup</source>
-        <translation>Lancer automatiquement KeepassXC au démarrage du système.</translation>
+        <source>Automatically launch BitwardenXC at system startup</source>
+        <translation>Lancer automatiquement BitwardenXC au démarrage du système.</translation>
     </message>
     <message>
         <source>Minimize window at application startup</source>
@@ -782,12 +782,12 @@
         <translation>Une autorisation est requise</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>KeePassXC requiert l’autorisation Accessibilité pour la saisie automatique des entrées. SI vous avez déjà accordé l’autorisation, il vous faudra peut-être redémarrer KeePassXC.</translation>
+        <source>BitwardenXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>BitwardenXC requiert l’autorisation Accessibilité pour la saisie automatique des entrées. SI vous avez déjà accordé l’autorisation, il vous faudra peut-être redémarrer BitwardenXC.</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>KeePassXC a besoin de l’autorisation Accessibilité et Enregistreur d’écran pour la saisie automatique globale. L’enregistrement de l’écran est nécessaire afin d’utiliser le titre des fenêtres pour trouver des entrées. Si vous avez déjà accordé l’autorisation, il vous faudra peut-être redémarrer KeePassXC.</translation>
+        <source>BitwardenXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>BitwardenXC a besoin de l’autorisation Accessibilité et Enregistreur d’écran pour la saisie automatique globale. L’enregistrement de l’écran est nécessaire afin d’utiliser le titre des fenêtres pour trouver des entrées. Si vous avez déjà accordé l’autorisation, il vous faudra peut-être redémarrer BitwardenXC.</translation>
     </message>
     <message>
         <source>Invalid entry provided</source>
@@ -893,8 +893,8 @@
 <context>
     <name>AutoTypeSelectDialog</name>
     <message>
-        <source>Auto-Type - KeePassXC</source>
-        <translation>Saisie automatique – KeePassXC</translation>
+        <source>Auto-Type - BitwardenXC</source>
+        <translation>Saisie automatique – BitwardenXC</translation>
     </message>
     <message>
         <source>Double click a row to perform Auto-Type or find an entry using the search:</source>
@@ -997,8 +997,8 @@ Ctrl+Maj+4 – Copier l’URL&lt;br/&gt;
 <context>
     <name>BrowserAccessControlDialog</name>
     <message>
-        <source>KeePassXC - Browser Access Request</source>
-        <translation>KeePassXC – Demande d’accès au navigateur</translation>
+        <source>BitwardenXC - Browser Access Request</source>
+        <translation>BitwardenXC – Demande d’accès au navigateur</translation>
     </message>
     <message>
         <source>%1 is requesting access to the following entries:</source>
@@ -1050,8 +1050,8 @@ Please select the correct database for saving credentials.</source>
 Choisissez la base de données dans laquelle enregistrer les identifiants.</translation>
     </message>
     <message>
-        <source>KeePassXC - Select Database</source>
-        <translation>KeePassXC – Choisir une base de données</translation>
+        <source>BitwardenXC - Select Database</source>
+        <translation>BitwardenXC – Choisir une base de données</translation>
     </message>
 </context>
 <context>
@@ -1089,8 +1089,8 @@ Choisissez la base de données dans laquelle enregistrer les identifiants.</tran
         <translation>Nom d’utilisateur : %1</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
-        <translation>KeePassXC – Identifiants de le clé d’accès</translation>
+        <source>BitwardenXC - Passkey credentials</source>
+        <translation>BitwardenXC – Identifiants de le clé d’accès</translation>
     </message>
     <message>
         <source>Add to existing entry</source>
@@ -1164,44 +1164,44 @@ Voulez-vous supprimer l’entrée ?
         <translation>%1 (clé d’accès)</translation>
     </message>
     <message>
-        <source>KeePassXC - Create a new group</source>
-        <translation>KeePassXC – Créer un nouveau groupe</translation>
+        <source>BitwardenXC - Create a new group</source>
+        <translation>BitwardenXC – Créer un nouveau groupe</translation>
     </message>
     <message>
         <source>Disable</source>
         <translation>Désactiver</translation>
     </message>
     <message>
-        <source>KeePassXC - Overwrite existing key?</source>
-        <translation>KeePassXC – Remplacer la clé existante ?</translation>
+        <source>BitwardenXC - Overwrite existing key?</source>
+        <translation>BitwardenXC – Remplacer la clé existante ?</translation>
     </message>
     <message>
-        <source>KeePassXC - Update Entry</source>
-        <translation>KeePassXC – Mettre l’entrée à jour</translation>
+        <source>BitwardenXC - Update Entry</source>
+        <translation>BitwardenXC – Mettre l’entrée à jour</translation>
     </message>
     <message>
-        <source>KeePassXC - Delete entry</source>
-        <translation>KeePassXC – Supprimer l’entrée</translation>
+        <source>BitwardenXC - Delete entry</source>
+        <translation>BitwardenXC – Supprimer l’entrée</translation>
     </message>
     <message>
-        <source>KeePassXC - New key association request</source>
-        <translation>KeePassXC – Demande de nouveau jumelage de clé</translation>
+        <source>BitwardenXC - New key association request</source>
+        <translation>BitwardenXC – Demande de nouveau jumelage de clé</translation>
     </message>
     <message>
         <source>Passkey</source>
         <translation>Clé d’accès</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
-        <translation>KeePassXC – Identifiants de clé d’accès</translation>
+        <source>BitwardenXC - Passkey credentials</source>
+        <translation>BitwardenXC – Identifiants de clé d’accès</translation>
     </message>
     <message>
         <source>Register a new passkey to this entry:</source>
         <translation>Enregistrer une nouvelle clé d’accès pour cette entrée :</translation>
     </message>
     <message>
-        <source>KeePassXC - Update passkey</source>
-        <translation>KeePassXC – Mettre la clé d’accès à jour</translation>
+        <source>BitwardenXC - Update passkey</source>
+        <translation>BitwardenXC – Mettre la clé d’accès à jour</translation>
     </message>
     <message>
         <source>Entry already has a passkey.
@@ -1342,8 +1342,8 @@ Remplacer la clé dans %1 – %2 ?</translation>
         <translation>Ne pas proposer la migration des paramètres de KeePassHTTP.</translation>
     </message>
     <message>
-        <source>Updates KeePassXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
-        <translation>Au démarrage, met automatiquement à jour le chemin des exécutables KeePassXC ou keepassxc-proxy vers les scripts de messagerie native.</translation>
+        <source>Updates BitwardenXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
+        <translation>Au démarrage, met automatiquement à jour le chemin des exécutables BitwardenXC ou keepassxc-proxy vers les scripts de messagerie native.</translation>
     </message>
     <message>
         <source>Update native messaging manifest files at startup</source>
@@ -1689,15 +1689,15 @@ La base de données de sauvegarde est située sur %2</translation>
 <context>
     <name>DatabaseOpenDialog</name>
     <message>
-        <source>Unlock Database - KeePassXC</source>
-        <translation>Déverrouiller la base de données – KeePassXC</translation>
+        <source>Unlock Database - BitwardenXC</source>
+        <translation>Déverrouiller la base de données – BitwardenXC</translation>
     </message>
 </context>
 <context>
     <name>DatabaseOpenWidget</name>
     <message>
-        <source>Unlock KeePassXC Database</source>
-        <translation>Déverrouiller la base de données KeePassXC</translation>
+        <source>Unlock BitwardenXC Database</source>
+        <translation>Déverrouiller la base de données BitwardenXC</translation>
     </message>
     <message>
         <source>Enter Password:</source>
@@ -1745,17 +1745,17 @@ La base de données de sauvegarde est située sur %2</translation>
     </message>
     <message>
         <source>The database you are trying to open was most likely
-created by a newer version of KeePassXC.
+created by a newer version of BitwardenXC.
 
 You can try to open it anyway, but it may be incomplete
 and saving any changes may incur data loss.
 
-We recommend you update your KeePassXC installation.</source>
-        <translation>La base de données que vous tentez d’ouvrir a probablement été créée avec une version plus récente de KeePassXC.
+We recommend you update your BitwardenXC installation.</source>
+        <translation>La base de données que vous tentez d’ouvrir a probablement été créée avec une version plus récente de BitwardenXC.
 
 Vous pouvez quand même tenter de l’ouvrir, mais elle pourrait être incomplète et l’enregistrement de changements pourrait entraîner une perte de données.
 
-Nous vous recommandons de mettre KeePassXC à jour.</translation>
+Nous vous recommandons de mettre BitwardenXC à jour.</translation>
     </message>
     <message>
         <source>Open database anyway</source>
@@ -1792,8 +1792,8 @@ Pour empêcher que cette erreur survienne, vous devez accéder à « Paramètre
         <translation>Ancien format de fichier clé</translation>
     </message>
     <message>
-        <source>You are using an old key file format which KeePassXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
-        <translation>Vous utilisez un ancien format de fichier clé que KeePassXC pourrait&lt;br&gt;ne plus prendre en charge à l’avenir.&lt;br&gt;&lt;br&gt;Envisagez de générer un nouveau fichier clé en allant dans :&lt;br&gt;&lt;strong&gt;Base de données &amp;gt; Sécurité de la base de données &amp;gt; Changer le fichier clé.&lt;/strong&gt;&lt;br&gt;</translation>
+        <source>You are using an old key file format which BitwardenXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
+        <translation>Vous utilisez un ancien format de fichier clé que BitwardenXC pourrait&lt;br&gt;ne plus prendre en charge à l’avenir.&lt;br&gt;&lt;br&gt;Envisagez de générer un nouveau fichier clé en allant dans :&lt;br&gt;&lt;strong&gt;Base de données &amp;gt; Sécurité de la base de données &amp;gt; Changer le fichier clé.&lt;/strong&gt;&lt;br&gt;</translation>
     </message>
     <message>
         <source>Don&apos;t show this warning again</source>
@@ -1846,8 +1846,8 @@ If you don&apos;t have a key file or don&apos;t know what that is, you don&apos;
 Si vous n’avez pas de fichier clé ou ne savez pas ce que c’est, vous n’avez pas à en choisir un.</translation>
     </message>
     <message>
-        <source>KeePassXC database file selected</source>
-        <translation>Fichier de base de données KeePassXC choisi</translation>
+        <source>KeePass database file selected</source>
+        <translation>Fichier de base de données KeePass choisi</translation>
     </message>
     <message>
         <source>The file you selected looks like a database file.
@@ -2003,12 +2003,12 @@ This may prevent connection to the browser plugin.</source>
 Cela pourrait empêcher la connexion avec l’extension pour navigateurs.</translation>
     </message>
     <message>
-        <source>No shared encryption keys found in KeePassXC settings.</source>
-        <translation>Aucune clé de chiffrement partagée n’a été trouvée dans les paramètres de KeePassXC.</translation>
+        <source>No shared encryption keys found in BitwardenXC settings.</source>
+        <translation>Aucune clé de chiffrement partagée n’a été trouvée dans les paramètres de BitwardenXC.</translation>
     </message>
     <message numerus="yes">
-        <source>Successfully removed %n encryption key(s) from KeePassXC settings.</source>
-        <translation><numerusform>%n clé de chiffrement a été supprimée des paramètres de KeePassXC.</numerusform><numerusform>%n clés de chiffrement ont été supprimées des paramètres de KeePassXC.</numerusform><numerusform>%n clés de chiffrement ont été supprimées des paramètres de KeePassXC.</numerusform></translation>
+        <source>Successfully removed %n encryption key(s) from BitwardenXC settings.</source>
+        <translation><numerusform>%n clé de chiffrement a été supprimée des paramètres de BitwardenXC.</numerusform><numerusform>%n clés de chiffrement ont été supprimées des paramètres de BitwardenXC.</numerusform><numerusform>%n clés de chiffrement ont été supprimées des paramètres de BitwardenXC.</numerusform></translation>
     </message>
     <message>
         <source>Do you really want forget all site-specific settings on every entry?
@@ -2859,9 +2859,9 @@ Enregistrer les changements ?</translation>
         <translation>Désactiver les enregistrements sécurisés ?</translation>
     </message>
     <message>
-        <source>KeePassXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
+        <source>BitwardenXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
 Disable safe saves and try again?</source>
-        <translation>KeePassXC n’a pas réussi à enregistrer la base de données à plusieurs reprises. Le fichier à enregistrer est probablement verrouillé par les services de synchronisation de fichiers.
+        <translation>BitwardenXC n’a pas réussi à enregistrer la base de données à plusieurs reprises. Le fichier à enregistrer est probablement verrouillé par les services de synchronisation de fichiers.
 Désactiver les enregistrements sécurisés et réessayer ?</translation>
     </message>
     <message>
@@ -3776,9 +3776,9 @@ navigateurs</translation>
         <translation>Synchroniser</translation>
     </message>
     <message>
-        <source>Your KeePassXC version does not support sharing this container type.
+        <source>Your BitwardenXC version does not support sharing this container type.
 Supported extensions are: %1.</source>
-        <translation>Votre version de KeePassXC ne prend pas en charge le partage de ce type de conteneur. Les extensions prises en charge sont : %1.</translation>
+        <translation>Votre version de BitwardenXC ne prend pas en charge le partage de ce type de conteneur. Les extensions prises en charge sont : %1.</translation>
     </message>
     <message>
         <source>%1 is already being exported by this database.</source>
@@ -4739,8 +4739,8 @@ Cela rendra vos mots de passe et données sensibles vulnérables !</translatio
 <context>
     <name>GlobalShortcutsPortal</name>
     <message>
-        <source>KeePassXC - Global Shortcuts</source>
-        <translation>KeePassXC – Raccourcis globaux</translation>
+        <source>BitwardenXC - Global Shortcuts</source>
+        <translation>BitwardenXC – Raccourcis globaux</translation>
     </message>
     <message>
         <source>The XDG Desktop Portal for global shortcuts is not available on this system.</source>
@@ -5719,8 +5719,8 @@ Si le problème persiste, le fichier de la base de données pourrait être corro
         <translation>Ancien format de fichier clé</translation>
     </message>
     <message>
-        <source>You selected a key file in an old format which KeePassXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
-        <translation>Vous utilisez un ancien format de fichier clé que KeePassXC &lt;br&gt;pourrait ne plus prendre en charge à l’avenir.&lt;br&gt;&lt;br&gt;Envisagez de plutôt générer un nouveau fichier clé.</translation>
+        <source>You selected a key file in an old format which BitwardenXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
+        <translation>Vous utilisez un ancien format de fichier clé que BitwardenXC &lt;br&gt;pourrait ne plus prendre en charge à l’avenir.&lt;br&gt;&lt;br&gt;Envisagez de plutôt générer un nouveau fichier clé.</translation>
     </message>
     <message>
         <source>Error loading the key file '%1'
@@ -6489,10 +6489,10 @@ Voulez-vous poursuivre avec ce fichier ?</translation>
         <translation>Configurer la synchronisation à distance…</translation>
     </message>
     <message>
-        <source>WARNING: You are using a development snapshot build of KeePassXC.
+        <source>WARNING: You are using a development snapshot build of BitwardenXC.
 Maintain a backup of your databases in the event of unknown bugs.
 This version is not meant for production use.</source>
-        <translation>Avertissement : Vous utilisez une version de développement de KeePassXC.
+        <translation>Avertissement : Vous utilisez une version de développement de BitwardenXC.
 Conservez une sauvegarde de vos bases de données au cas où des bogues inattendus surviendraient.
 Cette version n’est pas destinée à une utilisation en production.</translation>
     </message>
@@ -6696,8 +6696,8 @@ Cette version n’est pas destinée à une utilisation en production.</translati
 <context>
     <name>NewDatabaseWizard</name>
     <message>
-        <source>Create a new KeePassXC database…</source>
-        <translation>Créer une nouvelle base de données KeePassXC…</translation>
+        <source>Create a new KeePass database…</source>
+        <translation>Créer une nouvelle base de données KeePass…</translation>
     </message>
     <message>
         <source>Root</source>
@@ -6971,8 +6971,8 @@ Cette version n’est pas destinée à une utilisation en production.</translati
 <context>
     <name>PasskeyExportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Export</source>
-        <translation>KeePassXC – Exporter une clé d’accès</translation>
+        <source>BitwardenXC - Passkey Export</source>
+        <translation>BitwardenXC – Exporter une clé d’accès</translation>
     </message>
     <message>
         <source>Filenames will be generated with title and .passkey file extension.</source>
@@ -7028,8 +7028,8 @@ Le remplacer ?</translation>
 <context>
     <name>PasskeyImportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Import</source>
-        <translation>KeePassXC – Importer une clé d’accès</translation>
+        <source>BitwardenXC - Passkey Import</source>
+        <translation>BitwardenXC – Importer une clé d’accès</translation>
     </message>
     <message>
         <source>Username: %1</source>
@@ -7162,8 +7162,8 @@ Les données suivantes manquent :
         <translation>Le mot de passe est défini, cliquez pour le changer ou le supprimer</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. KeePassXC can generate one for you.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Un mot de passe est le moyen principal pour sécuriser votre base de données.&lt;/p&gt;&lt;p&gt;Les bons mots de passe sont longs et uniques. KeePassXC peut en générer un pour vous.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. BitwardenXC can generate one for you.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Un mot de passe est le moyen principal pour sécuriser votre base de données.&lt;/p&gt;&lt;p&gt;Les bons mots de passe sont longs et uniques. BitwardenXC peut en générer un pour vous.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Passwords do not match.</source>
@@ -7518,8 +7518,8 @@ Voulez-vous la remplacer ?</translation>
 <context>
     <name>PickcharsDialog</name>
     <message>
-        <source>KeePassXC - Pick Characters</source>
-        <translation>KeePassXC – Choisir des caractères</translation>
+        <source>BitwardenXC - Pick Characters</source>
+        <translation>BitwardenXC – Choisir des caractères</translation>
     </message>
     <message>
         <source>Select characters to type, navigate with arrow keys, Ctrl + S submits.</source>
@@ -7615,8 +7615,8 @@ Voulez-vous la remplacer ?</translation>
         <translation>Échec de chiffrement du message.</translation>
     </message>
     <message>
-        <source>KeePassXC association failed, try again</source>
-        <translation>Échec de jumelage avec KeePassXC, réessayez</translation>
+        <source>BitwardenXC association failed, try again</source>
+        <translation>Échec de jumelage avec BitwardenXC, réessayez</translation>
     </message>
     <message>
         <source>Encryption key is not recognized</source>
@@ -8704,11 +8704,11 @@ Commandes proposées :
         <translation>Échec de chargement du fichier clé %1 : %2</translation>
     </message>
     <message>
-        <source>WARNING: You are using an old key file format which KeePassXC may
+        <source>WARNING: You are using an old key file format which BitwardenXC may
 stop supporting in the future.
 
 Please consider generating a new key file.</source>
-        <translation>Avertissement : Vous utilisez un ancien format de fichier clé que KeePassXC pourrait ne plus prendre en charge à l’avenir.
+        <translation>Avertissement : Vous utilisez un ancien format de fichier clé que BitwardenXC pourrait ne plus prendre en charge à l’avenir.
 
 Envisagez de générer un nouveau fichier clé.</translation>
     </message>
@@ -9085,8 +9085,8 @@ Noyau : %3 %4</translation>
         <translation>Les données du fichier clé ne sont pas celles attendues. Le fichier clé pourrait être corrompu.</translation>
     </message>
     <message>
-        <source>KeePassXC - cross-platform password manager</source>
-        <translation>KeePassXC – Gestionnaire de mots de passe multiplateforme</translation>
+        <source>BitwardenXC - cross-platform password manager</source>
+        <translation>BitwardenXC – Gestionnaire de mots de passe multiplateforme</translation>
     </message>
     <message>
         <source>filenames of the password databases to open (*.kdbx)</source>
@@ -9117,20 +9117,20 @@ Noyau : %3 %4</translation>
         <translation>Échec de verrouillage de la base de données.</translation>
     </message>
     <message>
-        <source>Another instance of KeePassXC is already running.</source>
-        <translation>Une autre instance de KeePassXC est déjà en cours d’exécution.</translation>
+        <source>Another instance of BitwardenXC is already running.</source>
+        <translation>Une autre instance de BitwardenXC est déjà en cours d’exécution.</translation>
     </message>
     <message>
-        <source>KeePassXC is not running. No open database to lock</source>
-        <translation>KeePassXC n’est pas lancé. Aucune base de données ouverte à verrouiller</translation>
+        <source>BitwardenXC is not running. No open database to lock</source>
+        <translation>BitwardenXC n’est pas lancé. Aucune base de données ouverte à verrouiller</translation>
     </message>
     <message>
         <source>Fatal error while testing the cryptographic functions.</source>
         <translation>Erreur fatale d’évaluation des fonctions cryptographiques.</translation>
     </message>
     <message>
-        <source>KeePassXC - Error</source>
-        <translation>KeePassXC – Erreur</translation>
+        <source>BitwardenXC - Error</source>
+        <translation>BitwardenXC – Erreur</translation>
     </message>
     <message>
         <source>Database password: </source>
@@ -9253,8 +9253,8 @@ Cette option est déconseillée, utiliser plutôt --set-key-file.</translation>
         <translation>Aucun fournisseur de déverrouillage rapide n’est proposé</translation>
     </message>
     <message>
-        <source>Failed to init KeePassXC crypto.</source>
-        <translation>Échec d’initialisation de la cryptographie de KeePassXC</translation>
+        <source>Failed to init BitwardenXC crypto.</source>
+        <translation>Échec d’initialisation de la cryptographie de BitwardenXC</translation>
     </message>
     <message>
         <source>Failed to encrypt key data.</source>
@@ -9774,8 +9774,8 @@ Cette option est déconseillée, utiliser plutôt --set-key-file.</translation>
         <translation>Afficher aussi les entrées exclues des relevés</translation>
     </message>
     <message>
-        <source>This build of KeePassXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
-        <translation>Cette version de KeePassXC n’a pas de fonction réseau. Une connexion à Internet est nécessaire pour vérifier vos mots de passe sur le service « Have I Been Pwned ».</translation>
+        <source>This build of BitwardenXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
+        <translation>Cette version de BitwardenXC n’a pas de fonction réseau. Une connexion à Internet est nécessaire pour vérifier vos mots de passe sur le service « Have I Been Pwned ».</translation>
     </message>
     <message>
         <source>Congratulations, no exposed passwords!</source>
@@ -10243,8 +10243,8 @@ Cette option est déconseillée, utiliser plutôt --set-key-file.</translation>
         <translation>Options</translation>
     </message>
     <message>
-        <source>Enable KeepassXC Freedesktop.org Secret Service integration</source>
-        <translation>Activer l’intégration de KeePassXC à « Secret Service » de freedesktop.org </translation>
+        <source>Enable BitwardenXC Freedesktop.org Secret Service integration</source>
+        <translation>Activer l’intégration de BitwardenXC à « Secret Service » de freedesktop.org </translation>
     </message>
     <message>
         <source>General</source>
@@ -10622,8 +10622,8 @@ Exemple : JBSWY3DPEHPK3PXP</translation>
 <context>
     <name>WelcomeWidget</name>
     <message>
-        <source>Start storing your passwords securely in a KeePassXC database</source>
-        <translation>Commencez à enregistrer vos mots de passe en toute sécurité dans une base de données KeePassXC</translation>
+        <source>Start storing your passwords securely in a BitwardenXC database</source>
+        <translation>Commencez à enregistrer vos mots de passe en toute sécurité dans une base de données BitwardenXC</translation>
     </message>
     <message>
         <source>Recent databases</source>
@@ -10634,8 +10634,8 @@ Exemple : JBSWY3DPEHPK3PXP</translation>
         <translation>Ouvrir une base de données récente</translation>
     </message>
     <message>
-        <source>Welcome to KeePassXC %1</source>
-        <translation>Bienvenue sur KeePassXC %1</translation>
+        <source>Welcome to BitwardenXC %1</source>
+        <translation>Bienvenue sur BitwardenXC %1</translation>
     </message>
     <message>
         <source>Create Database</source>

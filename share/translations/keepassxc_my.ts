@@ -10,8 +10,8 @@
         <translation>အကြောင်း</translation>
     </message>
     <message>
-        <source>Report bugs at: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
-        <translation>ပြဿနာများကို &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt; သို့ အစီရင်ခံပါ</translation>
+        <source>Report bugs at: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
+        <translation>ပြဿနာများကို &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt; သို့ အစီရင်ခံပါ</translation>
     </message>
     <message>
         <source>KeePassXC is distributed under the terms of the GNU General Public License (GPL) version 2 or (at your option) version 3.</source>
@@ -49,8 +49,8 @@
 <context>
     <name>AccessControlDialog</name>
     <message>
-        <source>KeePassXC -  Access Request</source>
-        <translation>KeePassXC - အသုံးပြုခွင့် တောင်းဆိုချက်</translation>
+        <source>BitwardenXC -  Access Request</source>
+        <translation>BitwardenXC - အသုံးပြုခွင့် တောင်းဆိုချက်</translation>
     </message>
     <message>
         <source>Non-existing/inaccessible executable path. Please double-check the client is legit.</source>
@@ -81,8 +81,8 @@
         <translation>အသေးစိတ် အချက်အလက်များ</translation>
     </message>
     <message>
-        <source>Your decision will be remembered for the duration while both the requesting client AND KeePassXC are running.</source>
-        <translation>KeePassXC နှင့် ဖွင့်ရန်တောင်းဆိုထားသော အခြား Client နှစ်ခုစလုံး အလုပ်လုပ်နေချိန်တွင် သင့်ဆုံးဖြတ်ချက်များအား မှတ်သားထားမည်ဖြစ်သည်။</translation>
+        <source>Your decision will be remembered for the duration while both the requesting client AND BitwardenXC are running.</source>
+        <translation>BitwardenXC နှင့် ဖွင့်ရန်တောင်းဆိုထားသော အခြား Client နှစ်ခုစလုံး အလုပ်လုပ်နေချိန်တွင် သင့်ဆုံးဖြတ်ချက်များအား မှတ်သားထားမည်ဖြစ်သည်။</translation>
     </message>
     <message>
         <source>Remember</source>
@@ -249,7 +249,7 @@
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Import KeePassXC Settings</source>
+        <source>Import BitwardenXC Settings</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -257,7 +257,7 @@
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Export KeePassXC Settings</source>
+        <source>Export BitwardenXC Settings</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -285,7 +285,7 @@
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Restart KeePassXC to apply the Auto-Type desktop portals preference.</source>
+        <source>Restart BitwardenXC to apply the Auto-Type desktop portals preference.</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -300,12 +300,12 @@
         <translation>စတင်လုပ်ဆောင်ခြင်း</translation>
     </message>
     <message>
-        <source>Start only a single instance of KeePassXC</source>
-        <translation>KeePassXC ကို တစ်နေရာတွင်သာ စတင်ပါ</translation>
+        <source>Start only a single instance of BitwardenXC</source>
+        <translation>BitwardenXC ကို တစ်နေရာတွင်သာ စတင်ပါ</translation>
     </message>
     <message>
-        <source>Automatically launch KeePassXC at system startup</source>
-        <translation>စနစ် စတင်ဆောင်ရွက်ချိန်တွင် KeePassXC ကို အလိုအလျောက် ဖွင့်ပါ</translation>
+        <source>Automatically launch BitwardenXC at system startup</source>
+        <translation>စနစ် စတင်ဆောင်ရွက်ချိန်တွင် BitwardenXC ကို အလိုအလျောက် ဖွင့်ပါ</translation>
     </message>
     <message>
         <source>Minimize window at application startup</source>
@@ -778,12 +778,12 @@
         <translation>ခွင့်ပြုချက် လိုအပ်သည်</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>KeePassXC သည် ဖြည့်သွင်းချက်အဆင့် အလိုအလျောက် စာရိုက်ခြင်းကို လုပ်ဆောင်ရန် အသုံးပြုခွင့် ပြုအပ်သည်။ သင် ခွင့်ပြုချက် ပေးပြီးပါက KeePassXC ကို ပြန်လည်စတင်ရန် လိုအပ်ပါမည်။</translation>
+        <source>BitwardenXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>BitwardenXC သည် ဖြည့်သွင်းချက်အဆင့် အလိုအလျောက် စာရိုက်ခြင်းကို လုပ်ဆောင်ရန် အသုံးပြုခွင့် ပြုအပ်သည်။ သင် ခွင့်ပြုချက် ပေးပြီးပါက BitwardenXC ကို ပြန်လည်စတင်ရန် လိုအပ်ပါမည်။</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>ကမ္ဘာသုံး အလိုအလျောက် စာရိုက်ခြင်းကို ဆောင်ရွက်ရန် KeePassXC သည် အသုံးပြုနိုင်မှုနှင့် စခရင် မှတ်တမ်းတင်ကိရိယာ ခွင့်ပြုချက် လိုအပ်သည်။ ဖြည့်သွင်းချက်များကို ရှာရန်အတွက် ဝင်းဒိုးခေါင်းစဉ်ကို သုံးရန် စခရင် မှတ်တမ်းတင်ခြင်း လိုအပ်ပါသည်။ သင် ခွင့်ပြုချက်ပေးပြီးပါက KeePassXC ကို ပြန်လည်စတင်ရန် လိုအပ်ပါမည်။</translation>
+        <source>BitwardenXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>ကမ္ဘာသုံး အလိုအလျောက် စာရိုက်ခြင်းကို ဆောင်ရွက်ရန် BitwardenXC သည် အသုံးပြုနိုင်မှုနှင့် စခရင် မှတ်တမ်းတင်ကိရိယာ ခွင့်ပြုချက် လိုအပ်သည်။ ဖြည့်သွင်းချက်များကို ရှာရန်အတွက် ဝင်းဒိုးခေါင်းစဉ်ကို သုံးရန် စခရင် မှတ်တမ်းတင်ခြင်း လိုအပ်ပါသည်။ သင် ခွင့်ပြုချက်ပေးပြီးပါက BitwardenXC ကို ပြန်လည်စတင်ရန် လိုအပ်ပါမည်။</translation>
     </message>
     <message>
         <source>Invalid entry provided</source>
@@ -889,8 +889,8 @@
 <context>
     <name>AutoTypeSelectDialog</name>
     <message>
-        <source>Auto-Type - KeePassXC</source>
-        <translation>အလိုအလျောက် စာရိုက်ခြင်း - KeePassXC</translation>
+        <source>Auto-Type - BitwardenXC</source>
+        <translation>အလိုအလျောက် စာရိုက်ခြင်း - BitwardenXC</translation>
     </message>
     <message>
         <source>Double click a row to perform Auto-Type or find an entry using the search:</source>
@@ -982,8 +982,8 @@ Ctrl+Shift+4 - Copy URL&lt;br/&gt;
 <context>
     <name>BrowserAccessControlDialog</name>
     <message>
-        <source>KeePassXC - Browser Access Request</source>
-        <translation>KeePassXC - ဘရောက်ဇာ အသုံးပြုခွင့် တောင်းဆိုမှု</translation>
+        <source>BitwardenXC - Browser Access Request</source>
+        <translation>BitwardenXC - ဘရောက်ဇာ အသုံးပြုခွင့် တောင်းဆိုမှု</translation>
     </message>
     <message>
         <source>%1 is requesting access to the following entries:</source>
@@ -1035,7 +1035,7 @@ Please select the correct database for saving credentials.</source>
 ကျေးဇူးပြု၍ အထောက်အထားများ သိမ်းရန်အတွက် မှန်ကန်သော ဒေတာဘေ့စ်ကို ရွေးပါ။</translation>
     </message>
     <message>
-        <source>KeePassXC - Select Database</source>
+        <source>BitwardenXC - Select Database</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -1074,7 +1074,7 @@ Please select the correct database for saving credentials.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
+        <source>BitwardenXC - Passkey credentials</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1148,7 +1148,7 @@ Do you want to delete the entry?
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Create a new group</source>
+        <source>BitwardenXC - Create a new group</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1156,19 +1156,19 @@ Do you want to delete the entry?
         <translation>ပယ်ဖျက်ရန်</translation>
     </message>
     <message>
-        <source>KeePassXC - Overwrite existing key?</source>
+        <source>BitwardenXC - Overwrite existing key?</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Update Entry</source>
+        <source>BitwardenXC - Update Entry</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Delete entry</source>
+        <source>BitwardenXC - Delete entry</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - New key association request</source>
+        <source>BitwardenXC - New key association request</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1176,7 +1176,7 @@ Do you want to delete the entry?
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
+        <source>BitwardenXC - Passkey credentials</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1184,7 +1184,7 @@ Do you want to delete the entry?
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC - Update passkey</source>
+        <source>BitwardenXC - Update passkey</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1325,8 +1325,8 @@ Do you want to overwrite the passkey in %1 - %2?</source>
         <translation>KeePassHTTP ဆက်တင်များ ရွှေ့ရန် အသိမပေးပါနှင့်။</translation>
     </message>
     <message>
-        <source>Updates KeePassXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
-        <translation>စတင်ချိန်တွင် KeePassXC သို့မဟုတ် keepassxc-ပရောက်စီ နှစ်လီစနစ်လမ်းကြောင်းကို မူလမက်ဆေ့ချ်ပို့သည့် ရိုးရိုးပရိုဂရမ်များအဖြစ် အလိုအလျောက် အပ်ဒိတ်လုပ်သည်။</translation>
+        <source>Updates BitwardenXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
+        <translation>စတင်ချိန်တွင် BitwardenXC သို့မဟုတ် BitwardenXC-ပရောက်စီ နှစ်လီစနစ်လမ်းကြောင်းကို မူလမက်ဆေ့ချ်ပို့သည့် ရိုးရိုးပရိုဂရမ်များအဖြစ် အလိုအလျောက် အပ်ဒိတ်လုပ်သည်။</translation>
     </message>
     <message>
         <source>Update native messaging manifest files at startup</source>
@@ -1672,15 +1672,15 @@ Backup database located at %2</source>
 <context>
     <name>DatabaseOpenDialog</name>
     <message>
-        <source>Unlock Database - KeePassXC</source>
-        <translation>ဒေတာဘေ့စ် လော့ဖြည်ရန် - KeePassXC</translation>
+        <source>Unlock Database - BitwardenXC</source>
+        <translation>ဒေတာဘေ့စ် လော့ဖြည်ရန် - BitwardenXC</translation>
     </message>
 </context>
 <context>
     <name>DatabaseOpenWidget</name>
     <message>
-        <source>Unlock KeePassXC Database</source>
-        <translation> KeePassXC ဒေတာဘေ့စ်ကို လော့ဖြည်ရန်</translation>
+        <source>Unlock BitwardenXC Database</source>
+        <translation> BitwardenXC ဒေတာဘေ့စ်ကို လော့ဖြည်ရန်</translation>
     </message>
     <message>
         <source>Enter Password:</source>
@@ -1728,13 +1728,13 @@ Backup database located at %2</source>
     </message>
     <message>
         <source>The database you are trying to open was most likely
-created by a newer version of KeePassXC.
+created by a newer version of BitwardenXC.
 
 You can try to open it anyway, but it may be incomplete
 and saving any changes may incur data loss.
 
-We recommend you update your KeePassXC installation.</source>
-        <translation> KeePassXC ရဲ့ Version အသစ်ဖြစ်နိုင်သည့် ဒေတာဘေ့စ် ကို သင်ဖွင့်ရန် လုပ်ဆောင်နေသည်။ မည်သည့်နည်းနှင့်မဆို ဖွင့်လိုက်နိုင်ပေမယ့် ဒေတာပျောက်ဆုံးခြင်း၊ မပြည့်စုံခြင်း၊ မသိမ်းစည်းလိုက်မိခြင်းများ ဖြစ်စေနိုင်သည်။ ထိုကြောင့် KeePassXC ကို Update လုပ်ဆောင်ရန် အကြံပြုပါသည်။</translation>
+We recommend you update your BitwardenXC installation.</source>
+        <translation> BitwardenXC ရဲ့ Version အသစ်ဖြစ်နိုင်သည့် ဒေတာဘေ့စ် ကို သင်ဖွင့်ရန် လုပ်ဆောင်နေသည်။ မည်သည့်နည်းနှင့်မဆို ဖွင့်လိုက်နိုင်ပေမယ့် ဒေတာပျောက်ဆုံးခြင်း၊ မပြည့်စုံခြင်း၊ မသိမ်းစည်းလိုက်မိခြင်းများ ဖြစ်စေနိုင်သည်။ ထိုကြောင့် BitwardenXC ကို Update လုပ်ဆောင်ရန် အကြံပြုပါသည်။</translation>
     </message>
     <message>
         <source>Open database anyway</source>
@@ -1771,8 +1771,8 @@ To prevent this error from appearing, you must go to &quot;Database Settings / S
         <translation>စကားဝှက်သော့ဖိုင် ဖောမက်အဟောင်း</translation>
     </message>
     <message>
-        <source>You are using an old key file format which KeePassXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
-        <translation>သင်သည် အနာဂတ်တွင် KeePassXC မှ &lt;br&gt; ပံ့ပိုးခြင်း ရပ်တန့်နိုင်သည့် စကားဝှက်သော့ဖိုင် ဖောမက်အဟောင်းကို အသုံးပြုနေသည်။&lt;br&gt;&lt;br&gt;ကျေးဇူးပြု၍ စကားဝှက်သော့ဖိုင်သစ်ကို ဤသို့ ထုတ်လုပ်ရန် စဉ်းစားပါ -&lt;br&gt;&lt;strong&gt;ဒေတာဘေ့စ် &amp;gt;‌ ဒေတာဘေ့စ် လုံခြုံရေး &amp;gt;‌ စကားဝှက်သော့ဖိုင် ပြောင်းလဲရန်။&lt;/strong&gt;&lt;br&gt;</translation>
+        <source>You are using an old key file format which BitwardenXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
+        <translation>သင်သည် အနာဂတ်တွင် BitwardenXC မှ &lt;br&gt; ပံ့ပိုးခြင်း ရပ်တန့်နိုင်သည့် စကားဝှက်သော့ဖိုင် ဖောမက်အဟောင်းကို အသုံးပြုနေသည်။&lt;br&gt;&lt;br&gt;ကျေးဇူးပြု၍ စကားဝှက်သော့ဖိုင်သစ်ကို ဤသို့ ထုတ်လုပ်ရန် စဉ်းစားပါ -&lt;br&gt;&lt;strong&gt;ဒေတာဘေ့စ် &amp;gt;‌ ဒေတာဘေ့စ် လုံခြုံရေး &amp;gt;‌ စကားဝှက်သော့ဖိုင် ပြောင်းလဲရန်။&lt;/strong&gt;&lt;br&gt;</translation>
     </message>
     <message>
         <source>Don&apos;t show this warning again</source>
@@ -1824,7 +1824,7 @@ If you don&apos;t have a key file or don&apos;t know what that is, you don&apos;
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>KeePassXC database file selected</source>
+        <source>KeePass database file selected</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -1976,12 +1976,12 @@ This may prevent connection to the browser plugin.</source>
 ယင်းသည် ဘရောက်ဇာ ချိတ်ဆက်ပရိုဂရမ်နှင့် ချိတ်ဆက်မှုကို တားဆီးနိုင်သည်။</translation>
     </message>
     <message>
-        <source>No shared encryption keys found in KeePassXC settings.</source>
-        <translation>KeePassXC ဆက်တင်များတွင် မျှဝေထားသော ကုဒ်ဖြင့်ပြောင်းပြီး စကားဝှက်သော့များ မတွေ့ပါ။</translation>
+        <source>No shared encryption keys found in BitwardenXC settings.</source>
+        <translation>BitwardenXC ဆက်တင်များတွင် မျှဝေထားသော ကုဒ်ဖြင့်ပြောင်းပြီး စကားဝှက်သော့များ မတွေ့ပါ။</translation>
     </message>
     <message numerus="yes">
-        <source>Successfully removed %n encryption key(s) from KeePassXC settings.</source>
-        <translation><numerusform>KeePassXC ဆက်တင်များမှ ကုဒ်ဖြင့်ပြောင်းပြီး စကားဝှက်သော့ %n ခုကို အောင်မြင်စွာ ဖယ်ရှားပြီးပါပြီ။</numerusform></translation>
+        <source>Successfully removed %n encryption key(s) from BitwardenXC settings.</source>
+        <translation><numerusform>BitwardenXC ဆက်တင်များမှ ကုဒ်ဖြင့်ပြောင်းပြီး စကားဝှက်သော့ %n ခုကို အောင်မြင်စွာ ဖယ်ရှားပြီးပါပြီ။</numerusform></translation>
     </message>
     <message>
         <source>Do you really want forget all site-specific settings on every entry?
@@ -2822,9 +2822,9 @@ Save changes?</source>
         <translation>ဘေးကင်းသော သိမ်းထားမှုများကို ပယ်ဖျက်မလား။</translation>
     </message>
     <message>
-        <source>KeePassXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
+        <source>BitwardenXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
 Disable safe saves and try again?</source>
-        <translation>KeePassXC သည် ဒေတာဘေ့စ်ကို သိမ်းရန် အကြိမ်များစွာ ကြိုးစားသော်လည်း မအောင်မြင်ပါ။ ဤသို့ဖြစ်ရခြင်းမှာ ဖိုင်ချိန်ကိုက်သည့် ဝန်ဆောင်မှုများက သိမ်းရန်ဖိုင်ကို လော့ချထားသောကြောင့် ဖြစ်နိုင်သည်။
+        <translation>BitwardenXC သည် ဒေတာဘေ့စ်ကို သိမ်းရန် အကြိမ်များစွာ ကြိုးစားသော်လည်း မအောင်မြင်ပါ။ ဤသို့ဖြစ်ရခြင်းမှာ ဖိုင်ချိန်ကိုက်သည့် ဝန်ဆောင်မှုများက သိမ်းရန်ဖိုင်ကို လော့ချထားသောကြောင့် ဖြစ်နိုင်သည်။
 ဘေးကင်းသော သိမ်းဆည်းမှုများကို ပယ်ဖျက်ပြီး ထပ်ကြိုးစားမလား။</translation>
     </message>
     <message>
@@ -3735,9 +3735,9 @@ Would you like to correct it?</source>
         <translation>ချိန်ကိုက်ရန်</translation>
     </message>
     <message>
-        <source>Your KeePassXC version does not support sharing this container type.
+        <source>Your BitwardenXC version does not support sharing this container type.
 Supported extensions are: %1.</source>
-        <translation>သင့် KeePassXC သည် ဤကုဒ်ထည့်သည့်ဆော့ဝဲအမျိုးအစားကို မျှဝေခြင်းအား မပံ့ပိုးပါ။
+        <translation>သင့် BitwardenXC သည် ဤကုဒ်ထည့်သည့်ဆော့ဝဲအမျိုးအစားကို မျှဝေခြင်းအား မပံ့ပိုးပါ။
 ပံ့ပိုးသည့် အဆက်များမှာ - %1 ဖြစ်သည်။</translation>
     </message>
     <message>
@@ -4699,7 +4699,7 @@ This will leave your passwords and sensitive information vulnerable!
 <context>
     <name>GlobalShortcutsPortal</name>
     <message>
-        <source>KeePassXC - Global Shortcuts</source>
+        <source>BitwardenXC - Global Shortcuts</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -5674,8 +5674,8 @@ If this reoccurs, then your database file may be corrupt.</source>
         <translation>စကားဝှက်သော့ဖိုင် ဖောမက်အဟောင်း</translation>
     </message>
     <message>
-        <source>You selected a key file in an old format which KeePassXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
-        <translation>သင်သည် KeePassXC မှ&lt;br&gt;အနာဂတ်တွင် ပံ့ပိုးခြင်း ရပ်တန့်နိုင်သည့် ဖောမက်ဟောင်းရှိသော စကားဝှက်သော့ဖိုင်ကို ရွေးချယ်ခဲ့သည်။&lt;br&gt;&lt;br&gt;ကျေးဇူးပြု၍ စကားဝှက်သော့ဖိုင်သစ်ကို ထုတ်လုပ်ရန် စဉ်းစားပေးပါ။‌</translation>
+        <source>You selected a key file in an old format which BitwardenXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
+        <translation>သင်သည် BitwardenXC မှ&lt;br&gt;အနာဂတ်တွင် ပံ့ပိုးခြင်း ရပ်တန့်နိုင်သည့် ဖောမက်ဟောင်းရှိသော စကားဝှက်သော့ဖိုင်ကို ရွေးချယ်ခဲ့သည်။&lt;br&gt;&lt;br&gt;ကျေးဇူးပြု၍ စကားဝှက်သော့ဖိုင်သစ်ကို ထုတ်လုပ်ရန် စဉ်းစားပေးပါ။‌</translation>
     </message>
     <message>
         <source>Error loading the key file '%1'
@@ -6444,7 +6444,7 @@ Are you sure you want to continue with this file?</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>WARNING: You are using a development snapshot build of KeePassXC.
+        <source>WARNING: You are using a development snapshot build of BitwardenXC.
 Maintain a backup of your databases in the event of unknown bugs.
 This version is not meant for production use.</source>
         <translation type="unfinished"/>
@@ -6649,8 +6649,8 @@ This version is not meant for production use.</source>
 <context>
     <name>NewDatabaseWizard</name>
     <message>
-        <source>Create a new KeePassXC database…</source>
-        <translation>KeePassXC ဒေတာဘေ့စ်အသစ် ဖန်တီးရန်…</translation>
+        <source>Create a new KeePass database…</source>
+        <translation>KeePass ဒေတာဘေ့စ်အသစ် ဖန်တီးရန်…</translation>
     </message>
     <message>
         <source>Root</source>
@@ -6924,7 +6924,7 @@ This version is not meant for production use.</source>
 <context>
     <name>PasskeyExportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Export</source>
+        <source>BitwardenXC - Passkey Export</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -6980,7 +6980,7 @@ Do you want to overwrite it?
 <context>
     <name>PasskeyImportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Import</source>
+        <source>BitwardenXC - Passkey Import</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -7112,8 +7112,8 @@ The following data is missing:
         <translation>စကားဝှက် သတ်မှတ်ပြီးပါပြီ၊ ပြောင်းလဲရန် သို့မဟုတ် ဖယ်ရှားရန် နှိပ်ပါ</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. KeePassXC can generate one for you.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;စကားဝှက်သည် သင့်ဒေတာဘေ့စ်ကို လုံခြုံစေရန် အဓိကနည်းလမ်း ဖြစ်သည်။&lt;/p&gt;&lt;p&gt;အားကောင်းသော စကားဝှက်များသည် ရှည်ပြီး သီးသန့်ဖြစ်သည်။ KeePassXC သည် သင့်အတွက် ထိုကဲ့သို့စကားဝှက်တစ်ခု ထုတ်လုပ်ပေးနိုင်သည်။&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. BitwardenXC can generate one for you.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;စကားဝှက်သည် သင့်ဒေတာဘေ့စ်ကို လုံခြုံစေရန် အဓိကနည်းလမ်း ဖြစ်သည်။&lt;/p&gt;&lt;p&gt;အားကောင်းသော စကားဝှက်များသည် ရှည်ပြီး သီးသန့်ဖြစ်သည်။ BitwardenXC သည် သင့်အတွက် ထိုကဲ့သို့စကားဝှက်တစ်ခု ထုတ်လုပ်ပေးနိုင်သည်။&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Passwords do not match.</source>
@@ -7468,8 +7468,8 @@ Do you want to overwrite it?</source>
 <context>
     <name>PickcharsDialog</name>
     <message>
-        <source>KeePassXC - Pick Characters</source>
-        <translation>KeePassXC - စာလုံးများ ရွေးရန်</translation>
+        <source>BitwardenXC - Pick Characters</source>
+        <translation>BitwardenXC - စာလုံးများ ရွေးရန်</translation>
     </message>
     <message>
         <source>Select characters to type, navigate with arrow keys, Ctrl + S submits.</source>
@@ -7565,8 +7565,8 @@ Do you want to overwrite it?</source>
         <translation>မက်ဆေ့ချ် ကုဒ်ဖြင့်ပြောင်းခြင်း မအောင်မြင်ပါ။</translation>
     </message>
     <message>
-        <source>KeePassXC association failed, try again</source>
-        <translation>KeePassXC နှင့် ဆက်စပ်ခြင်း မအောင်မြင်ပါ၊ ထပ်မံကြိုးစားပါ</translation>
+        <source>BitwardenXC association failed, try again</source>
+        <translation>BitwardenXC နှင့် ဆက်စပ်ခြင်း မအောင်မြင်ပါ၊ ထပ်မံကြိုးစားပါ</translation>
     </message>
     <message>
         <source>Encryption key is not recognized</source>
@@ -8655,11 +8655,11 @@ Available commands:
         <translation>စကားဝှက်သော့ဖိုင် %1 ကို တင်ခြင်း မအောင်မြင်ပါ - %2</translation>
     </message>
     <message>
-        <source>WARNING: You are using an old key file format which KeePassXC may
+        <source>WARNING: You are using an old key file format which BitwardenXC may
 stop supporting in the future.
 
 Please consider generating a new key file.</source>
-        <translation>သတိပေးချက် - သင်သည် KeePassXC မှ
+        <translation>သတိပေးချက် - သင်သည် BitwardenXC မှ
 အနာဂတ်တွင် ပံ့ပိုးခြင်း ရပ်တန့်နိုင်သည့် စကားဝှက်သော့ဖိုင် ဖောမက်ဟောင်းကို အသုံးပြုနေသည်။
 
 ကျေးဇူးပြု၍ စကားဝှက်သော့ဖိုင်သစ်ကို ထုတ်လုပ်ရန် စဉ်းစားပေးပါ။‌</translation>
@@ -9037,8 +9037,8 @@ CPU တည်ဆောက်ပုံ - %2
         <translation>မျှော်လင့်မထားသော စကားဝှက်သော့ဖိုင် အချက်အလက် ဖြစ်သည်။ စကားဝှက်သော့ဖိုင် ပျက်စီးခြင်း ဖြစ်နိုင်သည်။</translation>
     </message>
     <message>
-        <source>KeePassXC - cross-platform password manager</source>
-        <translation>KeePassXC - ပလက်ဖောင်းအများတွင်သုံးရန် စကားဝှက် မန်နေဂျာ</translation>
+        <source>BitwardenXC - cross-platform password manager</source>
+        <translation>BitwardenXC - ပလက်ဖောင်းအများတွင်သုံးရန် စကားဝှက် မန်နေဂျာ</translation>
     </message>
     <message>
         <source>filenames of the password databases to open (*.kdbx)</source>
@@ -9069,20 +9069,20 @@ CPU တည်ဆောက်ပုံ - %2
         <translation>ဒေတာဘေ့စ်ကို လော့ချ၍မရပါ။</translation>
     </message>
     <message>
-        <source>Another instance of KeePassXC is already running.</source>
-        <translation>KeePassXC ကို အခြားတစ်နေရာတွင် လည်ပတ်နေပါသည်။</translation>
+        <source>Another instance of BitwardenXC is already running.</source>
+        <translation>BitwardenXC ကို အခြားတစ်နေရာတွင် လည်ပတ်နေပါသည်။</translation>
     </message>
     <message>
-        <source>KeePassXC is not running. No open database to lock</source>
-        <translation>KeePassXC သည် အလုပ်မလုပ်ပါ။ လော့ခ်ဖွင့်ရန် ဒေတာဘေ့စ်မရှိပါ</translation>
+        <source>BitwardenXC is not running. No open database to lock</source>
+        <translation>BitwardenXC သည် အလုပ်မလုပ်ပါ။ လော့ခ်ဖွင့်ရန် ဒေတာဘေ့စ်မရှိပါ</translation>
     </message>
     <message>
         <source>Fatal error while testing the cryptographic functions.</source>
         <translation>ကုဒ်ထည့်ထားသော လုပ်ဆောင်ချက်များကို စမ်းသပ်စဉ် အရေးကြီးပြဿနာ ဖြစ်ခဲ့သည်။</translation>
     </message>
     <message>
-        <source>KeePassXC - Error</source>
-        <translation>KeePassXC - ပြဿနာ</translation>
+        <source>BitwardenXC - Error</source>
+        <translation>BitwardenXC - ပြဿနာ</translation>
     </message>
     <message>
         <source>Database password: </source>
@@ -9204,8 +9204,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Failed to init KeePassXC crypto.</source>
-        <translation>KeePassXC crypto စတင်ရန် မအောင်မြင်ခဲ့ပါ</translation>
+        <source>Failed to init BitwardenXC crypto.</source>
+        <translation>BitwardenXC crypto စတင်ရန် မအောင်မြင်ခဲ့ပါ</translation>
     </message>
     <message>
         <source>Failed to encrypt key data.</source>
@@ -9725,8 +9725,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation>အစီရင်ခံစာများမှ ဖယ်ထားသော ဖြည့်သွင်းချက်များကိုပါ ပြသပါ</translation>
     </message>
     <message>
-        <source>This build of KeePassXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
-        <translation>ဤ KeePassXC တည်ဆောက်မှုတွင် ကွန်ရက်လုပ်ဆောင်ချက်များ မရှိပါ။ သင့်စကားဝှက်များကို Have I Been Pwned ဒေတာဘေ့စ်များနှင့် တိုက်၍စစ်ဆေးရန် ကွန်ရက်ချိတ်ဆက်ခြင်း လိုအပ်ပါသည်။</translation>
+        <source>This build of BitwardenXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
+        <translation>ဤ BitwardenXC တည်ဆောက်မှုတွင် ကွန်ရက်လုပ်ဆောင်ချက်များ မရှိပါ။ သင့်စကားဝှက်များကို Have I Been Pwned ဒေတာဘေ့စ်များနှင့် တိုက်၍စစ်ဆေးရန် ကွန်ရက်ချိတ်ဆက်ခြင်း လိုအပ်ပါသည်။</translation>
     </message>
     <message>
         <source>Congratulations, no exposed passwords!</source>
@@ -10194,8 +10194,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation>ရွေးချယ်စရာများ</translation>
     </message>
     <message>
-        <source>Enable KeepassXC Freedesktop.org Secret Service integration</source>
-        <translation>KeepassXC Freedesktop.org လျှို့ဝှက်ဝန်ဆောင်မှု ပေါင်းစပ်ထည့်သွင်းမှုကို ဖွင့်ပါ</translation>
+        <source>Enable BitwardenXC Freedesktop.org Secret Service integration</source>
+        <translation>BitwardenXC Freedesktop.org လျှို့ဝှက်ဝန်ဆောင်မှု ပေါင်းစပ်ထည့်သွင်းမှုကို ဖွင့်ပါ</translation>
     </message>
     <message>
         <source>General</source>
@@ -10572,8 +10572,8 @@ Example: JBSWY3DPEHPK3PXP</source>
 <context>
     <name>WelcomeWidget</name>
     <message>
-        <source>Start storing your passwords securely in a KeePassXC database</source>
-        <translation>သင့်စကားဝှက်များကို KeePassXC ဒေတာဘေ့စ်တွင် လုံခြုံစွာ စတင်သိမ်းဆည်းပါ</translation>
+        <source>Start storing your passwords securely in a BitwardenXC database</source>
+        <translation>သင့်စကားဝှက်များကို BitwardenXC ဒေတာဘေ့စ်တွင် လုံခြုံစွာ စတင်သိမ်းဆည်းပါ</translation>
     </message>
     <message>
         <source>Recent databases</source>
@@ -10584,8 +10584,8 @@ Example: JBSWY3DPEHPK3PXP</source>
         <translation>မကြာသေးမီက ဒေတာဘေ့စ်တစ်ခုကို ဖွင့်ပါ</translation>
     </message>
     <message>
-        <source>Welcome to KeePassXC %1</source>
-        <translation>KeePassXC %1 မှ ကြိုဆိုပါသည်</translation>
+        <source>Welcome to BitwardenXC %1</source>
+        <translation>BitwardenXC %1 မှ ကြိုဆိုပါသည်</translation>
     </message>
     <message>
         <source>Create Database</source>

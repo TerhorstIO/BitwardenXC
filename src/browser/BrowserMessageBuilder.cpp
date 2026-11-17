@@ -105,7 +105,7 @@ QString BrowserMessageBuilder::getErrorMessage(const int errorCode) const
     case ERROR_KEEPASS_CANNOT_ENCRYPT_MESSAGE:
         return QObject::tr("Message encryption failed.");
     case ERROR_KEEPASS_ASSOCIATION_FAILED:
-        return QObject::tr("KeePassXC association failed, try again");
+        return QObject::tr("BitwardenXC association failed, try again");
     case ERROR_KEEPASS_ENCRYPTION_KEY_UNRECOGNIZED:
         return QObject::tr("Encryption key is not recognized");
     case ERROR_KEEPASS_INCORRECT_ACTION:

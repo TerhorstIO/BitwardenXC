@@ -17,7 +17,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>KeePassXC - Passkey credentials</string>
+   <string>BitwardenXC - Passkey credentials</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

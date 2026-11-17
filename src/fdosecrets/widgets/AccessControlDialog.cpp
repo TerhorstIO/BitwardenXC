@@ -82,7 +82,7 @@ AccessControlDialog::AccessControlDialog(QWindow* parent,
 
     QString tooltip = QStringLiteral("<p align='justify'>%1</p>")
                           .arg(tr("Your decision will be remembered for the duration while both the requesting client "
-                                  "AND KeePassXC are running."));
+                                  "AND BitwardenXC are running."));
 
     m_rememberCheck = new QCheckBox(tr("Remember"), this);
     m_rememberCheck->setObjectName("rememberCheck"); // for testing

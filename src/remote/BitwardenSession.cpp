@@ -1081,7 +1081,7 @@ QSharedPointer<Database> BitwardenSession::makeDatabase(const VaultSnapshot& sna
     container->setProperty("bitwardenVaultRoots", true);
     auto* root = new Group();
     root->setUuid(m_rootId);
-    root->setName(QObject::tr("Vault"));
+    root->setName(QCoreApplication::translate("BitwardenSession", "Private"));
     root->setParent(container);
 
     const auto organizationGroups = buildOrganizationGroups(container, snapshot);

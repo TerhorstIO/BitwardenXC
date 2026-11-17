@@ -201,7 +201,7 @@
           </size>
          </property>
          <property name="text">
-          <string>This build of KeePassXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</string>
+          <string>This build of BitwardenXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>

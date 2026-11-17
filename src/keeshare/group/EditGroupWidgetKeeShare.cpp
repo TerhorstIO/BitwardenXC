@@ -119,7 +119,7 @@ void EditGroupWidgetKeeShare::updateSharingState()
             }
         }
         if (!supported) {
-            m_ui->messageWidget->showMessage(tr("Your KeePassXC version does not support sharing this container type.\n"
+            m_ui->messageWidget->showMessage(tr("Your BitwardenXC version does not support sharing this container type.\n"
                                                 "Supported extensions are: %1.")
                                                  .arg(supportedExtensions.join(", ")),
                                              MessageWidget::Warning);

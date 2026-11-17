@@ -251,7 +251,7 @@ void DatabaseOpenWidget::load(const QString& filename)
     m_ui->fileNameLabel->setRawText(m_filename);
 
     // Set the public name if defined
-    auto label = tr("Unlock KeePassXC Database");
+    auto label = tr("Unlock BitwardenXC Database");
     if (!m_db->publicName().isEmpty()) {
         label.append(QString(": %1").arg(m_db->publicName()));
     }
@@ -354,10 +354,10 @@ void DatabaseOpenWidget::openDatabase()
             msgBox->setIcon(QMessageBox::Warning);
             msgBox->setWindowTitle(tr("Database Version Mismatch"));
             msgBox->setText(tr("The database you are trying to open was most likely\n"
-                               "created by a newer version of KeePassXC.\n\n"
+                               "created by a newer version of BitwardenXC.\n\n"
                                "You can try to open it anyway, but it may be incomplete\n"
                                "and saving any changes may incur data loss.\n\n"
-                               "We recommend you update your KeePassXC installation."));
+                               "We recommend you update your BitwardenXC installation."));
             auto btn = msgBox->addButton(tr("Open database anyway"), QMessageBox::ButtonRole::AcceptRole);
             msgBox->setDefaultButton(btn);
             msgBox->addButton(QMessageBox::Cancel);
@@ -453,7 +453,7 @@ QSharedPointer<CompositeKey> DatabaseOpenWidget::buildDatabaseKey()
             && !config()->get(Config::Messages_NoLegacyKeyFileWarning).toBool()) {
             QMessageBox legacyWarning;
             legacyWarning.setWindowTitle(tr("Old key file format"));
-            legacyWarning.setText(tr("You are using an old key file format which KeePassXC may<br>"
+            legacyWarning.setText(tr("You are using an old key file format which BitwardenXC may<br>"
                                      "stop supporting in the future.<br><br>"
                                      "Please consider generating a new key file by going to:<br>"
                                      "<strong>Database &gt; Database Security &gt; Change Key File.</strong><br>"));
@@ -525,7 +525,7 @@ bool DatabaseOpenWidget::browseKeyFile()
     }
     if (filename.endsWith(".kdbx")
         && MessageBox::warning(this,
-                               tr("KeePassXC database file selected"),
+                               tr("KeePass database file selected"),
                                tr("The file you selected looks like a database file.\nA database file is NOT a key "
                                   "file!\n\nAre you sure you want to continue with this file?."),
                                MessageBox::Button::Yes | MessageBox::Button::Cancel,

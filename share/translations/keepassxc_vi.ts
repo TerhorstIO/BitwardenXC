@@ -10,8 +10,8 @@
         <translation>Giới thiệu</translation>
     </message>
     <message>
-        <source>Report bugs at: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
-        <translation>Báo cáo lỗi tại: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</translation>
+        <source>Report bugs at: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
+        <translation>Báo cáo lỗi tại: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</translation>
     </message>
     <message>
         <source>KeePassXC is distributed under the terms of the GNU General Public License (GPL) version 2 or (at your option) version 3.</source>
@@ -49,8 +49,8 @@
 <context>
     <name>AccessControlDialog</name>
     <message>
-        <source>KeePassXC -  Access Request</source>
-        <translation>KeePassXC - Yêu cầu truy cập</translation>
+        <source>BitwardenXC -  Access Request</source>
+        <translation>BitwardenXC - Yêu cầu truy cập</translation>
     </message>
     <message>
         <source>Non-existing/inaccessible executable path. Please double-check the client is legit.</source>
@@ -81,8 +81,8 @@
         <translation>Chi tiết</translation>
     </message>
     <message>
-        <source>Your decision will be remembered for the duration while both the requesting client AND KeePassXC are running.</source>
-        <translation>Quyết định của bạn sẽ được ghi nhớ trong suốt thời gian cả ứng dụng yêu cầu VÀ KeePassXC đang chạy.</translation>
+        <source>Your decision will be remembered for the duration while both the requesting client AND BitwardenXC are running.</source>
+        <translation>Quyết định của bạn sẽ được ghi nhớ trong suốt thời gian cả ứng dụng yêu cầu VÀ BitwardenXC đang chạy.</translation>
     </message>
     <message>
         <source>Remember</source>
@@ -249,16 +249,16 @@
         <translation>Bạn có chắc chắn muốn đặt lại tất cả cài đặt về mặc định không?</translation>
     </message>
     <message>
-        <source>Import KeePassXC Settings</source>
-        <translation>Nhập cài đặt KeePassXC</translation>
+        <source>Import BitwardenXC Settings</source>
+        <translation>Nhập cài đặt BitwardenXC</translation>
     </message>
     <message>
         <source>Failed to import settings from %1, not a valid settings file.</source>
         <translation>Không thể nhập cài đặt từ %1, không phải tệp cài đặt hợp lệ.</translation>
     </message>
     <message>
-        <source>Export KeePassXC Settings</source>
-        <translation>Xuất cài đặt KeePassXC</translation>
+        <source>Export BitwardenXC Settings</source>
+        <translation>Xuất cài đặt BitwardenXC</translation>
     </message>
     <message>
         <source>Small</source>
@@ -285,7 +285,7 @@
         <translation type="unfinished"/>
     </message>
     <message>
-        <source>Restart KeePassXC to apply the Auto-Type desktop portals preference.</source>
+        <source>Restart BitwardenXC to apply the Auto-Type desktop portals preference.</source>
         <translation type="unfinished"/>
     </message>
 </context>
@@ -300,12 +300,12 @@
         <translation>Khởi động</translation>
     </message>
     <message>
-        <source>Start only a single instance of KeePassXC</source>
-        <translation>Chỉ khởi động một phiên bản KeePassXC</translation>
+        <source>Start only a single instance of BitwardenXC</source>
+        <translation>Chỉ khởi động một phiên bản BitwardenXC</translation>
     </message>
     <message>
-        <source>Automatically launch KeePassXC at system startup</source>
-        <translation>Tự động khởi chạy KeePassXC khi hệ thống khởi động</translation>
+        <source>Automatically launch BitwardenXC at system startup</source>
+        <translation>Tự động khởi chạy BitwardenXC khi hệ thống khởi động</translation>
     </message>
     <message>
         <source>Minimize window at application startup</source>
@@ -778,12 +778,12 @@
         <translation>Yêu cầu quyền</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>KeePassXC yêu cầu quyền Trợ năng để thực hiện Tự động nhập cấp mục. Nếu bạn đã cấp quyền, bạn có thể phải khởi động lại KeePassXC.</translation>
+        <source>BitwardenXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>BitwardenXC yêu cầu quyền Trợ năng để thực hiện Tự động nhập cấp mục. Nếu bạn đã cấp quyền, bạn có thể phải khởi động lại BitwardenXC.</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>KeePassXC yêu cầu quyền Trợ năng và Ghi màn hình để thực hiện Tự động nhập toàn cục. Ghi màn hình cần thiết để sử dụng tiêu đề cửa sổ tìm mục. Nếu bạn đã cấp quyền, bạn có thể phải khởi động lại KeePassXC.</translation>
+        <source>BitwardenXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>BitwardenXC yêu cầu quyền Trợ năng và Ghi màn hình để thực hiện Tự động nhập toàn cục. Ghi màn hình cần thiết để sử dụng tiêu đề cửa sổ tìm mục. Nếu bạn đã cấp quyền, bạn có thể phải khởi động lại BitwardenXC.</translation>
     </message>
     <message>
         <source>Invalid entry provided</source>
@@ -889,8 +889,8 @@
 <context>
     <name>AutoTypeSelectDialog</name>
     <message>
-        <source>Auto-Type - KeePassXC</source>
-        <translation>Tự động nhập - KeePassXC</translation>
+        <source>Auto-Type - BitwardenXC</source>
+        <translation>Tự động nhập - BitwardenXC</translation>
     </message>
     <message>
         <source>Double click a row to perform Auto-Type or find an entry using the search:</source>
@@ -993,8 +993,8 @@ Ctrl+Shift+4 - Sao chép URL&lt;br/&gt;
 <context>
     <name>BrowserAccessControlDialog</name>
     <message>
-        <source>KeePassXC - Browser Access Request</source>
-        <translation>KeePassXC - Yêu cầu truy cập trình duyệt</translation>
+        <source>BitwardenXC - Browser Access Request</source>
+        <translation>BitwardenXC - Yêu cầu truy cập trình duyệt</translation>
     </message>
     <message>
         <source>%1 is requesting access to the following entries:</source>
@@ -1046,8 +1046,8 @@ Please select the correct database for saving credentials.</source>
 Vui lòng chọn cơ sở dữ liệu chính xác để lưu thông tin đăng nhập.</translation>
     </message>
     <message>
-        <source>KeePassXC - Select Database</source>
-        <translation>KeePassXC - Chọn cơ sở dữ liệu</translation>
+        <source>BitwardenXC - Select Database</source>
+        <translation>BitwardenXC - Chọn cơ sở dữ liệu</translation>
     </message>
 </context>
 <context>
@@ -1085,8 +1085,8 @@ Vui lòng chọn cơ sở dữ liệu chính xác để lưu thông tin đăng n
         <translation>Tên người dùng: %1</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
-        <translation>KeePassXC - Thông tin đăng nhập Passkey</translation>
+        <source>BitwardenXC - Passkey credentials</source>
+        <translation>BitwardenXC - Thông tin đăng nhập Passkey</translation>
     </message>
     <message>
         <source>Add to existing entry</source>
@@ -1160,44 +1160,44 @@ Bạn có muốn xóa mục này không?
         <translation>%1 (Passkey)</translation>
     </message>
     <message>
-        <source>KeePassXC - Create a new group</source>
-        <translation>KeePassXC - Tạo nhóm mới</translation>
+        <source>BitwardenXC - Create a new group</source>
+        <translation>BitwardenXC - Tạo nhóm mới</translation>
     </message>
     <message>
         <source>Disable</source>
         <translation>Tắt</translation>
     </message>
     <message>
-        <source>KeePassXC - Overwrite existing key?</source>
-        <translation>KeePassXC - Ghi đè khóa hiện có?</translation>
+        <source>BitwardenXC - Overwrite existing key?</source>
+        <translation>BitwardenXC - Ghi đè khóa hiện có?</translation>
     </message>
     <message>
-        <source>KeePassXC - Update Entry</source>
-        <translation>KeePassXC - Cập nhật mục</translation>
+        <source>BitwardenXC - Update Entry</source>
+        <translation>BitwardenXC - Cập nhật mục</translation>
     </message>
     <message>
-        <source>KeePassXC - Delete entry</source>
-        <translation>KeePassXC - Xóa mục</translation>
+        <source>BitwardenXC - Delete entry</source>
+        <translation>BitwardenXC - Xóa mục</translation>
     </message>
     <message>
-        <source>KeePassXC - New key association request</source>
-        <translation>KeePassXC - Yêu cầu liên kết khóa mới</translation>
+        <source>BitwardenXC - New key association request</source>
+        <translation>BitwardenXC - Yêu cầu liên kết khóa mới</translation>
     </message>
     <message>
         <source>Passkey</source>
         <translation>Passkey</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
-        <translation>KeePassXC - Thông tin đăng nhập Passkey</translation>
+        <source>BitwardenXC - Passkey credentials</source>
+        <translation>BitwardenXC - Thông tin đăng nhập Passkey</translation>
     </message>
     <message>
         <source>Register a new passkey to this entry:</source>
         <translation>Đăng ký passkey mới cho mục này:</translation>
     </message>
     <message>
-        <source>KeePassXC - Update passkey</source>
-        <translation>KeePassXC - Cập nhật passkey</translation>
+        <source>BitwardenXC - Update passkey</source>
+        <translation>BitwardenXC - Cập nhật passkey</translation>
     </message>
     <message>
         <source>Entry already has a passkey.
@@ -1338,8 +1338,8 @@ Bạn có muốn ghi đè passkey trong %1 - %2 không?</translation>
         <translation>Không nhắc di chuyển cài đặt KeePassHTTP.</translation>
     </message>
     <message>
-        <source>Updates KeePassXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
-        <translation>Tự động cập nhật đường dẫn nhị phân KeePassXC hoặc keepassxc-proxy vào script native messaging khi khởi động.</translation>
+        <source>Updates BitwardenXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
+        <translation>Tự động cập nhật đường dẫn nhị phân BitwardenXC hoặc keepassxc-proxy vào script native messaging khi khởi động.</translation>
     </message>
     <message>
         <source>Update native messaging manifest files at startup</source>
@@ -1686,15 +1686,15 @@ Cơ sở dữ liệu sao lưu nằm tại %2</translation>
 <context>
     <name>DatabaseOpenDialog</name>
     <message>
-        <source>Unlock Database - KeePassXC</source>
-        <translation>Mở khóa cơ sở dữ liệu - KeePassXC</translation>
+        <source>Unlock Database - BitwardenXC</source>
+        <translation>Mở khóa cơ sở dữ liệu - BitwardenXC</translation>
     </message>
 </context>
 <context>
     <name>DatabaseOpenWidget</name>
     <message>
-        <source>Unlock KeePassXC Database</source>
-        <translation>Mở khóa cơ sở dữ liệu KeePassXC</translation>
+        <source>Unlock BitwardenXC Database</source>
+        <translation>Mở khóa cơ sở dữ liệu BitwardenXC</translation>
     </message>
     <message>
         <source>Enter Password:</source>
@@ -1742,19 +1742,19 @@ Cơ sở dữ liệu sao lưu nằm tại %2</translation>
     </message>
     <message>
         <source>The database you are trying to open was most likely
-created by a newer version of KeePassXC.
+created by a newer version of BitwardenXC.
 
 You can try to open it anyway, but it may be incomplete
 and saving any changes may incur data loss.
 
-We recommend you update your KeePassXC installation.</source>
+We recommend you update your BitwardenXC installation.</source>
         <translation>Cơ sở dữ liệu bạn đang cố mở có thể
-được tạo bởi phiên bản KeePassXC mới hơn.
+được tạo bởi phiên bản BitwardenXC mới hơn.
 
 Bạn có thể thử mở nó, nhưng nó có thể không đầy đủ
 và lưu bất kỳ thay đổi nào có thể gây mất dữ liệu.
 
-Chúng tôi khuyên bạn nên cập nhật KeePassXC.</translation>
+Chúng tôi khuyên bạn nên cập nhật BitwardenXC.</translation>
     </message>
     <message>
         <source>Open database anyway</source>
@@ -1791,8 +1791,8 @@ Bạn có muốn thử lại với mật khẩu &quot;trống&quot; không?
         <translation>Định dạng tệp khóa cũ</translation>
     </message>
     <message>
-        <source>You are using an old key file format which KeePassXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
-        <translation>Bạn đang sử dụng định dạng tệp khóa cũ mà KeePassXC có thể&lt;br&gt;ngừng hỗ trợ trong tương lai.&lt;br&gt;&lt;br&gt;Vui lòng xem xét tạo tệp khóa mới bằng cách vào:&lt;br&gt;&lt;strong&gt;Cơ sở dữ liệu &amp;gt; Bảo mật cơ sở dữ liệu &amp;gt; Thay đổi tệp khóa.&lt;/strong&gt;&lt;br&gt;</translation>
+        <source>You are using an old key file format which BitwardenXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
+        <translation>Bạn đang sử dụng định dạng tệp khóa cũ mà BitwardenXC có thể&lt;br&gt;ngừng hỗ trợ trong tương lai.&lt;br&gt;&lt;br&gt;Vui lòng xem xét tạo tệp khóa mới bằng cách vào:&lt;br&gt;&lt;strong&gt;Cơ sở dữ liệu &amp;gt; Bảo mật cơ sở dữ liệu &amp;gt; Thay đổi tệp khóa.&lt;/strong&gt;&lt;br&gt;</translation>
     </message>
     <message>
         <source>Don&apos;t show this warning again</source>
@@ -1845,8 +1845,8 @@ If you don&apos;t have a key file or don&apos;t know what that is, you don&apos;
 Nếu bạn không có tệp khóa hoặc không biết đó là gì, bạn không cần chọn.</translation>
     </message>
     <message>
-        <source>KeePassXC database file selected</source>
-        <translation>Đã chọn tệp cơ sở dữ liệu KeePassXC</translation>
+        <source>KeePass database file selected</source>
+        <translation>Đã chọn tệp cơ sở dữ liệu KeePass</translation>
     </message>
     <message>
         <source>The file you selected looks like a database file.
@@ -2000,11 +2000,11 @@ This may prevent connection to the browser plugin.</source>
 Điều này có thể ngăn kết nối đến plugin trình duyệt.</translation>
     </message>
     <message>
-        <source>No shared encryption keys found in KeePassXC settings.</source>
-        <translation>Không tìm thấy khóa mã hóa được chia sẻ trong cài đặt KeePassXC.</translation>
+        <source>No shared encryption keys found in BitwardenXC settings.</source>
+        <translation>Không tìm thấy khóa mã hóa được chia sẻ trong cài đặt BitwardenXC.</translation>
     </message>
     <message numerus="yes">
-        <source>Successfully removed %n encryption key(s) from KeePassXC settings.</source>
+        <source>Successfully removed %n encryption key(s) from BitwardenXC settings.</source>
         <translation type="unfinished"><numerusform></numerusform></translation>
     </message>
     <message>
@@ -2867,9 +2867,9 @@ Lưu thay đổi?</translation>
         <translation>Tắt lưu an toàn?</translation>
     </message>
     <message>
-        <source>KeePassXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
+        <source>BitwardenXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
 Disable safe saves and try again?</source>
-        <translation>KeePassXC đã không thể lưu cơ sở dữ liệu nhiều lần. Điều này có thể do dịch vụ đồng bộ tệp đang giữ khóa trên tệp lưu.
+        <translation>BitwardenXC đã không thể lưu cơ sở dữ liệu nhiều lần. Điều này có thể do dịch vụ đồng bộ tệp đang giữ khóa trên tệp lưu.
 Tắt lưu an toàn và thử lại?</translation>
     </message>
     <message>
@@ -3780,9 +3780,9 @@ Bạn có muốn sửa nó không?</translation>
         <translation>Đồng bộ</translation>
     </message>
     <message>
-        <source>Your KeePassXC version does not support sharing this container type.
+        <source>Your BitwardenXC version does not support sharing this container type.
 Supported extensions are: %1.</source>
-        <translation>Phiên bản KeePassXC của bạn không hỗ trợ chia sẻ loại container này.
+        <translation>Phiên bản BitwardenXC của bạn không hỗ trợ chia sẻ loại container này.
 Các phần mở rộng được hỗ trợ là: %1.</translation>
     </message>
     <message>
@@ -4744,7 +4744,7 @@ This will leave your passwords and sensitive information vulnerable!
 <context>
     <name>GlobalShortcutsPortal</name>
     <message>
-        <source>KeePassXC - Global Shortcuts</source>
+        <source>BitwardenXC - Global Shortcuts</source>
         <translation type="unfinished"/>
     </message>
     <message>
@@ -5725,8 +5725,8 @@ Nếu điều này xảy ra lại, tệp cơ sở dữ liệu của bạn có th
         <translation>Định dạng tệp khóa cũ</translation>
     </message>
     <message>
-        <source>You selected a key file in an old format which KeePassXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
-        <translation>Bạn đã chọn tệp khóa ở định dạng cũ mà KeePassXC&lt;br&gt;có thể ngừng hỗ trợ trong tương lai.&lt;br&gt;&lt;br&gt;Vui lòng xem xét tạo tệp khóa mới thay thế.</translation>
+        <source>You selected a key file in an old format which BitwardenXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
+        <translation>Bạn đã chọn tệp khóa ở định dạng cũ mà BitwardenXC&lt;br&gt;có thể ngừng hỗ trợ trong tương lai.&lt;br&gt;&lt;br&gt;Vui lòng xem xét tạo tệp khóa mới thay thế.</translation>
     </message>
     <message>
         <source>Error loading the key file '%1'
@@ -6495,7 +6495,7 @@ Bạn có chắc chắn muốn tiếp tục với tệp này không?</translatio
         <translation>Thiết lập đồng bộ từ xa…</translation>
     </message>
     <message>
-        <source>WARNING: You are using a development snapshot build of KeePassXC.
+        <source>WARNING: You are using a development snapshot build of BitwardenXC.
 Maintain a backup of your databases in the event of unknown bugs.
 This version is not meant for production use.</source>
         <translation type="unfinished"/>
@@ -6700,8 +6700,8 @@ This version is not meant for production use.</source>
 <context>
     <name>NewDatabaseWizard</name>
     <message>
-        <source>Create a new KeePassXC database…</source>
-        <translation>Tạo cơ sở dữ liệu KeePassXC mới…</translation>
+        <source>Create a new KeePass database…</source>
+        <translation>Tạo cơ sở dữ liệu KeePass mới…</translation>
     </message>
     <message>
         <source>Root</source>
@@ -6975,8 +6975,8 @@ This version is not meant for production use.</source>
 <context>
     <name>PasskeyExportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Export</source>
-        <translation>KeePassXC - Xuất Passkey</translation>
+        <source>BitwardenXC - Passkey Export</source>
+        <translation>BitwardenXC - Xuất Passkey</translation>
     </message>
     <message>
         <source>Filenames will be generated with title and .passkey file extension.</source>
@@ -7033,8 +7033,8 @@ Bạn có muốn ghi đè nó không?
 <context>
     <name>PasskeyImportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Import</source>
-        <translation>KeePassXC - Nhập Passkey</translation>
+        <source>BitwardenXC - Passkey Import</source>
+        <translation>BitwardenXC - Nhập Passkey</translation>
     </message>
     <message>
         <source>Username: %1</source>
@@ -7167,8 +7167,8 @@ Dữ liệu sau bị thiếu:
         <translation>Mật khẩu đã đặt, nhấp để thay đổi hoặc xóa</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. KeePassXC can generate one for you.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;Mật khẩu là phương pháp chính để bảo mật cơ sở dữ liệu của bạn.&lt;/p&gt;&lt;p&gt;Mật khẩu tốt là dài và duy nhất. KeePassXC có thể tạo một mật khẩu cho bạn.&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. BitwardenXC can generate one for you.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Mật khẩu là phương pháp chính để bảo mật cơ sở dữ liệu của bạn.&lt;/p&gt;&lt;p&gt;Mật khẩu tốt là dài và duy nhất. BitwardenXC có thể tạo một mật khẩu cho bạn.&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Passwords do not match.</source>
@@ -7523,8 +7523,8 @@ Bạn có muốn ghi đè nó không?</translation>
 <context>
     <name>PickcharsDialog</name>
     <message>
-        <source>KeePassXC - Pick Characters</source>
-        <translation>KeePassXC - Chọn ký tự</translation>
+        <source>BitwardenXC - Pick Characters</source>
+        <translation>BitwardenXC - Chọn ký tự</translation>
     </message>
     <message>
         <source>Select characters to type, navigate with arrow keys, Ctrl + S submits.</source>
@@ -7620,8 +7620,8 @@ Bạn có muốn ghi đè nó không?</translation>
         <translation>Mã hóa thông điệp thất bại.</translation>
     </message>
     <message>
-        <source>KeePassXC association failed, try again</source>
-        <translation>Liên kết KeePassXC thất bại, thử lại</translation>
+        <source>BitwardenXC association failed, try again</source>
+        <translation>Liên kết BitwardenXC thất bại, thử lại</translation>
     </message>
     <message>
         <source>Encryption key is not recognized</source>
@@ -8709,11 +8709,11 @@ Các lệnh khả dụng:
         <translation>Không thể tải tệp khóa %1: %2</translation>
     </message>
     <message>
-        <source>WARNING: You are using an old key file format which KeePassXC may
+        <source>WARNING: You are using an old key file format which BitwardenXC may
 stop supporting in the future.
 
 Please consider generating a new key file.</source>
-        <translation>CẢNH BÁO: Bạn đang sử dụng định dạng tệp khóa cũ mà KeePassXC có thể
+        <translation>CẢNH BÁO: Bạn đang sử dụng định dạng tệp khóa cũ mà BitwardenXC có thể
 ngừng hỗ trợ trong tương lai.
 
 Vui lòng xem xét tạo tệp khóa mới.</translation>
@@ -9091,8 +9091,8 @@ Kernel: %3 %4</translation>
         <translation>Dữ liệu tệp khóa không mong đợi! Tệp khóa có thể bị hỏng.</translation>
     </message>
     <message>
-        <source>KeePassXC - cross-platform password manager</source>
-        <translation>KeePassXC - trình quản lý mật khẩu đa nền tảng</translation>
+        <source>BitwardenXC - cross-platform password manager</source>
+        <translation>BitwardenXC - trình quản lý mật khẩu đa nền tảng</translation>
     </message>
     <message>
         <source>filenames of the password databases to open (*.kdbx)</source>
@@ -9123,20 +9123,20 @@ Kernel: %3 %4</translation>
         <translation>Không thể khóa cơ sở dữ liệu.</translation>
     </message>
     <message>
-        <source>Another instance of KeePassXC is already running.</source>
-        <translation>Một phiên bản khác của KeePassXC đang chạy.</translation>
+        <source>Another instance of BitwardenXC is already running.</source>
+        <translation>Một phiên bản khác của BitwardenXC đang chạy.</translation>
     </message>
     <message>
-        <source>KeePassXC is not running. No open database to lock</source>
-        <translation>KeePassXC không chạy. Không có cơ sở dữ liệu nào đang mở để khóa</translation>
+        <source>BitwardenXC is not running. No open database to lock</source>
+        <translation>BitwardenXC không chạy. Không có cơ sở dữ liệu nào đang mở để khóa</translation>
     </message>
     <message>
         <source>Fatal error while testing the cryptographic functions.</source>
         <translation>Lỗi nghiêm trọng khi kiểm tra các hàm mã hóa.</translation>
     </message>
     <message>
-        <source>KeePassXC - Error</source>
-        <translation>KeePassXC - Lỗi</translation>
+        <source>BitwardenXC - Error</source>
+        <translation>BitwardenXC - Lỗi</translation>
     </message>
     <message>
         <source>Database password: </source>
@@ -9259,8 +9259,8 @@ Tùy chọn này đã lỗi thời, sử dụng --set-key-file thay thế.</tran
         <translation>Không có nhà cung cấp Mở khóa nhanh nào khả dụng</translation>
     </message>
     <message>
-        <source>Failed to init KeePassXC crypto.</source>
-        <translation>Không thể khởi tạo mã hóa KeePassXC.</translation>
+        <source>Failed to init BitwardenXC crypto.</source>
+        <translation>Không thể khởi tạo mã hóa BitwardenXC.</translation>
     </message>
     <message>
         <source>Failed to encrypt key data.</source>
@@ -9780,8 +9780,8 @@ Tùy chọn này đã lỗi thời, sử dụng --set-key-file thay thế.</tran
         <translation>Cũng hiển thị các mục đã bị loại trừ khỏi báo cáo</translation>
     </message>
     <message>
-        <source>This build of KeePassXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
-        <translation>Bản dựng KeePassXC này không có chức năng mạng. Cần có mạng để kiểm tra mật khẩu của bạn với cơ sở dữ liệu Have I Been Pwned.</translation>
+        <source>This build of BitwardenXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
+        <translation>Bản dựng BitwardenXC này không có chức năng mạng. Cần có mạng để kiểm tra mật khẩu của bạn với cơ sở dữ liệu Have I Been Pwned.</translation>
     </message>
     <message>
         <source>Congratulations, no exposed passwords!</source>
@@ -10249,8 +10249,8 @@ Tùy chọn này đã lỗi thời, sử dụng --set-key-file thay thế.</tran
         <translation>Tùy chọn</translation>
     </message>
     <message>
-        <source>Enable KeepassXC Freedesktop.org Secret Service integration</source>
-        <translation>Bật tích hợp Dịch vụ bí mật Freedesktop.org của KeepassXC</translation>
+        <source>Enable BitwardenXC Freedesktop.org Secret Service integration</source>
+        <translation>Bật tích hợp Dịch vụ bí mật Freedesktop.org của BitwardenXC</translation>
     </message>
     <message>
         <source>General</source>
@@ -10627,8 +10627,8 @@ Ví dụ: JBSWY3DPEHPK3PXP</translation>
 <context>
     <name>WelcomeWidget</name>
     <message>
-        <source>Start storing your passwords securely in a KeePassXC database</source>
-        <translation>Bắt đầu lưu trữ mật khẩu của bạn một cách an toàn trong cơ sở dữ liệu KeePassXC</translation>
+        <source>Start storing your passwords securely in a BitwardenXC database</source>
+        <translation>Bắt đầu lưu trữ mật khẩu của bạn một cách an toàn trong cơ sở dữ liệu BitwardenXC</translation>
     </message>
     <message>
         <source>Recent databases</source>
@@ -10639,8 +10639,8 @@ Ví dụ: JBSWY3DPEHPK3PXP</translation>
         <translation>Mở cơ sở dữ liệu gần đây</translation>
     </message>
     <message>
-        <source>Welcome to KeePassXC %1</source>
-        <translation>Chào mừng đến với KeePassXC %1</translation>
+        <source>Welcome to BitwardenXC %1</source>
+        <translation>Chào mừng đến với BitwardenXC %1</translation>
     </message>
     <message>
         <source>Create Database</source>

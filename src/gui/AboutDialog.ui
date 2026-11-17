@@ -90,7 +90,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string notr="true">Website: &lt;a href=&quot;https://keepassxc.org/&quot; style=&quot;text-decoration: underline&quot;&gt;https://keepassxc.org&lt;/a&gt;</string>
+          <string notr="true">Website: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC&quot; style=&quot;text-decoration: underline&quot;&gt;github.com/TerhorstIO/BitwardenXC&lt;/a&gt;</string>
          </property>
          <property name="openExternalLinks">
           <bool>true</bool>
@@ -100,7 +100,7 @@
        <item>
         <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>Report bugs at: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</string>
+          <string>Report bugs at: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</string>
          </property>
          <property name="openExternalLinks">
           <bool>true</bool>

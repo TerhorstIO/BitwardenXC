@@ -96,7 +96,7 @@
    <item>
     <widget class="QLabel" name="startLabel">
      <property name="text">
-      <string>Start storing your passwords securely in a KeePassXC database</string>
+      <string>Start storing your passwords securely in a BitwardenXC database</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>

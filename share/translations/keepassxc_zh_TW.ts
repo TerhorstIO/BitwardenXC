@@ -10,8 +10,8 @@
         <translation>關於</translation>
     </message>
     <message>
-        <source>Report bugs at: &lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
-        <translation>回報問題請至：&lt;a href=&quot;https://github.com/keepassxreboot/keepassxc/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</translation>
+        <source>Report bugs at: &lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</source>
+        <translation>回報問題請至：&lt;a href=&quot;https://github.com/TerhorstIO/BitwardenXC/issues&quot; style=&quot;text-decoration: underline;&quot;&gt;https://github.com&lt;/a&gt;</translation>
     </message>
     <message>
         <source>KeePassXC is distributed under the terms of the GNU General Public License (GPL) version 2 or (at your option) version 3.</source>
@@ -49,8 +49,8 @@
 <context>
     <name>AccessControlDialog</name>
     <message>
-        <source>KeePassXC -  Access Request</source>
-        <translation>KeePassXC -  存取請求</translation>
+        <source>BitwardenXC -  Access Request</source>
+        <translation>BitwardenXC -  存取請求</translation>
     </message>
     <message>
         <source>Non-existing/inaccessible executable path. Please double-check the client is legit.</source>
@@ -81,8 +81,8 @@
         <translation>詳情</translation>
     </message>
     <message>
-        <source>Your decision will be remembered for the duration while both the requesting client AND KeePassXC are running.</source>
-        <translation>在請求客戶端與 KeePassXC 同時執行期間，您的選擇會被記住。</translation>
+        <source>Your decision will be remembered for the duration while both the requesting client AND BitwardenXC are running.</source>
+        <translation>在請求客戶端與 BitwardenXC 同時執行期間，您的選擇會被記住。</translation>
     </message>
     <message>
         <source>Remember</source>
@@ -249,16 +249,16 @@
         <translation>您確定要重置所有設定回預設值？</translation>
     </message>
     <message>
-        <source>Import KeePassXC Settings</source>
-        <translation>匯入 KeePassXC 設定</translation>
+        <source>Import BitwardenXC Settings</source>
+        <translation>匯入 BitwardenXC 設定</translation>
     </message>
     <message>
         <source>Failed to import settings from %1, not a valid settings file.</source>
         <translation>從 %1 匯入設定失敗，並非有效的設定檔案。</translation>
     </message>
     <message>
-        <source>Export KeePassXC Settings</source>
-        <translation>匯出 KeePassXC 設定</translation>
+        <source>Export BitwardenXC Settings</source>
+        <translation>匯出 BitwardenXC 設定</translation>
     </message>
     <message>
         <source>Small</source>
@@ -285,8 +285,8 @@
         <translation>無</translation>
     </message>
     <message>
-        <source>Restart KeePassXC to apply the Auto-Type desktop portals preference.</source>
-        <translation>重啟 KeePassXC 以套用自動輸入桌面門戶選項。</translation>
+        <source>Restart BitwardenXC to apply the Auto-Type desktop portals preference.</source>
+        <translation>重啟 BitwardenXC 以套用自動輸入桌面門戶選項。</translation>
     </message>
 </context>
 <context>
@@ -300,12 +300,12 @@
         <translation>啟動</translation>
     </message>
     <message>
-        <source>Start only a single instance of KeePassXC</source>
-        <translation>只啟動單一 KeePassXC 程序</translation>
+        <source>Start only a single instance of BitwardenXC</source>
+        <translation>只啟動單一 BitwardenXC 程序</translation>
     </message>
     <message>
-        <source>Automatically launch KeePassXC at system startup</source>
-        <translation>系統開機時自動啟動 KeePassXC</translation>
+        <source>Automatically launch BitwardenXC at system startup</source>
+        <translation>系統開機時自動啟動 BitwardenXC</translation>
     </message>
     <message>
         <source>Minimize window at application startup</source>
@@ -778,12 +778,12 @@
         <translation>需要權限</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>KeePassXC 需要「輔助使用」權限才能執行項目層級的自動輸入。若您已授予權限，可能要重新啟動 KeePassXC。</translation>
+        <source>BitwardenXC requires the Accessibility permission in order to perform entry level Auto-Type. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>BitwardenXC 需要「輔助使用」權限才能執行項目層級的自動輸入。若您已授予權限，可能要重新啟動 BitwardenXC。</translation>
     </message>
     <message>
-        <source>KeePassXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart KeePassXC.</source>
-        <translation>KeePassXC 需要「輔助使用」和「螢幕錄製」權限以執行全域自動輸入。使用視窗標題尋找項目時需要螢幕錄製功能。若您已授予權限，可能要重新啟動 KeePassXC。</translation>
+        <source>BitwardenXC requires the Accessibility and Screen Recorder permission in order to perform global Auto-Type. Screen Recording is necessary to use the window title to find entries. If you already granted permission, you may have to restart BitwardenXC.</source>
+        <translation>BitwardenXC 需要「輔助使用」和「螢幕錄製」權限以執行全域自動輸入。使用視窗標題尋找項目時需要螢幕錄製功能。若您已授予權限，可能要重新啟動 BitwardenXC。</translation>
     </message>
     <message>
         <source>Invalid entry provided</source>
@@ -889,8 +889,8 @@
 <context>
     <name>AutoTypeSelectDialog</name>
     <message>
-        <source>Auto-Type - KeePassXC</source>
-        <translation>自動輸入 - KeePassXC</translation>
+        <source>Auto-Type - BitwardenXC</source>
+        <translation>自動輸入 - BitwardenXC</translation>
     </message>
     <message>
         <source>Double click a row to perform Auto-Type or find an entry using the search:</source>
@@ -993,8 +993,8 @@ Ctrl+Shift+4 - 複製 URL&lt;br/&gt;
 <context>
     <name>BrowserAccessControlDialog</name>
     <message>
-        <source>KeePassXC - Browser Access Request</source>
-        <translation>KeePassXC 瀏覽器擴充的存取要求</translation>
+        <source>BitwardenXC - Browser Access Request</source>
+        <translation>BitwardenXC 瀏覽器擴充的存取要求</translation>
     </message>
     <message>
         <source>%1 is requesting access to the following entries:</source>
@@ -1046,8 +1046,8 @@ Please select the correct database for saving credentials.</source>
 請選擇要保存憑證的資料庫。</translation>
     </message>
     <message>
-        <source>KeePassXC - Select Database</source>
-        <translation>KeePassXC - 選擇資料庫</translation>
+        <source>BitwardenXC - Select Database</source>
+        <translation>BitwardenXC - 選擇資料庫</translation>
     </message>
 </context>
 <context>
@@ -1085,8 +1085,8 @@ Please select the correct database for saving credentials.</source>
         <translation>使用者名稱：%1</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
-        <translation>KeePassXC - 通行密鑰憑證</translation>
+        <source>BitwardenXC - Passkey credentials</source>
+        <translation>BitwardenXC - 通行密鑰憑證</translation>
     </message>
     <message>
         <source>Add to existing entry</source>
@@ -1160,44 +1160,44 @@ Do you want to delete the entry?
         <translation>%1（通行密鑰）</translation>
     </message>
     <message>
-        <source>KeePassXC - Create a new group</source>
-        <translation>KeePassXC - 建立新群組</translation>
+        <source>BitwardenXC - Create a new group</source>
+        <translation>BitwardenXC - 建立新群組</translation>
     </message>
     <message>
         <source>Disable</source>
         <translation>停用</translation>
     </message>
     <message>
-        <source>KeePassXC - Overwrite existing key?</source>
-        <translation>KeePassXC - 覆蓋現有金鑰？</translation>
+        <source>BitwardenXC - Overwrite existing key?</source>
+        <translation>BitwardenXC - 覆蓋現有金鑰？</translation>
     </message>
     <message>
-        <source>KeePassXC - Update Entry</source>
-        <translation>KeePassXC - 更新項目</translation>
+        <source>BitwardenXC - Update Entry</source>
+        <translation>BitwardenXC - 更新項目</translation>
     </message>
     <message>
-        <source>KeePassXC - Delete entry</source>
-        <translation>KeePassXC - 刪除項目</translation>
+        <source>BitwardenXC - Delete entry</source>
+        <translation>BitwardenXC - 刪除項目</translation>
     </message>
     <message>
-        <source>KeePassXC - New key association request</source>
-        <translation>KeePassXC - 新的金鑰關聯請求</translation>
+        <source>BitwardenXC - New key association request</source>
+        <translation>BitwardenXC - 新的金鑰關聯請求</translation>
     </message>
     <message>
         <source>Passkey</source>
         <translation>通行密鑰</translation>
     </message>
     <message>
-        <source>KeePassXC - Passkey credentials</source>
-        <translation>KeePassXC - 通行密鑰憑證</translation>
+        <source>BitwardenXC - Passkey credentials</source>
+        <translation>BitwardenXC - 通行密鑰憑證</translation>
     </message>
     <message>
         <source>Register a new passkey to this entry:</source>
         <translation>註冊新的通行密鑰至此項目：</translation>
     </message>
     <message>
-        <source>KeePassXC - Update passkey</source>
-        <translation>KeePassXC - 更新通行密鑰</translation>
+        <source>BitwardenXC - Update passkey</source>
+        <translation>BitwardenXC - 更新通行密鑰</translation>
     </message>
     <message>
         <source>Entry already has a passkey.
@@ -1338,8 +1338,8 @@ Do you want to overwrite the passkey in %1 - %2?</source>
         <translation>不要提示 KeePassHTTP 設定移轉。</translation>
     </message>
     <message>
-        <source>Updates KeePassXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
-        <translation>啟動時，自動將 KeePassXC 或 keepassxc-proxy 二進位檔路徑更新至本地消息腳本。</translation>
+        <source>Updates BitwardenXC or keepassxc-proxy binary path automatically to native messaging scripts on startup.</source>
+        <translation>啟動時，自動將 BitwardenXC 或 keepassxc-proxy 二進位檔路徑更新至本地消息腳本。</translation>
     </message>
     <message>
         <source>Update native messaging manifest files at startup</source>
@@ -1686,15 +1686,15 @@ Backup database located at %2</source>
 <context>
     <name>DatabaseOpenDialog</name>
     <message>
-        <source>Unlock Database - KeePassXC</source>
-        <translation>解鎖資料庫 - KeePassXC</translation>
+        <source>Unlock Database - BitwardenXC</source>
+        <translation>解鎖資料庫 - BitwardenXC</translation>
     </message>
 </context>
 <context>
     <name>DatabaseOpenWidget</name>
     <message>
-        <source>Unlock KeePassXC Database</source>
-        <translation>解鎖 KeePassXC 資料庫</translation>
+        <source>Unlock BitwardenXC Database</source>
+        <translation>解鎖 BitwardenXC 資料庫</translation>
     </message>
     <message>
         <source>Enter Password:</source>
@@ -1742,19 +1742,19 @@ Backup database located at %2</source>
     </message>
     <message>
         <source>The database you are trying to open was most likely
-created by a newer version of KeePassXC.
+created by a newer version of BitwardenXC.
 
 You can try to open it anyway, but it may be incomplete
 and saving any changes may incur data loss.
 
-We recommend you update your KeePassXC installation.</source>
+We recommend you update your BitwardenXC installation.</source>
         <translation>將要開啟的資料庫可能建立自
-版本超前的 KeePassXC。
+版本超前的 BitwardenXC。
 
 您可以嘗試直接開啟，但可能導致檔案缺損，
 擅自變更或儲存將有資料損失的風險。
 
-我們建議在此之前先更新 KeePassXC。</translation>
+我們建議在此之前先更新 BitwardenXC。</translation>
     </message>
     <message>
         <source>Open database anyway</source>
@@ -1791,8 +1791,8 @@ To prevent this error from appearing, you must go to &quot;Database Settings / S
         <translation>舊的金鑰檔案格式</translation>
     </message>
     <message>
-        <source>You are using an old key file format which KeePassXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
-        <translation>您使用的金鑰檔案格式版本過舊，KeePassXC 可能&lt;br&gt;在未來停止支援。&lt;br&gt;&lt;br&gt;請考慮透過以下方式產生一組新的金鑰檔案：&lt;br&gt;&lt;strong&gt;資料庫 &amp;gt; 資料庫安全 &amp;gt; 更改金鑰檔案。&lt;/strong&gt;&lt;br&gt;</translation>
+        <source>You are using an old key file format which BitwardenXC may&lt;br&gt;stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file by going to:&lt;br&gt;&lt;strong&gt;Database &amp;gt; Database Security &amp;gt; Change Key File.&lt;/strong&gt;&lt;br&gt;</source>
+        <translation>您使用的金鑰檔案格式版本過舊，BitwardenXC 可能&lt;br&gt;在未來停止支援。&lt;br&gt;&lt;br&gt;請考慮透過以下方式產生一組新的金鑰檔案：&lt;br&gt;&lt;strong&gt;資料庫 &amp;gt; 資料庫安全 &amp;gt; 更改金鑰檔案。&lt;/strong&gt;&lt;br&gt;</translation>
     </message>
     <message>
         <source>Don&apos;t show this warning again</source>
@@ -1845,8 +1845,8 @@ If you don&apos;t have a key file or don&apos;t know what that is, you don&apos;
 若您沒有任何金鑰檔案，或不清楚那是什麼，可以選擇不使用。</translation>
     </message>
     <message>
-        <source>KeePassXC database file selected</source>
-        <translation>KeePassXC 資料庫檔案被選擇</translation>
+        <source>KeePass database file selected</source>
+        <translation>KeePass 資料庫檔案被選擇</translation>
     </message>
     <message>
         <source>The file you selected looks like a database file.
@@ -2000,12 +2000,12 @@ This may prevent connection to the browser plugin.</source>
 這可能導致與瀏覽器插件的連結受阻。</translation>
     </message>
     <message>
-        <source>No shared encryption keys found in KeePassXC settings.</source>
-        <translation>在 KeePassXC 設定中找不到共享加密金鑰。</translation>
+        <source>No shared encryption keys found in BitwardenXC settings.</source>
+        <translation>在 BitwardenXC 設定中找不到共享加密金鑰。</translation>
     </message>
     <message numerus="yes">
-        <source>Successfully removed %n encryption key(s) from KeePassXC settings.</source>
-        <translation><numerusform>成功從 KeePassXC 設定中移除 %n 組加密金鑰。</numerusform></translation>
+        <source>Successfully removed %n encryption key(s) from BitwardenXC settings.</source>
+        <translation><numerusform>成功從 BitwardenXC 設定中移除 %n 組加密金鑰。</numerusform></translation>
     </message>
     <message>
         <source>Do you really want forget all site-specific settings on every entry?
@@ -2867,9 +2867,9 @@ Save changes?</source>
         <translation>停用安全存檔？</translation>
     </message>
     <message>
-        <source>KeePassXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
+        <source>BitwardenXC has failed to save the database multiple times. This is likely caused by file sync services holding a lock on the save file.
 Disable safe saves and try again?</source>
-        <translation>KeePassXC 儲存資料庫已失敗數次。可能是檔案同步服務把儲存檔案鎖住了。
+        <translation>BitwardenXC 儲存資料庫已失敗數次。可能是檔案同步服務把儲存檔案鎖住了。
 停用安全儲存後再試一次？</translation>
     </message>
     <message>
@@ -3780,9 +3780,9 @@ Would you like to correct it?</source>
         <translation>同步</translation>
     </message>
     <message>
-        <source>Your KeePassXC version does not support sharing this container type.
+        <source>Your BitwardenXC version does not support sharing this container type.
 Supported extensions are: %1.</source>
-        <translation>您的 KeePassXC 版本不支援此容器類型。
+        <translation>您的 BitwardenXC 版本不支援此容器類型。
 受支援的擴充為：%1。</translation>
     </message>
     <message>
@@ -4743,8 +4743,8 @@ This will leave your passwords and sensitive information vulnerable!
 <context>
     <name>GlobalShortcutsPortal</name>
     <message>
-        <source>KeePassXC - Global Shortcuts</source>
-        <translation>KeePassXC - 全局快捷鍵</translation>
+        <source>BitwardenXC - Global Shortcuts</source>
+        <translation>BitwardenXC - 全局快捷鍵</translation>
     </message>
     <message>
         <source>The XDG Desktop Portal for global shortcuts is not available on this system.</source>
@@ -5724,8 +5724,8 @@ If this reoccurs, then your database file may be corrupt.</source>
         <translation>舊的金鑰檔案格式</translation>
     </message>
     <message>
-        <source>You selected a key file in an old format which KeePassXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
-        <translation>您選擇的金鑰檔案格式版本過舊，KeePassXC&lt;br&gt;將來有可能停止支援。&lt;br&gt;&lt;br&gt;請考慮產生一組新的金鑰檔案。</translation>
+        <source>You selected a key file in an old format which BitwardenXC&lt;br&gt;may stop supporting in the future.&lt;br&gt;&lt;br&gt;Please consider generating a new key file instead.</source>
+        <translation>您選擇的金鑰檔案格式版本過舊，BitwardenXC&lt;br&gt;將來有可能停止支援。&lt;br&gt;&lt;br&gt;請考慮產生一組新的金鑰檔案。</translation>
     </message>
     <message>
         <source>Error loading the key file '%1'
@@ -6494,10 +6494,10 @@ Are you sure you want to continue with this file?</source>
         <translation>設定遠端同步…</translation>
     </message>
     <message>
-        <source>WARNING: You are using a development snapshot build of KeePassXC.
+        <source>WARNING: You are using a development snapshot build of BitwardenXC.
 Maintain a backup of your databases in the event of unknown bugs.
 This version is not meant for production use.</source>
-        <translation>警告：您正在使用 KeePassXC 的開發快照版本。
+        <translation>警告：您正在使用 BitwardenXC 的開發快照版本。
 請備份您的資料庫以避免未知錯誤。
 此版本不適用於生產用途。</translation>
     </message>
@@ -6701,8 +6701,8 @@ This version is not meant for production use.</source>
 <context>
     <name>NewDatabaseWizard</name>
     <message>
-        <source>Create a new KeePassXC database…</source>
-        <translation>建立新的 KeePassXC 資料庫…</translation>
+        <source>Create a new KeePass database…</source>
+        <translation>建立新的 KeePass 資料庫…</translation>
     </message>
     <message>
         <source>Root</source>
@@ -6976,8 +6976,8 @@ This version is not meant for production use.</source>
 <context>
     <name>PasskeyExportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Export</source>
-        <translation>KeePassXC - 通行密鑰匯出</translation>
+        <source>BitwardenXC - Passkey Export</source>
+        <translation>BitwardenXC - 通行密鑰匯出</translation>
     </message>
     <message>
         <source>Filenames will be generated with title and .passkey file extension.</source>
@@ -7034,8 +7034,8 @@ Do you want to overwrite it?
 <context>
     <name>PasskeyImportDialog</name>
     <message>
-        <source>KeePassXC - Passkey Import</source>
-        <translation>KeePassXC - 通行密鑰匯入</translation>
+        <source>BitwardenXC - Passkey Import</source>
+        <translation>BitwardenXC - 通行密鑰匯入</translation>
     </message>
     <message>
         <source>Username: %1</source>
@@ -7168,8 +7168,8 @@ The following data is missing:
         <translation>密碼已設定，點擊更改或移除</translation>
     </message>
     <message>
-        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. KeePassXC can generate one for you.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;密碼是保全您的資料庫的主要方式。&lt;/p&gt;&lt;p&gt;好的密碼要夠長且獨特。KeePassXC 可以幫您產生一組。&lt;/p&gt;</translation>
+        <source>&lt;p&gt;A password is the primary method for securing your database.&lt;/p&gt;&lt;p&gt;Good passwords are long and unique. BitwardenXC can generate one for you.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;密碼是保全您的資料庫的主要方式。&lt;/p&gt;&lt;p&gt;好的密碼要夠長且獨特。BitwardenXC 可以幫您產生一組。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Passwords do not match.</source>
@@ -7524,8 +7524,8 @@ Do you want to overwrite it?</source>
 <context>
     <name>PickcharsDialog</name>
     <message>
-        <source>KeePassXC - Pick Characters</source>
-        <translation>KeePassXC - 挑選字元</translation>
+        <source>BitwardenXC - Pick Characters</source>
+        <translation>BitwardenXC - 挑選字元</translation>
     </message>
     <message>
         <source>Select characters to type, navigate with arrow keys, Ctrl + S submits.</source>
@@ -7621,8 +7621,8 @@ Do you want to overwrite it?</source>
         <translation>訊息加密失敗。</translation>
     </message>
     <message>
-        <source>KeePassXC association failed, try again</source>
-        <translation>KeePassXC 關聯失敗，請重試</translation>
+        <source>BitwardenXC association failed, try again</source>
+        <translation>BitwardenXC 關聯失敗，請重試</translation>
     </message>
     <message>
         <source>Encryption key is not recognized</source>
@@ -8710,12 +8710,12 @@ Available commands:
         <translation>載入金鑰檔案 %1 失敗：%2</translation>
     </message>
     <message>
-        <source>WARNING: You are using an old key file format which KeePassXC may
+        <source>WARNING: You are using an old key file format which BitwardenXC may
 stop supporting in the future.
 
 Please consider generating a new key file.</source>
         <translation>警告：您使用的金鑰檔案格式為舊版本，將來有可能
-不再被 KeePassXC 支援。
+不再被 BitwardenXC 支援。
 
 請考慮產生一組新的金鑰檔案。</translation>
     </message>
@@ -9092,8 +9092,8 @@ Kernel: %3 %4</source>
         <translation>出現未預期的金鑰檔案資料！金鑰檔案可能已損壞。</translation>
     </message>
     <message>
-        <source>KeePassXC - cross-platform password manager</source>
-        <translation>KeePassXC - 跨平台的密碼管理工具</translation>
+        <source>BitwardenXC - cross-platform password manager</source>
+        <translation>BitwardenXC - 跨平台的密碼管理工具</translation>
     </message>
     <message>
         <source>filenames of the password databases to open (*.kdbx)</source>
@@ -9124,20 +9124,20 @@ Kernel: %3 %4</source>
         <translation>資料庫鎖定失敗。</translation>
     </message>
     <message>
-        <source>Another instance of KeePassXC is already running.</source>
-        <translation>其他 KeePassXC 程式正在運行中。</translation>
+        <source>Another instance of BitwardenXC is already running.</source>
+        <translation>其他 BitwardenXC 程式正在運行中。</translation>
     </message>
     <message>
-        <source>KeePassXC is not running. No open database to lock</source>
-        <translation>KeePassXC 並未執行。沒有已開啟的資料庫要鎖定</translation>
+        <source>BitwardenXC is not running. No open database to lock</source>
+        <translation>BitwardenXC 並未執行。沒有已開啟的資料庫要鎖定</translation>
     </message>
     <message>
         <source>Fatal error while testing the cryptographic functions.</source>
         <translation>測試加密函數時發生重大錯誤。</translation>
     </message>
     <message>
-        <source>KeePassXC - Error</source>
-        <translation>KeePassXC - 錯誤</translation>
+        <source>BitwardenXC - Error</source>
+        <translation>BitwardenXC - 錯誤</translation>
     </message>
     <message>
         <source>Database password: </source>
@@ -9260,8 +9260,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation>沒有可用的快速解鎖提供者</translation>
     </message>
     <message>
-        <source>Failed to init KeePassXC crypto.</source>
-        <translation>初始化 KeePassXC 加密失敗。</translation>
+        <source>Failed to init BitwardenXC crypto.</source>
+        <translation>初始化 BitwardenXC 加密失敗。</translation>
     </message>
     <message>
         <source>Failed to encrypt key data.</source>
@@ -9781,8 +9781,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation>也顯示已從報告排除的項目</translation>
     </message>
     <message>
-        <source>This build of KeePassXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
-        <translation>此 KeePassXC 建置版本未包含網路功能。需要網路功能才能向 Have I Been Pwned 資料庫檢查您的密碼。</translation>
+        <source>This build of BitwardenXC does not have network functions. Networking is required to check your passwords against Have I Been Pwned databases.</source>
+        <translation>此 BitwardenXC 建置版本未包含網路功能。需要網路功能才能向 Have I Been Pwned 資料庫檢查您的密碼。</translation>
     </message>
     <message>
         <source>Congratulations, no exposed passwords!</source>
@@ -10250,8 +10250,8 @@ This option is deprecated, use --set-key-file instead.</source>
         <translation>選項</translation>
     </message>
     <message>
-        <source>Enable KeepassXC Freedesktop.org Secret Service integration</source>
-        <translation>啟用 KeepassXC 與 Freedesktop.org 保密服務的整合</translation>
+        <source>Enable BitwardenXC Freedesktop.org Secret Service integration</source>
+        <translation>啟用 BitwardenXC 與 Freedesktop.org 保密服務的整合</translation>
     </message>
     <message>
         <source>General</source>
@@ -10628,8 +10628,8 @@ Example: JBSWY3DPEHPK3PXP</source>
 <context>
     <name>WelcomeWidget</name>
     <message>
-        <source>Start storing your passwords securely in a KeePassXC database</source>
-        <translation>從現在開始，將您的密碼安全地保存到 KeePassXC 資料庫</translation>
+        <source>Start storing your passwords securely in a BitwardenXC database</source>
+        <translation>從現在開始，將您的密碼安全地保存到 BitwardenXC 資料庫</translation>
     </message>
     <message>
         <source>Recent databases</source>
@@ -10640,8 +10640,8 @@ Example: JBSWY3DPEHPK3PXP</source>
         <translation>開啟一個近期的資料庫</translation>
     </message>
     <message>
-        <source>Welcome to KeePassXC %1</source>
-        <translation>歡迎來到 KeePassXC %1</translation>
+        <source>Welcome to BitwardenXC %1</source>
+        <translation>歡迎來到 BitwardenXC %1</translation>
     </message>
     <message>
         <source>Create Database</source>
