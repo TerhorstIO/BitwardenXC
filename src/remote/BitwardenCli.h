@@ -82,6 +82,7 @@ public:
     QJsonObject createFolder(const QUuid& parentId, const QString& path, bool recoverUncertain = false);
     // The first edit is the renamed or moved folder. Remaining edits preserve the paths below it.
     QList<QJsonObject> editFolders(const QList<FolderEdit>& edits, const QUuid& destinationParentId = {});
+    void deleteFolder(const QUuid& id, const QString& expectedPath);
 
 private:
     QByteArray run(const QStringList& arguments,

@@ -19,6 +19,8 @@
 
 #include <QMimeData>
 
+#include <utility>
+
 #include "core/Database.h"
 #include "core/Group.h"
 #include "core/Metadata.h"
@@ -178,6 +180,9 @@ Group* GroupModel::groupFromIndex(const QModelIndex& index) const
 
 Qt::DropActions GroupModel::supportedDropActions() const
 {
+    if (m_moveRemoteGroup) {
+        return Qt::MoveAction;
+    }
     return Qt::MoveAction | Qt::CopyAction;
 }
 
@@ -192,16 +197,68 @@ Qt::ItemFlags GroupModel::flags(const QModelIndex& modelIndex) const
     }
 }
 
+void GroupModel::setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup)
+{
+    m_moveRemoteGroup = std::move(moveGroup);
+}
+
+Group* GroupModel::remoteDraggedGroup(const QMimeData* data,
+                                     Qt::DropAction action,
+                                     int row,
+                                     const QModelIndex& parent) const
+{
+    if (!m_moveRemoteGroup || action != Qt::MoveAction || row != -1 || !parent.isValid() || parent.model() != this
+        || !data || !data->hasFormat(mimeTypes().first())) {
+        return nullptr;
+    }
+
+    auto encoded = data->data(mimeTypes().first());
+    QDataStream stream(&encoded, QIODevice::ReadOnly);
+    QUuid databaseId;
+    QUuid groupId;
+    stream >> databaseId >> groupId;
+    if (stream.status() != QDataStream::Ok || !stream.atEnd() || databaseId != m_db->uuid() || groupId.isNull()) {
+        return nullptr;
+    }
+
+    const auto* target = groupFromIndex(parent);
+    auto* source = m_db->rootGroup()->findGroupByUuid(groupId);
+    if (!source || source == m_db->rootGroup()
+        || (source->parentGroup() == target && !source->name().contains('/'))
+        || source->findGroupByUuid(target->uuid())) {
+        return nullptr;
+    }
+    return source;
+}
+
+bool GroupModel::canDropMimeData(const QMimeData* data,
+                                 Qt::DropAction action,
+                                 int row,
+                                 int column,
+                                 const QModelIndex& parent) const
+{
+    if (m_moveRemoteGroup) {
+        return (column == -1 || column == 0) && remoteDraggedGroup(data, action, row, parent);
+    }
+    return QAbstractItemModel::canDropMimeData(data, action, row, column, parent);
+}
+
 bool GroupModel::dropMimeData(const QMimeData* data,
                               Qt::DropAction action,
                               int row,
                               int column,
                               const QModelIndex& parent)
 {
-    Q_UNUSED(column);
-
     if (action == Qt::IgnoreAction) {
         return true;
+    }
+
+    if (m_moveRemoteGroup) {
+        if (column != -1 && column != 0) {
+            return false;
+        }
+        auto* source = remoteDraggedGroup(data, action, row, parent);
+        return source && m_moveRemoteGroup(source, groupFromIndex(parent));
     }
 
     if (!data || (action != Qt::MoveAction && action != Qt::CopyAction) || !parent.isValid()) {

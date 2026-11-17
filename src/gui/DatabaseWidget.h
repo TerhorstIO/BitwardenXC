@@ -338,6 +338,8 @@ private:
     bool saveBitwarden();
     void createBitwardenFolder();
     void editBitwardenFolder();
+    void deleteBitwardenFolder();
+    bool updateBitwardenFolder(Group* folder, Group* destination, const QString& name);
     void selectBitwardenFolder(Group* folder);
     bool startBitwardenFolderSync();
     void startBitwardenSync(bool force);

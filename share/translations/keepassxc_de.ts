@@ -2784,6 +2784,18 @@ Das ist definitiv ein Programmfehler, bitte benachrichtigen Sie die Entwickler.<
         <translation>Bitwarden-Ordner bearbeiten</translation>
     </message>
     <message>
+        <source>Delete Bitwarden Folder?</source>
+        <translation>Bitwarden-Ordner löschen?</translation>
+    </message>
+    <message>
+        <source>Delete the folder "%1"? Its entries and subfolders will be kept.</source>
+        <translation>Den Ordner „%1“ löschen? Seine Einträge und Unterordner bleiben erhalten.</translation>
+    </message>
+    <message>
+        <source>Delete Folder</source>
+        <translation>Ordner löschen</translation>
+    </message>
+    <message>
         <source>Parent folder:</source>
         <translation>Übergeordneter Ordner:</translation>
     </message>

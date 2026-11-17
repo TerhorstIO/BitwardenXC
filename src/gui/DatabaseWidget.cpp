@@ -176,7 +176,9 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent, QSh
     m_entryView = new EntryView(rightHandSideWidget);
     if (isBitwarden()) {
         m_entryView->setDragDropMode(QAbstractItemView::NoDragDrop);
-        m_groupView->setDragDropMode(QAbstractItemView::NoDragDrop);
+        m_groupView->setRemoteGroupMoveHandler([this](Group* folder, Group* destination) {
+            return updateBitwardenFolder(folder, destination, folder->name().section('/', -1));
+        });
         m_bitwardenFolderRetry = new QTimer(this);
         m_bitwardenFolderRetry->setSingleShot(true);
         m_bitwardenFolderRetry->setInterval(60000);
@@ -1520,7 +1522,9 @@ void DatabaseWidget::editBitwardenFolder()
     QDialog dialog(this);
     dialog.setWindowTitle(tr("Edit Bitwarden Folder"));
     auto* layout = new QFormLayout(&dialog);
-    auto* name = new QLineEdit(folder->name(), &dialog);
+    const auto originalName = folder->name();
+    const auto leafName = originalName.section('/', -1);
+    auto* name = new QLineEdit(leafName, &dialog);
     auto* parent = new QComboBox(&dialog);
     auto* root = m_db->rootGroup();
     const auto descendants = folder->groupsRecursive(true);
@@ -1528,12 +1532,13 @@ void DatabaseWidget::editBitwardenFolder()
     QList<QPointer<Group>> choices{root};
     parent->addItem(root->name());
     for (auto* group : root->groupsRecursive(false)) {
-        if (!excluded.contains(group) && m_bitwarden->canEditFolder(group->uuid())) {
+        if (!excluded.contains(group) && m_bitwarden->canUseFolderAsParent(group->uuid())) {
             parent->addItem(group->hierarchy().join(QStringLiteral(" / ")));
             choices.append(group);
         }
     }
-    parent->setCurrentIndex(choices.indexOf(folder->parentGroup()));
+    const auto originalParent = choices.indexOf(folder->parentGroup());
+    parent->setCurrentIndex(originalParent);
     auto* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
     layout->addRow(tr("Folder name:"), name);
     layout->addRow(tr("Parent folder:"), parent);
@@ -1541,6 +1546,13 @@ void DatabaseWidget::editBitwardenFolder()
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
     connect(this, &DatabaseWidget::databaseLockRequested, &dialog, &QDialog::reject);
+    const auto updateSave = [name, parent, buttons] {
+        buttons->button(QDialogButtonBox::Save)->setEnabled(!name->text().trimmed().isEmpty()
+                                                           && parent->currentIndex() >= 0);
+    };
+    connect(name, &QLineEdit::textChanged, &dialog, updateSave);
+    connect(parent, &QComboBox::currentIndexChanged, &dialog, updateSave);
+    updateSave();
     name->selectAll();
     name->setFocus();
     if (dialog.exec() != QDialog::Accepted || requestedDatabase != m_db.data() || folder != currentGroup()
@@ -1549,22 +1561,34 @@ void DatabaseWidget::editBitwardenFolder()
     }
 
     const auto destination = choices.value(parent->currentIndex());
-    if (!destination) {
+    if (!destination || (originalName != leafName && parent->currentIndex() == originalParent
+                         && name->text().trimmed() == leafName)) {
         return;
     }
-    const auto selectedEntry = currentSelectedEntry();
+    updateBitwardenFolder(folder, destination, name->text());
+}
+
+bool DatabaseWidget::updateBitwardenFolder(Group* folder, Group* destination, const QString& name)
+{
+    if (!canCreateBitwardenFolder() || QApplication::activeModalWidget()
+        || !m_bitwarden->canEditFolder(folder->uuid())) {
+        return false;
+    }
+
+    const QPointer<Entry> selectedEntry(currentSelectedEntry());
     try {
-        m_bitwarden->queueFolderUpdate(*m_db, folder->uuid(), destination->uuid(), name->text());
+        m_bitwarden->queueFolderUpdate(*m_db, folder->uuid(), destination->uuid(), name);
         selectBitwardenFolder(folder);
-        if (selectedEntry) {
+        if (selectedEntry && selectedEntry->group() == folder) {
             m_entryView->setCurrentEntry(selectedEntry);
         }
         m_previewView->refresh();
     } catch (const BitwardenCliError& error) {
         showMessage(error.message().toHtmlEscaped(), MessageWidget::Error, true);
-        return;
+        return false;
     }
     startBitwardenFolderSync();
+    return true;
 }
 
 void DatabaseWidget::selectBitwardenFolder(Group* folder)
@@ -1594,6 +1618,11 @@ void DatabaseWidget::cloneGroup()
 
 void DatabaseWidget::deleteGroup()
 {
+    if (isBitwarden()) {
+        deleteBitwardenFolder();
+        return;
+    }
+
     // Prevent deletion when a modal dialog is active
     if (QApplication::activeModalWidget()) {
         return;
@@ -1632,6 +1661,47 @@ void DatabaseWidget::deleteGroup()
             m_db->recycleGroup(currentGroup);
         }
     }
+}
+
+void DatabaseWidget::deleteBitwardenFolder()
+{
+    if (!canDeleteCurrentGroup() || QApplication::activeModalWidget()) {
+        return;
+    }
+
+    const QPointer<Database> requestedDatabase(m_db.data());
+    const QPointer<Group> folder(currentGroup());
+    QMessageBox dialog(this);
+    dialog.setTextFormat(Qt::PlainText);
+    dialog.setIcon(QMessageBox::Question);
+    dialog.setWindowTitle(tr("Delete Bitwarden Folder?"));
+    dialog.setText(tr("Delete the folder \"%1\"? Its entries and subfolders will be kept.").arg(folder->name()));
+    auto* deleteButton = dialog.addButton(tr("Delete Folder"), QMessageBox::DestructiveRole);
+    dialog.setDefaultButton(dialog.addButton(QMessageBox::Cancel));
+    connect(this, &DatabaseWidget::databaseLockRequested, &dialog, &QDialog::reject);
+    dialog.exec();
+    if (dialog.clickedButton() != deleteButton || requestedDatabase != m_db.data() || folder != currentGroup()
+        || !canDeleteCurrentGroup()) {
+        return;
+    }
+
+    const QPointer<Group> parent(folder->parentGroup());
+    const QPointer<Entry> selectedEntry(currentSelectedEntry());
+    try {
+        m_bitwarden->queueFolderDelete(*m_db, folder->uuid());
+    } catch (const BitwardenCliError& error) {
+        showMessage(error.message().toHtmlEscaped(), MessageWidget::Error, true);
+        return;
+    }
+    if (selectedEntry) {
+        selectBitwardenFolder(selectedEntry->group());
+        m_entryView->setCurrentEntry(selectedEntry);
+    } else {
+        selectBitwardenFolder(parent ? parent.data() : m_db->rootGroup());
+    }
+    m_previewView->refresh();
+    emit groupChanged();
+    startBitwardenFolderSync();
 }
 
 int DatabaseWidget::addChildWidget(QWidget* w)
@@ -2454,6 +2524,12 @@ void DatabaseWidget::endSearch()
 
 void DatabaseWidget::emitGroupContextMenuRequested(const QPoint& pos)
 {
+    if (isBitwarden()) {
+        const auto index = m_groupView->indexAt(pos);
+        if (index.isValid()) {
+            m_groupView->setCurrentIndex(index);
+        }
+    }
     emit groupContextMenuRequested(m_groupView->viewport()->mapToGlobal(pos));
 }
 
@@ -2481,6 +2557,9 @@ bool DatabaseWidget::canCloneCurrentGroup() const
 
 bool DatabaseWidget::canDeleteCurrentGroup() const
 {
+    if (isBitwarden()) {
+        return canEditBitwardenFolder();
+    }
     return currentGroup() != m_db->rootGroup();
 }
 

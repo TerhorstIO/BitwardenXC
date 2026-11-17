@@ -814,17 +814,22 @@ QList<QJsonObject> BitwardenCli::editFolders(const QList<FolderEdit>& edits, con
     folders.verifyParent(destinationParentId, parentPath);
     const auto conflict =
         QStringLiteral("Ein Bitwarden-Ordner wurde auf einem anderen Gerät geändert. Synchronisiere den Tresor und prüfe die Ordner.");
+    const bool singleEdit = edits.size() == 1;
+    const auto originalIds = folders.byPath.values(first.oldPath);
+    const bool sourceStillExists = singleEdit
+        && std::any_of(originalIds.cbegin(), originalIds.cend(), [&first](const QUuid& id) { return id != first.id; });
     for (auto entry = folders.byPath.constBegin(); entry != folders.byPath.constEnd(); ++entry) {
         const auto& path = entry.key();
-        if (!ids.contains(entry.value()) && (path.startsWith(oldPrefix) || path.startsWith(newPrefix))) {
+        if (!ids.contains(entry.value())
+            && ((path.startsWith(oldPrefix) && !sourceStillExists) || path.startsWith(newPrefix))) {
             throw BitwardenCliError(conflict, BitwardenCliError::Reason::Conflict);
         }
     }
     for (const auto& edit : edits) {
         const auto current = folders.byId.value(edit.id).value(nameKey);
         if (!current.isString() || (current != edit.oldPath && current != edit.newPath)
-            || folders.byPath.count(current.toString()) != 1
-            || (current == edit.newPath && folders.byPath.contains(edit.oldPath))) {
+            || (folders.byPath.count(current.toString()) != 1 && !(sourceStillExists && current == edit.oldPath))
+            || (!singleEdit && current == edit.newPath && folders.byPath.contains(edit.oldPath))) {
             throw BitwardenCliError(conflict, BitwardenCliError::Reason::Conflict);
         }
         if (current == edit.oldPath && folders.byPath.contains(edit.newPath)) {
@@ -853,6 +858,38 @@ QList<QJsonObject> BitwardenCli::editFolders(const QList<FolderEdit>& edits, con
         results.append(std::move(folder));
     }
     return results;
+}
+
+void BitwardenCli::deleteFolder(const QUuid& id, const QString& expectedPath)
+{
+    const QMutexLocker locker(&m_mutex);
+    ensureUnlocked();
+    if (id.isNull() || expectedPath.isEmpty() || expectedPath.contains(QChar::Null)) {
+        throw BitwardenCliError(QStringLiteral("Die Bitwarden-Ordnerkennung oder der Ordnerpfad ist ungültig."));
+    }
+
+    // Recheck after an uncertain reply without targeting any replacement at the same path.
+    syncVault(true);
+    const FolderIndex folders(parseArray(run({QStringLiteral("list"), QStringLiteral("folders")})));
+    const auto existing = folders.byId.constFind(id);
+    if (existing == folders.byId.constEnd()) {
+        return;
+    }
+    if (existing.value().value(nameKey) != expectedPath) {
+        throw BitwardenCliError(
+            QStringLiteral("Der Bitwarden-Ordner wurde auf einem anderen Gerät geändert."),
+            BitwardenCliError::Reason::Conflict);
+    }
+
+    try {
+        run({QStringLiteral("delete"), QStringLiteral("folder"), id.toString(QUuid::WithoutBraces)});
+    } catch (const BitwardenCliError& error) {
+        if (error.reason() != BitwardenCliError::Reason::Failed) {
+            throw;
+        }
+        throw BitwardenCliError(QStringLiteral("Bitwarden hat das Löschen des Ordners nicht bestätigt."),
+                               BitwardenCliError::Reason::WriteUncertain);
+    }
 }
 
 QJsonObject BitwardenCli::writeObject(const QStringList& arguments, const QJsonObject& object) const

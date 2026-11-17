@@ -280,6 +280,7 @@ MainWindow::MainWindow()
     connect(m_entryNewContextMenu, SIGNAL(aboutToShow()), SLOT(obtainContextFocusLock()));
     connect(m_entryNewContextMenu, SIGNAL(aboutToHide()), SLOT(releaseContextFocusLock()));
     connect(m_ui->menuGroups, SIGNAL(aboutToShow()), SLOT(obtainContextFocusLock()));
+    connect(m_ui->menuGroups, &QMenu::aboutToShow, this, &MainWindow::updateMenuActionState);
     connect(m_ui->menuGroups, SIGNAL(aboutToHide()), SLOT(releaseContextFocusLock()));
 
     // Control window state
@@ -1057,7 +1058,7 @@ void MainWindow::updateMenuActionState()
                                      || (inDatabase && bitwarden && dbWidget->canCreateBitwardenFolder()));
     m_ui->actionGroupEdit->setEnabled(groupSelected || (inDatabase && bitwarden && dbWidget->canEditBitwardenFolder()));
     m_ui->actionGroupClone->setEnabled(groupSelected && dbWidget->canCloneCurrentGroup());
-    m_ui->actionGroupDelete->setEnabled(groupSelected && dbWidget->canDeleteCurrentGroup());
+    m_ui->actionGroupDelete->setEnabled((groupSelected || (inDatabase && bitwarden)) && dbWidget->canDeleteCurrentGroup());
     m_ui->actionGroupSortAsc->setVisible(groupHasChildren);
     m_ui->actionGroupSortAsc->setEnabled(groupHasChildren);
     m_ui->actionGroupSortDesc->setVisible(groupHasChildren);

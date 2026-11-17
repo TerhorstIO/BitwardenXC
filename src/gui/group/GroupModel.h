@@ -20,6 +20,8 @@
 
 #include <QAbstractItemModel>
 
+#include <functional>
+
 class Database;
 class Group;
 
@@ -41,13 +43,20 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
     Qt::DropActions supportedDropActions() const override;
     Qt::ItemFlags flags(const QModelIndex& modelIndex) const override;
+    bool canDropMimeData(const QMimeData* data,
+                         Qt::DropAction action,
+                         int row,
+                         int column,
+                         const QModelIndex& parent) const override;
     bool
     dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex& parent) override;
     QStringList mimeTypes() const override;
     QMimeData* mimeData(const QModelIndexList& indexes) const override;
     void sortChildren(Group* rootGroup, bool reverse = false);
+    void setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup);
 
 private:
+    Group* remoteDraggedGroup(const QMimeData* data, Qt::DropAction action, int row, const QModelIndex& parent) const;
     QModelIndex parent(Group* group) const;
     void collectIndexesRecursively(QList<QModelIndex>& indexes, QList<Group*> groups);
 
@@ -62,6 +71,7 @@ private slots:
 
 private:
     Database* m_db;
+    std::function<bool(Group*, Group*)> m_moveRemoteGroup;
 };
 
 #endif // KEEPASSX_GROUPMODEL_H

@@ -55,6 +55,12 @@ public:
         QString path;
         QList<BitwardenCli::FolderEdit> edits;
         bool attempted = false;
+        QUuid deleteId;
+
+        bool isCreate() const
+        {
+            return deleteId.isNull() && edits.isEmpty();
+        }
     };
 
     BitwardenSession(QString executable, QUrl server, QString email);
@@ -72,10 +78,12 @@ public:
     SaveResult save(const QList<Edit>& edits);
     QUuid queueFolderCreate(Database& database, const QUuid& parent, const QString& name);
     void queueFolderUpdate(Database& database, const QUuid& id, const QUuid& parent, const QString& name);
+    void queueFolderDelete(Database& database, const QUuid& id);
     bool hasPendingFolderWrites() const;
     QString folderQueueError() const;
     bool isPendingFolder(const QUuid& id) const;
     bool canEditFolder(const QUuid& id) const;
+    bool canUseFolderAsParent(const QUuid& id) const;
     std::optional<FolderWrite> beginFolderWrite();
     QList<QJsonObject> flushFolderWrite(const FolderWrite& write);
     void applyFolderWrite(Database& database, const FolderWrite& write, const QList<QJsonObject>& result);
@@ -99,7 +107,7 @@ private:
     void restoreFolderWrites(const QJsonArray& records);
     void storeFolderWrites(QList<FolderWrite> writes);
     void projectFolderWrites();
-    void reconcileGroups(Database& database);
+    void reconcileGroups(Database& database, const QSet<QUuid>& restoredFolderIds = {});
     QString folderPathForWrite(const QUuid& parent, const QString& name) const;
     QSharedPointer<Database> makeDatabase(const VaultSnapshot& snapshot) const;
 

@@ -304,3 +304,10 @@ jobs:
               --notes "Portable Windows x64 build from commit $GITHUB_SHA. Extract the Windows ZIP and run BitwardenXC.exe. The package includes the patched Bitwarden CLI. Its source is available in BitwardenXC-CLI-Source.zip." \
               --prerelease --latest=false
           fi
+          # Older builds can finish later. Only the current main build can replace Latest.
+          if [[ "$GITHUB_REF" == "refs/heads/main" ]]; then
+            main_commit=$(gh api "repos/$GH_REPO/git/ref/heads/main" --jq .object.sha)
+            if [[ "$main_commit" == "$GITHUB_SHA" ]]; then
+              gh release edit "$TAG" --prerelease=false --latest
+            fi
+          fi

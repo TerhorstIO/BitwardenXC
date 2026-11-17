@@ -180,6 +180,15 @@ namespace
         folders.append(folder);
     }
 
+    void removeFolder(QJsonArray& folders, const QUuid& id)
+    {
+        for (qsizetype i = folders.size(); i > 0; --i) {
+            if (QUuid(folders.at(i - 1).toObject().value("id").toString()) == id) {
+                folders.removeAt(i - 1);
+            }
+        }
+    }
+
     QJsonObject folderRow(const QUuid& id, const QString& path)
     {
         return {{"object", "folder"}, {"id", idString(id)}, {"name", path}};
@@ -574,10 +583,12 @@ void BitwardenSession::restoreFolderWrites(const QJsonArray& records)
         FolderWrite write;
         write.id = QUuid(record.value("id").toString());
         write.parent = QUuid(record.value("parent").toString());
-        write.path = record.value("path").toString();
         write.attempted = record.value("attempted").toBool();
+        write.deleteId = QUuid(record.value("deleteId").toString());
+        write.path = record.value(write.deleteId.isNull() ? "path" : "deletePath").toString();
         if (write.id.isNull() || writeIds.contains(write.id)
             || (!record.value("parent").toString().isEmpty() && write.parent.isNull())
+            || (!record.value("deleteId").toString().isEmpty() && write.deleteId.isNull())
             || !record.value("edits").isArray()) {
             throw badJournal();
         }
@@ -596,6 +607,10 @@ void BitwardenSession::restoreFolderWrites(const QJsonArray& records)
         if (write.edits.isEmpty() ? !validFolderPath(write.path) : !write.path.isEmpty()) {
             throw badJournal();
         }
+        if (!write.deleteId.isNull() && (!write.edits.isEmpty() || !write.parent.isNull() || write.attempted
+                                       || !record.value("path").toString().isEmpty())) {
+            throw badJournal();
+        }
         writeIds.insert(write.id);
         writes.append(std::move(write));
     }
@@ -610,11 +625,18 @@ void BitwardenSession::storeFolderWrites(QList<FolderWrite> writes)
         for (const auto& edit : write.edits) {
             edits.append(QJsonObject{{"id", idString(edit.id)}, {"oldPath", edit.oldPath}, {"newPath", edit.newPath}});
         }
-        records.append(QJsonObject{{"id", idString(write.id)},
-                                   {"parent", write.parent.isNull() ? QString() : idString(write.parent)},
-                                   {"path", write.path},
-                                   {"attempted", write.attempted},
-                                   {"edits", edits}});
+        QJsonObject record{{"id", idString(write.id)},
+                           {"parent", write.parent.isNull() ? QString() : idString(write.parent)},
+                           {"attempted", write.attempted},
+                           {"edits", edits}};
+        if (write.deleteId.isNull()) {
+            record.insert("path", write.path);
+        } else {
+            // Older clients reject this record instead of replaying the deletion as a create.
+            record.insert("deleteId", idString(write.deleteId));
+            record.insert("deletePath", write.path);
+        }
+        records.append(record);
     }
     m_folderJournal.save(records);
     m_folderWrites = std::move(writes);
@@ -633,7 +655,7 @@ QString BitwardenSession::folderQueueError() const
 bool BitwardenSession::isPendingFolder(const QUuid& id) const
 {
     return std::any_of(m_folderWrites.begin(), m_folderWrites.end(), [&id](const FolderWrite& write) {
-        return write.edits.isEmpty() && write.id == id;
+        return write.isCreate() && write.id == id;
     });
 }
 
@@ -642,8 +664,13 @@ bool BitwardenSession::canEditFolder(const QUuid& id) const
     if (!m_connected || id.isNull() || id == m_rootId) {
         return false;
     }
-    const auto path = folderPath(m_folders, id);
-    return validFolderPath(path) && countFolderPath(m_folders, path) == 1;
+    return validFolderPath(folderPath(m_folders, id));
+}
+
+bool BitwardenSession::canUseFolderAsParent(const QUuid& id) const
+{
+    return m_connected && (id == m_rootId
+                           || (canEditFolder(id) && countFolderPath(m_folders, folderPath(m_folders, id)) == 1));
 }
 
 QString BitwardenSession::folderPathForWrite(const QUuid& parent, const QString& name) const
@@ -661,7 +688,7 @@ QString BitwardenSession::folderPathForWrite(const QUuid& parent, const QString&
     if (parent == m_rootId) {
         return leaf;
     }
-    if (!canEditFolder(parent)) {
+    if (!canUseFolderAsParent(parent)) {
         throw BitwardenCliError(QObject::tr("The selected Bitwarden parent folder is missing or ambiguous."));
     }
     return folderPath(m_folders, parent) + '/' + leaf;
@@ -676,7 +703,7 @@ QUuid BitwardenSession::queueFolderCreate(Database& database, const QUuid& paren
     }
     auto writes = m_folderWrites;
     const auto id = QUuid::createUuid();
-    writes.append({id, parent == m_rootId ? QUuid() : parent, path, {}, false});
+    writes.append({id, parent == m_rootId ? QUuid() : parent, path, {}, false, {}});
     storeFolderWrites(std::move(writes));
     projectFolderWrites();
     reconcileGroups(database);
@@ -699,6 +726,7 @@ void BitwardenSession::queueFolderUpdate(Database& database, const QUuid& id, co
     }
     QSet<QString> outsidePaths;
     QList<BitwardenCli::FolderEdit> edits{{id, source, target}};
+    const bool moveSubfolders = countFolderPath(m_folders, source) == 1;
     for (const auto& value : m_folders) {
         const auto folder = value.toObject();
         const QUuid folderId(folder.value("id").toString());
@@ -706,7 +734,7 @@ void BitwardenSession::queueFolderUpdate(Database& database, const QUuid& id, co
         if (folderId.isNull() || folderId == id) {
             continue;
         }
-        if (path.startsWith(prefix)) {
+        if (moveSubfolders && path.startsWith(prefix)) {
             edits.append({folderId, path, target + path.mid(source.size())});
         } else {
             outsidePaths.insert(path);
@@ -727,7 +755,22 @@ void BitwardenSession::queueFolderUpdate(Database& database, const QUuid& id, co
         }
     }
     auto writes = m_folderWrites;
-    writes.append({QUuid::createUuid(), parent == m_rootId ? QUuid() : parent, {}, edits, false});
+    writes.append({QUuid::createUuid(), parent == m_rootId ? QUuid() : parent, {}, edits, false, {}});
+    storeFolderWrites(std::move(writes));
+    projectFolderWrites();
+    reconcileGroups(database);
+}
+
+void BitwardenSession::queueFolderDelete(Database& database, const QUuid& id)
+{
+    if (!m_folderQueueError.isEmpty()) {
+        throw BitwardenCliError(m_folderQueueError);
+    }
+    if (!canEditFolder(id)) {
+        throw BitwardenCliError(QObject::tr("The selected Bitwarden folder is missing or ambiguous."));
+    }
+    auto writes = m_folderWrites;
+    writes.append({QUuid::createUuid(), {}, folderPath(m_folders, id), {}, false, id});
     storeFolderWrites(std::move(writes));
     projectFolderWrites();
     reconcileGroups(database);
@@ -738,6 +781,10 @@ void BitwardenSession::projectFolderWrites()
     m_folders = m_confirmedFolders;
     m_pendingFolderAliases.clear();
     for (const auto& write : m_folderWrites) {
+        if (!write.deleteId.isNull()) {
+            removeFolder(m_folders, write.deleteId);
+            continue;
+        }
         if (!write.edits.isEmpty()) {
             for (const auto& edit : write.edits) {
                 replaceFolder(m_folders, folderRow(edit.id, edit.newPath));
@@ -770,7 +817,7 @@ std::optional<BitwardenSession::FolderWrite> BitwardenSession::beginFolderWrite(
         return std::nullopt;
     }
     auto write = m_folderWrites.first();
-    if (!write.attempted && write.edits.isEmpty()) {
+    if (!write.attempted && write.isCreate()) {
         auto writes = m_folderWrites;
         writes.first().attempted = true;
         storeFolderWrites(std::move(writes));
@@ -780,7 +827,11 @@ std::optional<BitwardenSession::FolderWrite> BitwardenSession::beginFolderWrite(
 
 QList<QJsonObject> BitwardenSession::flushFolderWrite(const FolderWrite& write)
 {
-    if (write.edits.isEmpty()) {
+    if (!write.deleteId.isNull()) {
+        m_cli.deleteFolder(write.deleteId, write.path);
+        return {};
+    }
+    if (write.isCreate()) {
         return {m_cli.createFolder(write.parent, write.path, write.attempted)};
     }
     return m_cli.editFolders(write.edits, write.parent);
@@ -790,19 +841,24 @@ void BitwardenSession::applyFolderWrite(Database& database,
                                        const FolderWrite& write,
                                        const QList<QJsonObject>& result)
 {
-    if (!hasPendingFolderWrites() || m_folderWrites.first().id != write.id || result.isEmpty()) {
+    if (!hasPendingFolderWrites() || m_folderWrites.first().id != write.id
+        || (write.deleteId.isNull() && result.isEmpty())) {
         throw BitwardenCliError(QObject::tr("Could not confirm the pending Bitwarden folder change."));
     }
     auto writes = m_folderWrites;
     writes.removeFirst();
-    const QUuid confirmedId(result.first().value("id").toString());
-    if (write.edits.isEmpty()) {
+    QUuid confirmedId;
+    if (write.isCreate()) {
+        confirmedId = QUuid(result.first().value("id").toString());
         if (confirmedId.isNull() || confirmedId == m_rootId) {
             throw BitwardenCliError(QObject::tr("Could not confirm the pending Bitwarden folder change."));
         }
         for (auto& next : writes) {
             if (next.parent == write.id) {
                 next.parent = confirmedId;
+            }
+            if (next.deleteId == write.id) {
+                next.deleteId = confirmedId;
             }
             for (auto& edit : next.edits) {
                 if (edit.id == write.id) {
@@ -812,10 +868,14 @@ void BitwardenSession::applyFolderWrite(Database& database,
         }
     }
     storeFolderWrites(std::move(writes));
+    if (!write.deleteId.isNull()) {
+        removeFolder(m_confirmedFolders, write.deleteId);
+        m_needsInitialSync = true;
+    }
     for (const auto& folder : result) {
         replaceFolder(m_confirmedFolders, folder);
     }
-    if (write.edits.isEmpty()) {
+    if (write.isCreate()) {
         if (auto* group = database.rootGroup()->findGroupByUuid(write.id)) {
             if (!database.rootGroup()->findGroupByUuid(confirmedId)) {
                 group->setEmitModified(false);
@@ -831,7 +891,7 @@ void BitwardenSession::applyFolderWrite(Database& database,
 void BitwardenSession::rejectFolderWrite(const FolderWrite& write, BitwardenCliError::Reason reason)
 {
     if (!write.attempted && reason != BitwardenCliError::Reason::WriteUncertain && hasPendingFolderWrites()
-        && m_folderWrites.first().id == write.id && write.edits.isEmpty()) {
+        && m_folderWrites.first().id == write.id && write.isCreate()) {
         auto writes = m_folderWrites;
         writes.first().attempted = false;
         storeFolderWrites(std::move(writes));
@@ -843,9 +903,19 @@ void BitwardenSession::discardPendingFolderWrites(Database& database)
     if (database.isModified() || !m_connected || !hasPendingFolderWrites()) {
         throw BitwardenCliError(QObject::tr("Save or discard entry changes before discarding pending folder changes."));
     }
+    QSet<QUuid> removedIds;
+    for (const auto& write : m_folderWrites) {
+        if (!write.deleteId.isNull()) {
+            removedIds.insert(write.deleteId);
+        }
+    }
+    const auto aliases = m_pendingFolderAliases;
     storeFolderWrites({});
     auto* root = database.rootGroup();
-    for (auto alias = m_pendingFolderAliases.cbegin(); alias != m_pendingFolderAliases.cend(); ++alias) {
+    for (auto alias = aliases.cbegin(); alias != aliases.cend(); ++alias) {
+        if (removedIds.contains(alias.value())) {
+            removedIds.insert(alias.key());
+        }
         if (auto* group = root->findGroupByUuid(alias.value())) {
             if (!root->findGroupByUuid(alias.key())) {
                 group->setEmitModified(false);
@@ -855,11 +925,15 @@ void BitwardenSession::discardPendingFolderWrites(Database& database)
         }
     }
     projectFolderWrites();
-    reconcileGroups(database);
+    reconcileGroups(database, removedIds);
 }
 
-void BitwardenSession::reconcileGroups(Database& database)
+void BitwardenSession::reconcileGroups(Database& database, const QSet<QUuid>& restoredFolderIds)
 {
+    // Folder changes are persisted separately. Keep entry edits dirty and still notify the tree models.
+    const auto emitModified = database.modifiedSignalEnabled();
+    database.setEmitModified(false);
+    const auto restoreModified = qScopeGuard([&database, emitModified] { database.setEmitModified(emitModified); });
     auto* root = database.rootGroup();
     QHash<QUuid, Group*> groups;
     for (auto* group : root->groupsRecursive(false)) {
@@ -880,31 +954,41 @@ void BitwardenSession::reconcileGroups(Database& database)
         if (!group) {
             group = new Group();
         }
-        group->setEmitModified(false);
         group->setUuid(id);
         group->setName(parent == root ? path : path.mid(separator + 1));
         if (group->parentGroup() != parent) {
             group->setParent(parent, -1, false);
         }
-        group->setEmitModified(true);
         if (!paths.contains(path)) {
             paths.insert(path, group);
         }
     }
-    // Only vanished optimistic groups are removed. Keep any entries attached to them.
+    // When a folder disappears, direct entries go to the vault root. Retained subfolders have already been reparented.
     QSet<Group*> obsolete;
     for (auto* old : groups) {
-        old->setEmitModified(false);
         for (auto* entry : old->entries()) {
-            entry->setEmitModified(false);
             entry->setGroup(root, false);
-            entry->setEmitModified(true);
         }
         if (!groups.contains(old->parentGroup()->uuid())) {
             obsolete.insert(old);
         }
     }
     qDeleteAll(obsolete);
+
+    if (!restoredFolderIds.isEmpty()) {
+        // When a deletion is discarded, restore the confirmed assignments from the cached items.
+        for (const auto& value : m_items) {
+            const auto item = value.toObject();
+            const QUuid folderId(item.value("folderId").toString());
+            if (restoredFolderIds.contains(folderId)) {
+                auto* destination = root->findGroupByUuid(folderId);
+                auto* entry = root->findEntryByUuid(QUuid(item.value("id").toString()));
+                if (destination && entry && entry->group() == root) {
+                    entry->setGroup(destination, false);
+                }
+            }
+        }
+    }
 }
 QSharedPointer<Database> BitwardenSession::makeDatabase(const VaultSnapshot& snapshot) const
 {

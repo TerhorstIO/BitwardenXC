@@ -22,6 +22,8 @@
 #include <QMimeData>
 #include <QShortcut>
 
+#include <utility>
+
 #include "core/Config.h"
 #include "core/Group.h"
 #include "gui/group/GroupModel.h"
@@ -97,8 +99,24 @@ void GroupView::changeDatabase(const QSharedPointer<Database>& newDb)
     setColumnWidth(0, sizeHintForColumn(0));
 }
 
+void GroupView::setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup)
+{
+    m_model->setRemoteGroupMoveHandler(std::move(moveGroup));
+    setDragDropMode(QAbstractItemView::InternalMove);
+}
+
 void GroupView::dragMoveEvent(QDragMoveEvent* event)
 {
+    if (dragDropMode() == QAbstractItemView::InternalMove) {
+        if (event->keyboardModifiers() & Qt::ControlModifier) {
+            event->ignore();
+            return;
+        }
+        event->setDropAction(Qt::MoveAction);
+        QTreeView::dragMoveEvent(event);
+        return;
+    }
+
     if (event->keyboardModifiers() & Qt::ControlModifier) {
         event->setDropAction(Qt::CopyAction);
     } else {
@@ -112,6 +130,15 @@ void GroupView::dragMoveEvent(QDragMoveEvent* event)
         && (dropIndicatorPosition() == AboveItem || dropIndicatorPosition() == BelowItem)) {
         event->ignore();
     }
+}
+
+void GroupView::dropEvent(QDropEvent* event)
+{
+    if (dragDropMode() == QAbstractItemView::InternalMove && event->keyboardModifiers() & Qt::ControlModifier) {
+        event->ignore();
+        return;
+    }
+    QTreeView::dropEvent(event);
 }
 
 void GroupView::focusInEvent(QFocusEvent* event)

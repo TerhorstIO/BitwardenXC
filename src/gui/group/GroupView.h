@@ -20,6 +20,8 @@
 
 #include <QTreeView>
 
+#include <functional>
+
 class Database;
 class Group;
 class GroupModel;
@@ -36,6 +38,7 @@ public:
     void setCurrentGroup(Group* group);
     void expandGroup(Group* group, bool expand = true);
     void sortGroups(bool reverse = false);
+    void setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup);
 
 signals:
     void groupSelectionChanged();
@@ -51,6 +54,7 @@ private slots:
 
 protected:
     void dragMoveEvent(QDragMoveEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
     void focusInEvent(QFocusEvent* event) override;
 
 private:
