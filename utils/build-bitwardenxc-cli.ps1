@@ -1,14 +1,14 @@
 [CmdletBinding()]
 param(
     [string]$OutputDirectory = (Join-Path (Split-Path -Parent $PSScriptRoot) 'dist/bitwardenxc-cli'),
-    [string]$WorkDirectory = (Join-Path ([IO.Path]::GetTempPath()) 'bitwardenxc-cli-2026.10.1-bitwardenxc.2-build')
+    [string]$WorkDirectory = (Join-Path ([IO.Path]::GetTempPath()) 'bitwardenxc-cli-2026.10.1-bitwardenxc.3-build')
 )
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 
 $revision = '91214c3b978edb5496a32a946451960fe7d44531' # Bitwarden clients cli-v2026.10.1
-$expectedVersion = '2026.10.1-bitwardenxc.2'
+$expectedVersion = '2026.10.1-bitwardenxc.3'
 $nodeVersion = '22.23.5'
 $npmVersion = '11.18.0'
 $pkgVersion = '3.5'
@@ -159,7 +159,7 @@ try {
     }
 
     Invoke-Checked $nodeExe @($npm, 'test', '--', '--runInBand', '--runTestsByPath',
-        'libs/common/src/models/export/cipher.export.spec.ts')
+        'libs/common/src/models/export/cipher.export.spec.ts', 'apps/cli/src/vault/models/cipher.response.spec.ts')
     # Run the three upstream dist:oss:win steps with the same pinned npm.
     foreach ($task in @('build:oss:prod', 'clean', 'package:oss:win')) {
         Invoke-Checked $nodeExe @($npm, 'run', $task, '--workspace', '@bitwarden/cli')

@@ -50,6 +50,7 @@ public:
     bool setViewState(const QByteArray& state);
 
     void displayGroup(Group* group);
+    void displayCollection(const QList<Entry*>& entries);
     void displaySearch(const QList<Entry*>& entries);
 
 signals:
@@ -75,6 +76,7 @@ private slots:
     void jumpToGroupShortcut();
 
 private:
+    void showGroupRows();
     void resetFixedColumns();
     bool isColumnHidden(int logicalIndex);
     void onHeaderChanged();

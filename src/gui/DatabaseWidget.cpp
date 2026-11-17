@@ -40,6 +40,7 @@
 #include <QTextDocumentFragment>
 #include <QTextEdit>
 
+#include <algorithm>
 #include <utility>
 
 #include "autotype/AutoType.h"
@@ -88,6 +89,39 @@
 
 namespace
 {
+    bool isBitwardenCollection(const Group* group)
+    {
+        return group && group->property("bitwardenCollection").toBool();
+    }
+
+    QList<Entry*> collectionEntries(const Group* collection, bool includeDescendants = false)
+    {
+        auto* organization = collection->parentGroup();
+        while (organization && !organization->property("bitwardenOrganization").toBool()) {
+            organization = organization->parentGroup();
+        }
+        if (!organization) {
+            return {};
+        }
+
+        QSet<QUuid> collectionIds{collection->uuid()};
+        if (includeDescendants) {
+            for (const auto* subgroup : collection->groupsRecursive(false)) {
+                collectionIds.insert(subgroup->uuid());
+            }
+        }
+        QList<Entry*> entries;
+        for (auto* entry : organization->entries()) {
+            const auto memberships = entry->property("bitwardenCollectionGroups").toList();
+            if (std::any_of(memberships.cbegin(), memberships.cend(), [&collectionIds](const QVariant& groupId) {
+                    return collectionIds.contains(groupId.toUuid());
+                })) {
+                entries.append(entry);
+            }
+        }
+        return entries;
+    }
+
     bool lockBitwarden(const QSharedPointer<BitwardenSession>& session)
     {
         try {
@@ -207,7 +241,7 @@ DatabaseWidget::DatabaseWidget(QSharedPointer<Database> db, QWidget* parent, QSh
 
     m_entryView->setObjectName("entryView");
     m_entryView->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_entryView->displayGroup(m_db->rootGroup());
+    displayGroupEntries(currentGroup());
     connect(m_entryView, SIGNAL(customContextMenuRequested(QPoint)), SLOT(emitEntryContextMenuRequested(QPoint)));
 
     // Add a notification for when we are searching
@@ -305,6 +339,12 @@ DatabaseWidget::~DatabaseWidget()
 {
     cancelBitwardenSync();
     resetBitwardenQuickUnlock();
+    if (isBitwarden()) {
+        disconnect(m_groupView, nullptr, this, nullptr);
+        const QSignalBlocker blocker(m_entryView);
+        m_entryView->displayGroup(nullptr);
+        m_previewView->clear();
+    }
     // Trigger any Database deletion related signals manually by
     // explicitly clearing the Database pointer, instead of leaving it to ~QSharedPointer.
     // QSharedPointer may behave differently depending on whether it is cleared by the `clear` method
@@ -326,20 +366,36 @@ bool DatabaseWidget::isBitwarden() const
 
 bool DatabaseWidget::canCreateBitwardenEntry() const
 {
-    auto* group = currentGroup();
-    return isBitwarden() && !isLocked() && !m_bitwardenBusy && group && m_bitwarden->canCreate()
-        && !m_bitwarden->isPendingFolder(group->uuid());
+    const auto* group = currentGroup();
+    if (!isBitwarden() || isLocked() || m_bitwardenBusy || !group || !m_bitwarden->canCreate()
+        || m_bitwarden->isPendingFolder(group->uuid())) {
+        return false;
+    }
+    const auto personalId = m_bitwarden->personalRootId();
+    for (auto* ancestor = group; ancestor; ancestor = ancestor->parentGroup()) {
+        if (ancestor->uuid() == personalId) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool DatabaseWidget::canChangeBitwardenFolders() const
+{
+    return isBitwarden() && !isLocked() && isEntryViewActive() && !m_attemptingLock && !m_bitwardenBusy
+        && m_bitwarden->canCreate();
 }
 
 bool DatabaseWidget::canCreateBitwardenFolder() const
 {
-    return isBitwarden() && !isLocked() && isEntryViewActive() && !m_attemptingLock && !m_bitwardenBusy
-        && currentGroup() && m_bitwarden->canCreate();
+    const auto* group = currentGroup();
+    return canChangeBitwardenFolders() && group && m_bitwarden->canUseFolderAsParent(group->uuid());
 }
 
 bool DatabaseWidget::canEditBitwardenFolder() const
 {
-    return canCreateBitwardenFolder() && m_bitwarden->canEditFolder(currentGroup()->uuid());
+    const auto* group = currentGroup();
+    return canChangeBitwardenFolders() && group && m_bitwarden->canEditFolder(group->uuid());
 }
 
 bool DatabaseWidget::canEditBitwardenEntry() const
@@ -856,6 +912,10 @@ void DatabaseWidget::replaceDatabase(QSharedPointer<Database> db)
     // break from the old database. Without this crashes occur due to the change
     // signals triggering dangling pointers.
     auto oldDb = m_db;
+    if (isBitwarden()) {
+        // A collection view references entries outside its displayed group.
+        m_entryView->displayGroup(nullptr);
+    }
     m_db = std::move(db);
     connectDatabaseSignals();
     m_groupView->changeDatabase(m_db);
@@ -867,7 +927,7 @@ void DatabaseWidget::replaceDatabase(QSharedPointer<Database> db)
     if (!newParentUuid.isNull()) {
         m_newParent = m_db->rootGroup()->findGroupByUuid(newParentUuid);
         if (!m_newParent) {
-            m_newParent = m_db->rootGroup();
+            m_newParent = isBitwarden() ? personalBitwardenRoot() : m_db->rootGroup();
         }
     }
 
@@ -1526,14 +1586,19 @@ void DatabaseWidget::editBitwardenFolder()
     const auto leafName = originalName.section('/', -1);
     auto* name = new QLineEdit(leafName, &dialog);
     auto* parent = new QComboBox(&dialog);
-    auto* root = m_db->rootGroup();
+    auto* root = personalBitwardenRoot();
+    if (!root) {
+        return;
+    }
     const auto descendants = folder->groupsRecursive(true);
     const QSet<Group*> excluded(descendants.cbegin(), descendants.cend());
     QList<QPointer<Group>> choices{root};
     parent->addItem(root->name());
     for (auto* group : root->groupsRecursive(false)) {
         if (!excluded.contains(group) && m_bitwarden->canUseFolderAsParent(group->uuid())) {
-            parent->addItem(group->hierarchy().join(QStringLiteral(" / ")));
+            auto hierarchy = group->hierarchy();
+            hierarchy.removeFirst();
+            parent->addItem(hierarchy.join(QStringLiteral(" / ")));
             choices.append(group);
         }
     }
@@ -1570,8 +1635,8 @@ void DatabaseWidget::editBitwardenFolder()
 
 bool DatabaseWidget::updateBitwardenFolder(Group* folder, Group* destination, const QString& name)
 {
-    if (!canCreateBitwardenFolder() || QApplication::activeModalWidget()
-        || !m_bitwarden->canEditFolder(folder->uuid())) {
+    if (!canChangeBitwardenFolders() || QApplication::activeModalWidget()
+        || !m_bitwarden->canEditFolder(folder->uuid()) || !m_bitwarden->canUseFolderAsParent(destination->uuid())) {
         return false;
     }
 
@@ -1591,12 +1656,18 @@ bool DatabaseWidget::updateBitwardenFolder(Group* folder, Group* destination, co
     return true;
 }
 
+Group* DatabaseWidget::personalBitwardenRoot() const
+{
+    return m_db->rootGroup()->findGroupByUuid(m_bitwarden->personalRootId());
+}
+
 void DatabaseWidget::selectBitwardenFolder(Group* folder)
 {
-    if (isSearchActive()) {
+    if (!folder || isSearchActive()) {
         return;
     }
-    for (auto* parent = folder->parentGroup(); parent; parent = parent->parentGroup()) {
+    auto* syntheticRoot = m_db->rootGroup();
+    for (auto* parent = folder->parentGroup(); parent && parent != syntheticRoot; parent = parent->parentGroup()) {
         const QSignalBlocker blocker(parent);
         m_groupView->expandGroup(parent);
     }
@@ -1697,7 +1768,7 @@ void DatabaseWidget::deleteBitwardenFolder()
         selectBitwardenFolder(selectedEntry->group());
         m_entryView->setCurrentEntry(selectedEntry);
     } else {
-        selectBitwardenFolder(parent ? parent.data() : m_db->rootGroup());
+        selectBitwardenFolder(parent ? parent.data() : personalBitwardenRoot());
     }
     m_previewView->refresh();
     emit groupChanged();
@@ -2341,11 +2412,13 @@ void DatabaseWidget::search(const QString& searchtext)
     }
 
     auto searchGroup = m_db->rootGroup();
-    if (m_searchLimitGroup && m_nextSearchLabelText.isEmpty()) {
+    if (m_searchLimitGroup && m_nextSearchLabelText.isEmpty() && currentGroup()) {
         searchGroup = currentGroup();
     }
 
-    auto results = m_entrySearcher->search(searchtext, searchGroup);
+    auto results = isBitwardenCollection(searchGroup)
+        ? m_entrySearcher->searchEntries(searchtext, collectionEntries(searchGroup, true))
+        : m_entrySearcher->search(searchtext, searchGroup);
 
     // Display a label detailing our search results
     if (!m_nextSearchLabelText.isEmpty()) {
@@ -2428,7 +2501,7 @@ void DatabaseWidget::onGroupChanged()
         search(m_lastSearchText);
     } else {
         endSearch();
-        m_entryView->displayGroup(group);
+        displayGroupEntries(group);
     }
 
     m_previewView->setGroup(group);
@@ -2442,6 +2515,15 @@ void DatabaseWidget::onGroupChanged()
     }
 
     emit groupChanged();
+}
+
+void DatabaseWidget::displayGroupEntries(Group* group)
+{
+    if (isBitwardenCollection(group)) {
+        m_entryView->displayCollection(collectionEntries(group));
+    } else {
+        m_entryView->displayGroup(group);
+    }
 }
 
 void DatabaseWidget::onDatabaseModified()
@@ -2503,7 +2585,7 @@ void DatabaseWidget::endSearch()
     if (isSearchActive()) {
         // Show the normal entry view of the current group
         emit listModeAboutToActivate();
-        m_entryView->displayGroup(currentGroup());
+        displayGroupEntries(currentGroup());
         emit listModeActivated();
         m_entryView->setFirstEntryActive();
         // Enforce preview view update (prevents stale information if focus group is empty)
@@ -2997,9 +3079,10 @@ QStringList DatabaseWidget::customEntryAttributes() const
 void DatabaseWidget::restoreGroupEntryFocus(const QUuid& groupUuid, const QUuid& entryUuid)
 {
     auto group = m_db->rootGroup()->findGroupByUuid(groupUuid);
-    if (group) {
+    if (group && (!isBitwarden() || group != m_db->rootGroup())) {
         m_groupView->setCurrentGroup(group);
-        auto entry = group->findEntryByUuid(entryUuid, false);
+        auto* entry = isBitwardenCollection(group) ? m_db->rootGroup()->findEntryByUuid(entryUuid)
+                                                   : group->findEntryByUuid(entryUuid, false);
         if (entry) {
             m_entryView->setCurrentEntry(entry);
         }

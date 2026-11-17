@@ -7708,6 +7708,14 @@ Möchten Sie diese überschreiben?</translation>
 <context>
     <name>QObject</name>
     <message>
+        <source>Organization (%1)</source>
+        <translation>Organisation (%1)</translation>
+    </message>
+    <message>
+        <source>Bitwarden returned an invalid organization ID.</source>
+        <translation>Bitwarden hat eine ungültige Organisationskennung zurückgegeben.</translation>
+    </message>
+    <message>
         <source>Enter a folder name without a slash or line break.</source>
         <translation>Gib einen Ordnernamen ohne Schrägstrich oder Zeilenumbruch ein.</translation>
     </message>

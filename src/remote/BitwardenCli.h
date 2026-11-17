@@ -49,6 +49,8 @@ public:
     {
         QJsonArray folders;
         QJsonArray items;
+        QJsonArray organizations;
+        QJsonArray collections;
     };
 
     struct FolderEdit
@@ -74,8 +76,6 @@ public:
     void unlock(const QByteArray& masterPassword);
     void lock();
     void sync(bool force = true);
-    QJsonArray listFolders();
-    QJsonArray listItems();
     QJsonObject editItem(const QString& id, const QJsonObject& item, const QString& expectedRevision);
     QJsonObject createItem(const QJsonObject& item);
     QString folderJournalPath() const;

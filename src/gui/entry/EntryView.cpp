@@ -213,7 +213,23 @@ void EntryView::focusInEvent(QFocusEvent* event)
 
 void EntryView::displayGroup(Group* group)
 {
-    m_model->setGroup(group);
+    if (group) {
+        m_model->setGroup(group);
+    } else {
+        m_model->setEntries({});
+    }
+    showGroupRows();
+}
+
+void EntryView::displayCollection(const QList<Entry*>& entries)
+{
+    // Collection membership references the canonical entry, including for copy and preview.
+    m_model->setEntries(entries);
+    showGroupRows();
+}
+
+void EntryView::showGroupRows()
+{
     header()->hideSection(EntryModel::ParentGroup);
     setFirstEntryActive();
     m_inSearchMode = false;

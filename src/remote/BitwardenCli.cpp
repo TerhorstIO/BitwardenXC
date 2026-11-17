@@ -31,6 +31,7 @@ namespace
     const auto upstreamVersion = QStringLiteral("2026.10.1");
     const auto fullEditingVersion = QStringLiteral("2026.10.1-bitwardenxc.1");
     const auto cachedOpenVersion = QStringLiteral("2026.10.1-bitwardenxc.2");
+    const auto organizationCacheVersion = QStringLiteral("2026.10.1-bitwardenxc.3");
     const auto nameKey = QStringLiteral("name");
     const auto notesKey = QStringLiteral("notes");
     const auto idKey = QStringLiteral("id");
@@ -52,7 +53,7 @@ namespace
 
     bool supportsFullEditingVersion(const QString& version)
     {
-        return version == fullEditingVersion || version == cachedOpenVersion;
+        return version == fullEditingVersion || version == cachedOpenVersion || version == organizationCacheVersion;
     }
 
     QString executablePath(const QString& path)
@@ -409,7 +410,9 @@ bool BitwardenCli::supportsFullEditing()
 std::optional<BitwardenCli::VaultSnapshot> BitwardenCli::openCachedVault(const QByteArray& masterPassword)
 {
     const QMutexLocker locker(&m_mutex);
-    if (cliVersion() != cachedOpenVersion) {
+    const auto version = cliVersion();
+    const bool supportsOrganizationCache = version == organizationCacheVersion;
+    if (version != cachedOpenVersion && !supportsOrganizationCache) {
         return std::nullopt;
     }
     if (!m_sessionKey.isEmpty()) {
@@ -440,15 +443,20 @@ std::optional<BitwardenCli::VaultSnapshot> BitwardenCli::openCachedVault(const Q
     const auto key = result.value(QStringLiteral("sessionKey"));
     const auto folders = result.value(QStringLiteral("folders"));
     const auto items = result.value(QStringLiteral("items"));
-    if (kind != QStringLiteral("opened") || result.size() != 6 || server.isEmpty() || email.isEmpty()
-        || !key.isString() || !folders.isArray() || !items.isArray()) {
+    const auto organizations = result.value(QStringLiteral("organizations"));
+    const auto collections = result.value(QStringLiteral("collections"));
+    if (kind != QStringLiteral("opened") || result.size() != (supportsOrganizationCache ? 8 : 6) || server.isEmpty()
+        || email.isEmpty() || !key.isString() || !folders.isArray() || !items.isArray()
+        || (supportsOrganizationCache && (!organizations.isArray() || !collections.isArray()))) {
         throw BitwardenCliError(QStringLiteral("Die BitwardenXC-CLI hat ungültige Tresordaten geliefert."));
     }
     verifyProfile(server, email);
-    VaultSnapshot snapshot{folders.toArray(), items.toArray()};
+    VaultSnapshot snapshot{folders.toArray(), items.toArray(), organizations.toArray(), collections.toArray()};
     const auto isObject = [](const QJsonValue& value) { return value.isObject(); };
     if (!std::all_of(snapshot.folders.constBegin(), snapshot.folders.constEnd(), isObject)
-        || !std::all_of(snapshot.items.constBegin(), snapshot.items.constEnd(), isObject)) {
+        || !std::all_of(snapshot.items.constBegin(), snapshot.items.constEnd(), isObject)
+        || !std::all_of(snapshot.organizations.constBegin(), snapshot.organizations.constEnd(), isObject)
+        || !std::all_of(snapshot.collections.constBegin(), snapshot.collections.constEnd(), isObject)) {
         throw BitwardenCliError(QStringLiteral("Die BitwardenXC-CLI hat ungültige Tresordaten geliefert."));
     }
     adoptSessionKey(key.toString().toLatin1());
@@ -623,21 +631,15 @@ BitwardenCli::readVault(bool synchronize, bool force, const std::function<bool()
     checkCanceled();
     auto items = parseArray(run({QStringLiteral("list"), QStringLiteral("items")}));
     checkCanceled();
-    return {std::move(folders), std::move(items)};
-}
-
-QJsonArray BitwardenCli::listFolders()
-{
-    const QMutexLocker locker(&m_mutex);
-    ensureUnlocked();
-    return parseArray(run({QStringLiteral("list"), QStringLiteral("folders")}));
-}
-
-QJsonArray BitwardenCli::listItems()
-{
-    const QMutexLocker locker(&m_mutex);
-    ensureUnlocked();
-    return parseArray(run({QStringLiteral("list"), QStringLiteral("items")}));
+    auto organizations = parseArray(run({QStringLiteral("list"), QStringLiteral("organizations")}));
+    checkCanceled();
+    QJsonArray collections;
+    if (!organizations.isEmpty()) {
+        // These are the local, accessible collections. "org-collections" uses an administrative API.
+        collections = parseArray(run({QStringLiteral("list"), QStringLiteral("collections")}));
+        checkCanceled();
+    }
+    return {std::move(folders), std::move(items), std::move(organizations), std::move(collections)};
 }
 
 QJsonObject BitwardenCli::editItem(const QString& id, const QJsonObject& item, const QString& expectedRevision)

@@ -22,6 +22,7 @@
 #include "Application.h"
 #include "core/Clock.h"
 #include "core/Config.h"
+#include "core/Database.h"
 #include "core/Totp.h"
 #include "gui/Font.h"
 #include "gui/GuiTools.h"
@@ -598,7 +599,11 @@ void EntryPreviewWidget::setTabEnabled(QTabWidget* tabWidget, QWidget* widget, b
 QString EntryPreviewWidget::hierarchy(const Group* group, const QString& title)
 {
     if (group) {
-        QString groupList = QString("%1").arg(group->hierarchy().join(" / "));
+        auto groups = group->hierarchy();
+        if (group->database() && group->database()->rootGroup()->property("bitwardenVaultRoots").toBool()) {
+            groups.removeFirst();
+        }
+        const auto groupList = groups.join(" / ");
         return title.isEmpty() ? groupList : QString("%1 / %2").arg(groupList, title);
     }
     return {};

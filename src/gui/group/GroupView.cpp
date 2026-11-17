@@ -218,6 +218,10 @@ void GroupView::setCurrentGroup(Group* group)
 
 void GroupView::modelReset()
 {
-    recInitExpanded(m_model->groupFromIndex(m_model->index(0, 0)));
-    setCurrentIndex(m_model->index(0, 0));
+    const auto rootIndex = m_model->index(0, 0);
+    auto* root = m_model->groupFromIndex(rootIndex);
+    const auto splitVaults = root->property("bitwardenVaultRoots").toBool();
+    setRootIndex(splitVaults ? rootIndex : QModelIndex{});
+    recInitExpanded(root);
+    setCurrentIndex(splitVaults ? m_model->index(0, 0, rootIndex) : rootIndex);
 }

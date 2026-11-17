@@ -336,6 +336,9 @@ private:
     void performIconDownloads(const QList<Entry*>& entries, bool force = false, bool downloadInBackground = false);
     bool performSave(QString& errorMessage, const QString& fileName = {});
     bool saveBitwarden();
+    Group* personalBitwardenRoot() const;
+    bool canChangeBitwardenFolders() const;
+    void displayGroupEntries(Group* group);
     void createBitwardenFolder();
     void editBitwardenFolder();
     void deleteBitwardenFolder();

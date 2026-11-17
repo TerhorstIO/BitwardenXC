@@ -72,6 +72,7 @@ public:
                  const OpenProgress& progress = {});
     void unlock(QByteArray password, const OpenProgress& progress = {});
     bool needsInitialSync() const;
+    QUuid personalRootId() const;
     VaultSnapshot fetchSync(bool force, const std::function<bool()>& canceled = {});
     QSharedPointer<Database> applySync(VaultSnapshot snapshot);
     void lock();
@@ -114,6 +115,7 @@ private:
     BitwardenCli m_cli;
     BitwardenFolderJournal m_folderJournal;
     QString m_name;
+    QUuid m_containerId = QUuid::createUuid();
     QUuid m_rootId = QUuid::createUuid();
     QList<FolderWrite> m_folderWrites;
     QString m_folderQueueError;
@@ -121,6 +123,8 @@ private:
     QHash<QUuid, QUuid> m_pendingFolderAliases;
     QJsonArray m_folders;
     QJsonArray m_items;
+    QJsonArray m_organizations;
+    QJsonArray m_collections;
     QSet<QUuid> m_uncertainCreates;
     bool m_fullEditing = false;
     bool m_connected = false;

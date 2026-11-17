@@ -73,7 +73,11 @@ namespace
         entry.setPassword(canViewPassword ? login.value("password").toString() : QString());
         if (canViewPassword) {
             QVariantList passkeys;
-            for (const auto& value : login.value("fido2Credentials").toArray()) {
+            const auto credentials = item.value("organizationId").toString().isEmpty()
+                    || item.value("viewPassword").toBool()
+                ? login.value("fido2Credentials").toArray()
+                : QJsonArray();
+            for (const auto& value : credentials) {
                 if (!value.isObject()) {
                     continue;
                 }
@@ -209,6 +213,69 @@ namespace
     bool validFolderPath(const QString& path)
     {
         return !path.isEmpty() && !path.contains(QChar::Null) && !path.contains('\r') && !path.contains('\n');
+    }
+
+    QUuid organizationGroupId(const QUuid& id, const QByteArray& type)
+    {
+        static const QUuid groupNamespace(QStringLiteral("45273921-667d-4368-b93a-fbdf6050dc50"));
+        return QUuid::createUuidV5(groupNamespace, type + id.toRfc4122());
+    }
+
+    struct OrganizationGroups
+    {
+        QHash<QUuid, Group*> vaults;
+        QHash<QUuid, QHash<QUuid, Group*>> collections;
+    };
+
+    OrganizationGroups buildOrganizationGroups(Group* container, const BitwardenCli::VaultSnapshot& snapshot)
+    {
+        OrganizationGroups groups;
+        const auto addVault = [&groups, container](const QUuid& id, const QString& name) {
+            if (id.isNull() || groups.vaults.contains(id)) {
+                return;
+            }
+            auto* group = new Group();
+            group->setUuid(organizationGroupId(id, "organization"));
+            group->setName(name.isEmpty() ? QObject::tr("Organization (%1)").arg(idString(id).left(8)) : name);
+            group->setProperty("bitwardenOrganization", true);
+            group->setParent(container);
+            groups.vaults.insert(id, group);
+        };
+        for (const auto& value : snapshot.organizations) {
+            const auto organization = value.toObject();
+            addVault(QUuid(organization.value("id").toString()), organization.value("name").toString());
+        }
+        // The previous bundled CLI can open an encrypted cache without organization metadata.
+        for (const auto& value : snapshot.items) {
+            const auto item = value.toObject();
+            if (visibleItem(item)) {
+                addVault(QUuid(item.value("organizationId").toString()), {});
+            }
+        }
+
+        QHash<QUuid, QHash<QString, Group*>> paths;
+        for (const auto& collection : sortedFolders(snapshot.collections)) {
+            const QUuid organizationId(collection.value("organizationId").toString());
+            const QUuid id(collection.value("id").toString());
+            const auto path = collection.value("name").toString();
+            auto* vault = groups.vaults.value(organizationId);
+            if (!vault || id.isNull() || path.isEmpty() || groups.collections[organizationId].contains(id)) {
+                continue;
+            }
+            auto& organizationPaths = paths[organizationId];
+            const auto separator = path.lastIndexOf('/');
+            auto* parent = separator > 0 ? organizationPaths.value(path.left(separator), vault) : vault;
+            auto* group = new Group();
+            group->setUuid(organizationGroupId(id, "collection" + organizationId.toRfc4122()));
+            group->setName(parent == vault ? path : path.mid(separator + 1));
+            group->setProperty("bitwardenCollection", true);
+            group->setParent(parent);
+            groups.collections[organizationId].insert(id, group);
+            if (!organizationPaths.contains(path)) {
+                organizationPaths.insert(path, group);
+            }
+        }
+        return groups;
     }
 
     BitwardenCliError unsupportedChange()
@@ -445,7 +512,7 @@ void BitwardenSession::loadVault(bool synchronize, bool force, const OpenProgres
     if (progress) {
         progress(OpenStage::ReadingVault);
     }
-    setVault({m_cli.listFolders(), m_cli.listItems()}, false);
+    setVault(m_cli.readVault(false), false);
 }
 
 void BitwardenSession::setVault(VaultSnapshot snapshot, bool needsInitialSync)
@@ -453,6 +520,8 @@ void BitwardenSession::setVault(VaultSnapshot snapshot, bool needsInitialSync)
     m_confirmedFolders = std::move(snapshot.folders);
     projectFolderWrites();
     m_items = std::move(snapshot.items);
+    m_organizations = std::move(snapshot.organizations);
+    m_collections = std::move(snapshot.collections);
     m_connected = true;
     m_needsInitialSync = needsInitialSync;
 }
@@ -460,6 +529,11 @@ void BitwardenSession::setVault(VaultSnapshot snapshot, bool needsInitialSync)
 bool BitwardenSession::needsInitialSync() const
 {
     return m_needsInitialSync;
+}
+
+QUuid BitwardenSession::personalRootId() const
+{
+    return m_rootId;
 }
 
 BitwardenSession::VaultSnapshot BitwardenSession::fetchSync(bool force, const std::function<bool()>& canceled)
@@ -472,7 +546,8 @@ QSharedPointer<Database> BitwardenSession::applySync(VaultSnapshot snapshot)
     if (!m_connected || hasPendingFolderWrites()) {
         return {};
     }
-    if (snapshot.folders == m_folders && snapshot.items == m_items) {
+    if (snapshot.folders == m_folders && snapshot.items == m_items && snapshot.organizations == m_organizations
+        && snapshot.collections == m_collections) {
         m_needsInitialSync = false;
         return {};
     }
@@ -507,6 +582,8 @@ void BitwardenSession::unlock(QByteArray password, const OpenProgress& progress)
 void BitwardenSession::lock()
 {
     m_items = {};
+    m_organizations = {};
+    m_collections = {};
     m_folders = {};
     m_confirmedFolders = {};
     m_folderWrites.clear();
@@ -556,7 +633,7 @@ bool BitwardenSession::isDraft(const QUuid& id) const
 
 QSharedPointer<Database> BitwardenSession::makeDatabase() const
 {
-    return makeDatabase({m_folders, m_items});
+    return makeDatabase({m_folders, m_items, m_organizations, m_collections});
 }
 
 void BitwardenSession::loadFolderWrites(const QByteArray& password)
@@ -876,8 +953,9 @@ void BitwardenSession::applyFolderWrite(Database& database,
         replaceFolder(m_confirmedFolders, folder);
     }
     if (write.isCreate()) {
-        if (auto* group = database.rootGroup()->findGroupByUuid(write.id)) {
-            if (!database.rootGroup()->findGroupByUuid(confirmedId)) {
+        auto* personalVault = database.rootGroup()->findGroupByUuid(m_rootId);
+        if (auto* group = personalVault->findGroupByUuid(write.id)) {
+            if (!personalVault->findGroupByUuid(confirmedId)) {
                 group->setEmitModified(false);
                 group->setUuid(confirmedId);
                 group->setEmitModified(true);
@@ -911,7 +989,7 @@ void BitwardenSession::discardPendingFolderWrites(Database& database)
     }
     const auto aliases = m_pendingFolderAliases;
     storeFolderWrites({});
-    auto* root = database.rootGroup();
+    auto* root = database.rootGroup()->findGroupByUuid(m_rootId);
     for (auto alias = aliases.cbegin(); alias != aliases.cend(); ++alias) {
         if (removedIds.contains(alias.value())) {
             removedIds.insert(alias.key());
@@ -934,7 +1012,8 @@ void BitwardenSession::reconcileGroups(Database& database, const QSet<QUuid>& re
     const auto emitModified = database.modifiedSignalEnabled();
     database.setEmitModified(false);
     const auto restoreModified = qScopeGuard([&database, emitModified] { database.setEmitModified(emitModified); });
-    auto* root = database.rootGroup();
+    auto* root = database.rootGroup()->findGroupByUuid(m_rootId);
+    Q_ASSERT(root);
     QHash<QUuid, Group*> groups;
     for (auto* group : root->groupsRecursive(false)) {
         groups.insert(group->uuid(), group);
@@ -997,9 +1076,15 @@ QSharedPointer<Database> BitwardenSession::makeDatabase(const VaultSnapshot& sna
     database->setEmitModified(false);
     database->metadata()->setName(m_name);
     database->metadata()->setRecycleBinEnabled(false);
-    auto* root = database->rootGroup();
+    auto* container = database->rootGroup();
+    container->setUuid(m_containerId);
+    container->setProperty("bitwardenVaultRoots", true);
+    auto* root = new Group();
     root->setUuid(m_rootId);
     root->setName(QObject::tr("Vault"));
+    root->setParent(container);
+
+    const auto organizationGroups = buildOrganizationGroups(container, snapshot);
 
     QHash<QString, Group*> paths;
     QHash<QUuid, Group*> folderIds;
@@ -1031,6 +1116,12 @@ QSharedPointer<Database> BitwardenSession::makeDatabase(const VaultSnapshot& sna
         if (id.isNull() || ids.contains(id)) {
             throw BitwardenCliError(QObject::tr("Bitwarden returned an invalid or duplicate entry ID."));
         }
+        const auto organization = item.value("organizationId").toString();
+        const QUuid organizationId(organization);
+        auto* organizationVault = organizationGroups.vaults.value(organizationId);
+        if (!organization.isEmpty() && !organizationVault) {
+            throw BitwardenCliError(QObject::tr("Bitwarden returned an invalid organization ID."));
+        }
         ids.insert(id);
         auto* entry = new Entry();
         entry->setUuid(id);
@@ -1041,8 +1132,23 @@ QSharedPointer<Database> BitwardenSession::makeDatabase(const VaultSnapshot& sna
         } else {
             entry->setAutoTypeEnabled(false);
         }
-        const QUuid folderId(item.value("folderId").toString());
-        entry->setGroup(folderIds.value(m_pendingFolderAliases.value(folderId, folderId), root));
+        if (!organizationVault) {
+            const QUuid folderId(item.value("folderId").toString());
+            entry->setGroup(folderIds.value(m_pendingFolderAliases.value(folderId, folderId), root));
+        } else {
+            const auto collections = organizationGroups.collections.value(organizationId);
+            QVariantList memberships;
+            QSet<QUuid> added;
+            for (const auto& value : item.value("collectionIds").toArray()) {
+                if (const auto* collection = collections.value(QUuid(value.toString())); collection
+                    && !added.contains(collection->uuid())) {
+                    memberships.append(collection->uuid());
+                    added.insert(collection->uuid());
+                }
+            }
+            entry->setProperty("bitwardenCollectionGroups", memberships);
+            entry->setGroup(organizationVault);
+        }
     }
 
     database->setEmitModified(true);
@@ -1087,7 +1193,8 @@ QList<BitwardenSession::Edit> BitwardenSession::prepareSave(const Database& data
         }
         auto updated = updatedLogin(*entry, *oldEntry, item, m_fullEditing);
         if (oldEntry->group()->uuid() != entry->group()->uuid()) {
-            if (!m_fullEditing || !personalLogin(item)) {
+            const auto destination = entry->group()->uuid();
+            if (!m_fullEditing || !personalLogin(item) || (destination != m_rootId && !canEditFolder(destination))) {
                 throw unsupportedChange();
             }
             if (isPendingFolder(entry->group()->uuid())) {
@@ -1115,6 +1222,9 @@ QList<BitwardenSession::Edit> BitwardenSession::prepareSave(const Database& data
         }
         if (m_uncertainCreates.contains(entry->uuid())) {
             throw BitwardenCliError(QObject::tr("Bitwarden did not confirm this creation. Check the server before trying again."));
+        }
+        if (entry->group()->uuid() != m_rootId && !canEditFolder(entry->group()->uuid())) {
+            throw unsupportedChange();
         }
         if (isPendingFolder(entry->group()->uuid())) {
             throw BitwardenCliError(QObject::tr("Synchronize the new Bitwarden folder before saving entries in it."));

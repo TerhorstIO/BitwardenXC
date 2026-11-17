@@ -190,11 +190,22 @@ Qt::ItemFlags GroupModel::flags(const QModelIndex& modelIndex) const
 {
     if (!modelIndex.isValid()) {
         return Qt::NoItemFlags;
-    } else if (modelIndex == index(0, 0)) {
-        return QAbstractItemModel::flags(modelIndex) | Qt::ItemIsDropEnabled;
-    } else {
-        return QAbstractItemModel::flags(modelIndex) | Qt::ItemIsDropEnabled | Qt::ItemIsDragEnabled;
     }
+
+    const auto baseFlags = QAbstractItemModel::flags(modelIndex);
+    const auto* group = groupFromIndex(modelIndex);
+    const auto* parent = group->parentGroup();
+    if (m_moveRemoteGroup) {
+        if (group->property("bitwardenVaultRoots").toBool() || group->property("bitwardenOrganization").toBool()
+            || group->property("bitwardenCollection").toBool()) {
+            return baseFlags;
+        }
+        if (parent && parent->property("bitwardenVaultRoots").toBool()) {
+            // The personal vault is a destination. Only its folders can be dragged.
+            return baseFlags | Qt::ItemIsDropEnabled;
+        }
+    }
+    return parent ? baseFlags | Qt::ItemIsDropEnabled | Qt::ItemIsDragEnabled : baseFlags | Qt::ItemIsDropEnabled;
 }
 
 void GroupModel::setRemoteGroupMoveHandler(std::function<bool(Group*, Group*)> moveGroup)
@@ -208,7 +219,7 @@ Group* GroupModel::remoteDraggedGroup(const QMimeData* data,
                                      const QModelIndex& parent) const
 {
     if (!m_moveRemoteGroup || action != Qt::MoveAction || row != -1 || !parent.isValid() || parent.model() != this
-        || !data || !data->hasFormat(mimeTypes().first())) {
+        || !flags(parent).testFlag(Qt::ItemIsDropEnabled) || !data || !data->hasFormat(mimeTypes().first())) {
         return nullptr;
     }
 
@@ -223,7 +234,7 @@ Group* GroupModel::remoteDraggedGroup(const QMimeData* data,
 
     const auto* target = groupFromIndex(parent);
     auto* source = m_db->rootGroup()->findGroupByUuid(groupId);
-    if (!source || source == m_db->rootGroup()
+    if (!source || !flags(index(source)).testFlag(Qt::ItemIsDragEnabled)
         || (source->parentGroup() == target && !source->name().contains('/'))
         || source->findGroupByUuid(target->uuid())) {
         return nullptr;
@@ -482,6 +493,10 @@ void GroupModel::groupMoved()
 
 void GroupModel::sortChildren(Group* rootGroup, bool reverse)
 {
+    if (m_moveRemoteGroup
+        && (rootGroup->property("bitwardenOrganization").toBool() || rootGroup->property("bitwardenCollection").toBool())) {
+        return;
+    }
     emit layoutAboutToBeChanged();
 
     QList<QModelIndex> oldIndexes;

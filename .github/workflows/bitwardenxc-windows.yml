@@ -246,7 +246,7 @@ jobs:
           $env:BITWARDENCLI_APPDATA_DIR = Join-Path $env:RUNNER_TEMP 'bitwardenxc-packaged-cli-smoke'
           New-Item -ItemType Directory -Force -Path $env:BITWARDENCLI_APPDATA_DIR | Out-Null
           $cliVersion = & (Join-Path $startInfo.WorkingDirectory 'bw.exe') --version
-          if ($LASTEXITCODE -ne 0 -or $cliVersion -cne '2026.10.1-bitwardenxc.2') {
+          if ($LASTEXITCODE -ne 0 -or $cliVersion -cne '2026.10.1-bitwardenxc.3') {
             throw 'The packaged Bitwarden CLI could not be verified.'
           }
           $cacheProbe = '{"serverUrl":"https://example.invalid","email":"cache-smoke@example.invalid","password":"synthetic-only"}'
